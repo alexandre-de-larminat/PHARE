@@ -59,6 +59,7 @@ public:
 
     NO_DISCARD auto& getHybridModel() { return hybridModel_; }
     NO_DISCARD auto& getMHDModel() { return mhdModel_; }
+    NO_DISCARD auto& getPICModel() { return picModel_; }
     NO_DISCARD auto& getMultiPhysicsIntegrator() { return multiphysInteg_; }
 
     NO_DISCARD std::string to_str() override;
@@ -94,9 +95,11 @@ public:
     using IPhysicalModel = PHARE::solver::IPhysicalModel<SAMRAITypes>;
     using HybridModel    = typename PHARETypes::HybridModel_t;
     using MHDModel       = typename PHARETypes::MHDModel_t;
+    using PICModel       = typename PHARETypes::PICModel_t;
 
     using SolverMHD = typename PHARETypes::SolverMHD_t;
     using SolverPPC = typename PHARETypes::SolverPPC_t;
+    using SolverPIC = typename PHARETypes::SolverPIC_t;
 
     using MessengerFactory       = typename PHARETypes::MessengerFactory;
     using MultiPhysicsIntegrator = typename PHARETypes::MultiPhysicsIntegrator;
@@ -158,6 +161,7 @@ private:
     // physical models that can be used
     std::shared_ptr<HybridModel> hybridModel_;
     std::shared_ptr<MHDModel> mhdModel_;
+    std::shared_ptr<PICModel> picModel_;
 
     std::unique_ptr<PHARE::core::ITimeStamper> timeStamper;
     std::unique_ptr<PHARE::diagnostic::IDiagnosticsManager> dMan;
@@ -251,14 +255,49 @@ void Simulator<dim, _interp, nbRefinedPart>::hybrid_init(initializer::PHAREDict 
 
     // we register the hybrid model for all possible levels in the hierarchy
     // since for now it is the only model available, same for the solver
-    multiphysInteg_->registerModel(0, maxLevelNumber_ - 1, hybridModel_);
+    // EDIT: applies only up to the penultimate level
+    multiphysInteg_->registerModel(0, maxLevelNumber_ - 2, hybridModel_);
 
-    multiphysInteg_->registerAndInitSolver(0, maxLevelNumber_ - 1,
+    multiphysInteg_->registerAndInitSolver(0, maxLevelNumber_ - 2,
                                            std::make_unique<SolverPPC>(dict["simulation"]["algo"]));
 
     multiphysInteg_->registerAndSetupMessengers(messengerFactory_);
 
     // hard coded for now, should get some params later from the dict
+    auto hybridTagger_ = amr::TaggerFactory<PHARETypes>::make("HybridModel", "default");
+    multiphysInteg_->registerTagger(0, maxLevelNumber_ - 1, std::move(hybridTagger_));
+
+    if (dict["simulation"].contains("restarts"))
+        startTime_ = restarts_init(dict["simulation"]["restarts"]);
+
+    integrator_ = std::make_unique<Integrator>(dict, hierarchy_, multiphysInteg_, multiphysInteg_,
+                                               startTime_, finalTime_);
+
+    timeStamper = core::TimeStamperFactory::create(dict["simulation"]);
+
+    if (dict["simulation"].contains("diagnostics"))
+        diagnostics_init(dict["simulation"]["diagnostics"]);
+}
+
+template<std::size_t dim, std::size_t _interp, std::size_t nbRefinedPart>
+void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict const& dict)
+{
+    PICModel_ = std::make_shared<PICModel>(
+        dict["simulation"], std::make_shared<typename PICModel::resources_manager_type>());
+
+
+    PICModel_->resourcesManager->registerResources(PICModel_->state);
+
+    // we register the PIC model for the highest level only
+    multiphysInteg_->registerModel(maxLevelNumber_ - 1, maxLevelNumber_ - 1, PICModel_);
+
+    multiphysInteg_->registerAndInitSolver(maxLevelNumber_ - 1, maxLevelNumber_ - 1,
+                                           std::make_unique<SolverPIC>(dict["simulation"]["algo"]));
+
+    multiphysInteg_->registerAndSetupMessengers(messengerFactory_);
+
+    // hard coded for now, should get some params later from the dict
+    // same tagger as for hybrid for now
     auto hybridTagger_ = amr::TaggerFactory<PHARETypes>::make("HybridModel", "default");
     multiphysInteg_->registerTagger(0, maxLevelNumber_ - 1, std::move(hybridTagger_));
 
@@ -282,7 +321,7 @@ Simulator<_dimension, _interp_order, _nbRefinedPart>::Simulator(
     std::shared_ptr<PHARE::amr::Hierarchy> const& hierarchy)
     : coutbuf{logging(log_out)}
     , hierarchy_{hierarchy}
-    , modelNames_{"HybridModel"}
+    , modelNames_{"PICModel"} // EDITED
     , descriptors_{PHARE::amr::makeDescriptors(modelNames_)}
     , messengerFactory_{descriptors_}
     , maxLevelNumber_{dict["simulation"]["AMR"]["max_nbr_levels"].template to<int>()}
@@ -294,6 +333,8 @@ Simulator<_dimension, _interp_order, _nbRefinedPart>::Simulator(
 {
     if (find_model("HybridModel"))
         hybrid_init(dict);
+    else if (find_model("PICModel"))
+        pic_init(dict);
     else
         throw std::runtime_error("unsupported model");
 }

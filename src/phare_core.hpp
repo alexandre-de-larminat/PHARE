@@ -51,8 +51,11 @@ struct PHARE_Types
         = PHARE::core::MaxwellianParticleInitializer<ParticleArray_t, GridLayout_t>;
     using IonPopulation_t
         = PHARE::core::IonPopulation<ParticleArray_t, VecField_t, SymTensorField_t, GridLayout_t>;
-    using Ions_t      = PHARE::core::Ions<IonPopulation_t, GridLayout_t>;
-    using Electrons_t = PHARE::core::Electrons<Ions_t>;
+    using Ions_t         = PHARE::core::Ions<IonPopulation_t, GridLayout_t>;
+    using ElectronPopulation_t
+        = PHARE::core::ElectronPopulation<ParticleArray_t, VecField_t, GridLayout_t>;
+    using PICElectrons_t = PHARE::core::Ions<ElectronPopulation_t, GridLayout_t>;
+    using Electrons_t    = PHARE::core::Electrons<Ions_t>;
 
     using ParticleInitializerFactory
         = PHARE::core::ParticleInitializerFactory<ParticleArray_t, GridLayout_t>;

@@ -66,7 +66,7 @@ public:
     static constexpr std::size_t nbRefinedPart = _nbRefinedPart;
 
     using Simulator   = PHARE::Simulator<dimension, interp_order, nbRefinedPart>;
-    using HybridModel = typename Simulator::HybridModel;
+    using PICModel = typename Simulator::PICModel;
 
     DataWrangler(std::shared_ptr<ISimulator> const& simulator,
                  std::shared_ptr<amr::Hierarchy> const& hierarchy)
@@ -82,7 +82,7 @@ public:
     auto getPatchLevel(size_t lvl)
     {
         return PatchLevel<_dimension, _interp_order, _nbRefinedPart>{
-            *hierarchy_, *simulator_.getHybridModel(), lvl};
+            *hierarchy_, *simulator_.getPICModel(), lvl}; // EDITED
     }
 
     auto sort_merge_1d(std::vector<PatchData<std::vector<double>, dimension>> const&& input,

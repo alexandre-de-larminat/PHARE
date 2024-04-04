@@ -28,6 +28,8 @@ struct PHARE_Types
     using MaxwellianParticleInitializer_t = typename core_types::MaxwellianParticleInitializer_t;
     using IonPopulation_t                 = typename core_types::IonPopulation_t;
     using Electrons_t                     = typename core_types::Electrons_t;
+    using PICElectrons_t                  = typename core_types::PICElectrons_t;
+    using ElectronPopulation_t            = typename core_types::ElectronPopulation_t;
     using ParticleInitializerFactory      = typename core_types::ParticleInitializerFactory;
 
 
@@ -44,8 +46,10 @@ struct PHARE_Types
     using IPhysicalModel   = typename solver_types::IPhysicalModel;
     using HybridModel_t    = typename solver_types::HybridModel_t;
     using MHDModel_t       = typename solver_types::MHDModel_t;
+    using PICModel_t       = typename solver_types::PICModel_t;
     using SolverPPC_t      = typename solver_types::SolverPPC_t;
     using SolverMHD_t      = typename solver_types::SolverMHD_t;
+    using SolverPIC_t      = typename solver_types::SolverPIC_t;
     using MessengerFactory = typename solver_types::MessengerFactory;
     using LevelInitializerFactory_t = typename solver_types::LevelInitializerFactory_t;
     using MultiPhysicsIntegrator    = typename solver_types::MultiPhysicsIntegrator;
