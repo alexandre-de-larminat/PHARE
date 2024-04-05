@@ -14,7 +14,7 @@ namespace PHARE::core
 
         explicit Fermions(PHARE::initializer::PHAREDict const& dict)
         : ions{dict["ions"]}
-        , electrons{} // TODO
+        , electrons{dict["pic_electrons"]}
 
         Ions ions;
         PICElectrons electrons;

@@ -17,7 +17,7 @@
 // Only works for a single population of electrons, but could be modified for many.
 namespace PHARE::core
 {
-    template<typename ParticleArray, typename VecField, typename TensorField, typename GridLayout>
+    template<typename ParticleArray, typename VecField, typename GridLayout>
     class ElectronPopulation
     {
     public:
@@ -26,9 +26,8 @@ namespace PHARE::core
         using particle_array_type              = ParticleArray;
         using particle_resource_type           = ParticlesPack<ParticleArray>;
         using vecfield_type                    = VecField;
-        using tensorfield_type                 = TensorField;
-        double Me_ov_Mp = 1/1836.152673 // mass of an electron normalized by proton mass
-        std::string defName_ = PICelectrons; 
+        double Me_ov_Mp = 1/1836.152673; // mass of an electron normalized by proton mass
+        std::string defName_ = "PICelectrons"; 
 
         ElectronPopulation()
             : name_{defName_}

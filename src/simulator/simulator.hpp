@@ -288,10 +288,10 @@ void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict con
 
     PICModel_->resourcesManager->registerResources(PICModel_->state);
 
-    // we register the PIC model for the highest level only
-    multiphysInteg_->registerModel(maxLevelNumber_ - 1, maxLevelNumber_ - 1, PICModel_);
+    // we register the PIC model for the all levels
+    multiphysInteg_->registerModel(0, maxLevelNumber_ - 1, PICModel_);
 
-    multiphysInteg_->registerAndInitSolver(maxLevelNumber_ - 1, maxLevelNumber_ - 1,
+    multiphysInteg_->registerAndInitSolver(0, maxLevelNumber_ - 1,
                                            std::make_unique<SolverPIC>(dict["simulation"]["algo"]));
 
     multiphysInteg_->registerAndSetupMessengers(messengerFactory_);

@@ -15,7 +15,7 @@
 #include "core/pic/pic_quantities.hpp"
 #include "core/data/vecfield/vecfield_component.hpp"
 #include "initializer/data_provider.hpp"
-#include "particle_initializers/particle_initializer_factory.hpp"
+#include "core/data/ions/particle_initializers/particle_initializer_factory.hpp"
 #include "core/utilities/algorithm.hpp"
 #include "core/data/fermions/electron_population.hpp"
 
@@ -37,13 +37,16 @@ namespace PHARE::core
 
 
 
-        explicit PICElectrons()
+        explicit PICElectrons(PHARE::initializer::PHAREDict const& dict)
             : bulkVelocity_{"ElectronBulkVel", PICQuantity::Vector::Ve}
-            , populations_{} // TODO check how to initialize without using PHAREdict
+            , populations_{generate(
+                  [&dict](auto ipop) { //
+                      return ElectronPopulation{dict["pop" + std::to_string(ipop)]};
+                  },
+                  dict["nbrPopulations"].template to<std::size_t>())}
         {
         }
 
-        auto const& populations_ = ElectronPopulation{}; // Placeholder till I find smth better
 
 
         NO_DISCARD auto nbrPopulations() const { return populations_.size(); }
@@ -156,7 +159,7 @@ namespace PHARE::core
         NO_DISCARD bool isSettable() const
         {
             bool settable
-                = rho_ == nullptr && bulkVelocity_.isSettable()
+                = rho_ == nullptr && bulkVelocity_.isSettable();
 
             for (auto const& pop : populations_)
             {

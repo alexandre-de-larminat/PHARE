@@ -16,6 +16,9 @@ set( SOURCES_INC
      data/ions/ion_population/particle_pack.hpp
      data/ions/ion_population/ion_population.hpp
      data/ions/ions.hpp
+     data/fermions/electron_population.hpp
+     data/fermions/pic_electrons.hpp
+     data/fermions/fermions.hpp
      data/electrons/electrons.hpp
      data/ions/particle_initializers/particle_initializer.hpp
      data/ions/particle_initializers/maxwellian_particle_initializer.hpp
@@ -32,10 +35,12 @@ set( SOURCES_INC
      numerics/pusher/pusher.hpp
      numerics/pusher/pusher_factory.hpp
      numerics/ampere/ampere.hpp
+     numerics/ampere/maxwell_ampere.hpp
      numerics/faraday/faraday.hpp
      numerics/ohm/ohm.hpp
      numerics/moments/moments.hpp
      numerics/ion_updater/ion_updater.hpp
+     numerics/fermion_updater/fermion_updater.hpp
      models/physical_state.hpp
      models/hybrid_state.hpp
      models/mhd_state.hpp

@@ -56,6 +56,7 @@ set( SOURCES_INC
      solvers/solver.hpp
      solvers/solver_ppc.hpp
      solvers/solver_mhd.hpp
+     solvers/solver_pic.hpp
      physical_models/physical_model.hpp
      physical_models/hybrid_model.hpp
      physical_models/mhd_model.hpp

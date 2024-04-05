@@ -7,6 +7,9 @@
 #include "core/data/grid/gridlayoutimplyee.hpp"
 #include "core/data/ions/ion_population/ion_population.hpp"
 #include "core/data/ions/ions.hpp"
+#include "core/data/fermions/pic_electrons.hpp"
+#include "core/data/fermions/fermions.hpp"
+#include "core/data/fermions/electron_population.hpp"
 #include "core/data/ions/particle_initializers/maxwellian_particle_initializer.hpp"
 #include "core/data/ndarray/ndarray_vector.hpp"
 #include "core/data/particles/particle_array.hpp"
@@ -54,7 +57,8 @@ struct PHARE_Types
     using Ions_t         = PHARE::core::Ions<IonPopulation_t, GridLayout_t>;
     using ElectronPopulation_t
         = PHARE::core::ElectronPopulation<ParticleArray_t, VecField_t, GridLayout_t>;
-    using PICElectrons_t = PHARE::core::Ions<ElectronPopulation_t, GridLayout_t>;
+    using PICElectrons_t = PHARE::core::PICElectrons<ElectronPopulation_t, GridLayout_t>;
+    using Fermions_t     = PHARE::core::Fermions<Ions_t, PICElectrons_t>;
     using Electrons_t    = PHARE::core::Electrons<Ions_t>;
 
     using ParticleInitializerFactory

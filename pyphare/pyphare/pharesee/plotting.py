@@ -332,8 +332,8 @@ def finest_field_plot(run_path, qty, **kwargs):
 
     ax.set_title(kwargs.get("title", ""))
 
-    ax.set_xlabel(kwargs.get("xlabel", "$x c / \omega_p$"))
-    ax.set_ylabel(kwargs.get("ylabel", "$y c / \omega_p$"))
+    ax.set_xlabel(kwargs.get("xlabel", r"$x c / \omega_p$"))
+    ax.set_ylabel(kwargs.get("ylabel", r"$y c / \omega_p$"))
 
     if "xlim" in kwargs:
         ax.set_xlim(kwargs["xlim"])
