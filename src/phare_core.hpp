@@ -15,7 +15,6 @@
 #include "core/data/particles/particle_array.hpp"
 #include "core/data/vecfield/vecfield.hpp"
 #include "core/models/physical_state.hpp"
-#include "core/models/physical_state.hpp"
 #include "core/utilities/meta/meta_utilities.hpp"
 #include "core/utilities/algorithm.hpp"
 #include "core/logger.hpp"

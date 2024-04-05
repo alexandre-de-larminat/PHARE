@@ -222,25 +222,47 @@ def populateDict():
 
     partinit = "particle_initializer"
     for pop_index, pop in enumerate(init_model.populations):
-        pop_path = "simulation/ions/pop"
-        partinit_path = pop_path + "{:d}/".format(pop_index) + partinit + "/"
-        d = modelDict[pop]
-        add_string(pop_path + "{:d}/name".format(pop_index), pop)
-        add_double(pop_path + "{:d}/mass".format(pop_index), d["mass"])
-        add_string(partinit_path + "name", "maxwellian")
+        if pop.charge < 0:
+            pop_path = "simulation/ions/pop"
+            partinit_path = pop_path + "{:d}/".format(pop_index) + partinit + "/"
+            d = modelDict[pop]
+            add_string(pop_path + "{:d}/name".format(pop_index), pop)
+            add_double(pop_path + "{:d}/mass".format(pop_index), d["mass"])
+            add_string(partinit_path + "name", "maxwellian")
 
-        addInitFunction(partinit_path + "density", fn_wrapper(d["density"]))
-        addInitFunction(partinit_path + "bulk_velocity_x", fn_wrapper(d["vx"]))
-        addInitFunction(partinit_path + "bulk_velocity_y", fn_wrapper(d["vy"]))
-        addInitFunction(partinit_path + "bulk_velocity_z", fn_wrapper(d["vz"]))
-        addInitFunction(partinit_path + "thermal_velocity_x", fn_wrapper(d["vthx"]))
-        addInitFunction(partinit_path + "thermal_velocity_y", fn_wrapper(d["vthy"]))
-        addInitFunction(partinit_path + "thermal_velocity_z", fn_wrapper(d["vthz"]))
-        add_int(partinit_path + "nbr_part_per_cell", d["nbrParticlesPerCell"])
-        add_double(partinit_path + "charge", d["charge"])
-        add_string(partinit_path + "basis", "cartesian")
-        if "init" in d and "seed" in d["init"]:
-            pp.add_optional_size_t(partinit_path + "init/seed", d["init"]["seed"])
+            addInitFunction(partinit_path + "density", fn_wrapper(d["density"]))
+            addInitFunction(partinit_path + "bulk_velocity_x", fn_wrapper(d["vx"]))
+            addInitFunction(partinit_path + "bulk_velocity_y", fn_wrapper(d["vy"]))
+            addInitFunction(partinit_path + "bulk_velocity_z", fn_wrapper(d["vz"]))
+            addInitFunction(partinit_path + "thermal_velocity_x", fn_wrapper(d["vthx"]))
+            addInitFunction(partinit_path + "thermal_velocity_y", fn_wrapper(d["vthy"]))
+            addInitFunction(partinit_path + "thermal_velocity_z", fn_wrapper(d["vthz"]))
+            add_int(partinit_path + "nbr_part_per_cell", d["nbrParticlesPerCell"])
+            add_double(partinit_path + "charge", d["charge"])
+            add_string(partinit_path + "basis", "cartesian")
+            if "init" in d and "seed" in d["init"]:
+                pp.add_optional_size_t(partinit_path + "init/seed", d["init"]["seed"])
+                
+        if pop.charge > 0:
+            pop_path = "simulation/pic_electrons/pop"
+            partinit_path = pop_path + "{:d}/".format(pop_index) + partinit + "/"
+            d = modelDict[pop]
+            add_string(pop_path + "{:d}/name".format(pop_index), pop)
+            add_double(pop_path + "{:d}/mass".format(pop_index), d["mass"])
+            add_string(partinit_path + "name", "maxwellian")
+
+            addInitFunction(partinit_path + "density", fn_wrapper(d["density"]))
+            addInitFunction(partinit_path + "bulk_velocity_x", fn_wrapper(d["vx"]))
+            addInitFunction(partinit_path + "bulk_velocity_y", fn_wrapper(d["vy"]))
+            addInitFunction(partinit_path + "bulk_velocity_z", fn_wrapper(d["vz"]))
+            addInitFunction(partinit_path + "thermal_velocity_x", fn_wrapper(d["vthx"]))
+            addInitFunction(partinit_path + "thermal_velocity_y", fn_wrapper(d["vthy"]))
+            addInitFunction(partinit_path + "thermal_velocity_z", fn_wrapper(d["vthz"]))
+            add_int(partinit_path + "nbr_part_per_cell", d["nbrParticlesPerCell"])
+            add_double(partinit_path + "charge", d["charge"])
+            add_string(partinit_path + "basis", "cartesian")
+            if "init" in d and "seed" in d["init"]:
+                pp.add_optional_size_t(partinit_path + "init/seed", d["init"]["seed"])
 
     add_string("simulation/electromag/name", "EM")
     add_string("simulation/electromag/electric/name", "E")

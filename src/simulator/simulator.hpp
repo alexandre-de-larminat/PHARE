@@ -181,6 +181,7 @@ private:
     double restarts_init(initializer::PHAREDict const&);
     void diagnostics_init(initializer::PHAREDict const&);
     void hybrid_init(initializer::PHAREDict const&);
+    void pic_init(initializer::PHAREDict const&);
 };
 
 
@@ -282,14 +283,14 @@ void Simulator<dim, _interp, nbRefinedPart>::hybrid_init(initializer::PHAREDict 
 template<std::size_t dim, std::size_t _interp, std::size_t nbRefinedPart>
 void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict const& dict)
 {
-    PICModel_ = std::make_shared<PICModel>(
+    picModel_ = std::make_shared<PICModel>(
         dict["simulation"], std::make_shared<typename PICModel::resources_manager_type>());
 
 
-    PICModel_->resourcesManager->registerResources(PICModel_->state);
+    picModel_->resourcesManager->registerResources(picModel_->state);
 
     // we register the PIC model for the all levels
-    multiphysInteg_->registerModel(0, maxLevelNumber_ - 1, PICModel_);
+    multiphysInteg_->registerModel(0, maxLevelNumber_ - 1, picModel_);
 
     multiphysInteg_->registerAndInitSolver(0, maxLevelNumber_ - 1,
                                            std::make_unique<SolverPIC>(dict["simulation"]["algo"]));

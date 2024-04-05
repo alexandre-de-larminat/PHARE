@@ -42,9 +42,9 @@ namespace PHARE::core
         NO_DISCARD std::string const& name() const { return name_; }
 
 
-        initializer::PHAREDict initElectrons()
+        PHARE::initializer::PHAREDict initElectrons()
         {
-        initializer::PHAREDict dict;
+        PHARE::initializer::PHAREDict dict;
 
         dict["name"]    = std::string{"maxwellian"};
         dict["density"] = 0;
@@ -64,9 +64,8 @@ namespace PHARE::core
         return dict;
         }
 
-        static auto init_dict_ = initElectrons();
 
-        NO_DISCARD auto const& particleInitializerInfo() const { return init_dict_; }
+        NO_DISCARD auto const& particleInitializerInfo() const { return initElectrons(); }
 
 
         NO_DISCARD bool isUsable() const

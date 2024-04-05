@@ -5,16 +5,19 @@
 #include "core/def/phare_mpi.hpp"
 
 #include <SAMRAI/hier/Patch.h>
+#include <cstddef>
 
 
-#include "amr/messengers/pic_messenger.hpp"
-#include "amr/messengers/pic_messenger_info.hpp"
+#include "amr/messengers/hybrid_messenger.hpp"
+#include "amr/messengers/hybrid_messenger_info.hpp"
 #include "amr/resources_manager/amr_utils.hpp"
 
 #include "amr/physical_models/physical_model.hpp"
+#include "amr/physical_models/hybrid_model.hpp"
 #include "amr/solvers/solver.hpp"
 
 #include "core/data/grid/gridlayout_utils.hpp"
+#include "core/data/grid/gridlayoutdefs.hpp"
 #include "core/data/vecfield/vecfield_component.hpp"
 
 
@@ -31,13 +34,15 @@ class SolverPIC : public ISolver<AMR_Types>
 private:
     using Electromag       = typename PICModel::electromag_type;
     using Ions             = typename PICModel::ions_type;
+    using Fermions         = typename PICModel::fermions_type;
     using ParticleArray    = typename Ions::particle_array_type;
     using VecFieldT        = typename PICModel::vecfield_type;
     using GridLayout       = typename PICModel::gridlayout_type;
     using ResourcesManager = typename PICModel::resources_manager_type;
     using IPhysicalModel_t = IPhysicalModel<AMR_Types>;
     using IMessenger       = amr::IMessenger<IPhysicalModel_t>;
-    using PICMessenger     = amr::PICMessenger<PICModel>;
+    using HybridModel_t    = typename PICModel::hybrid_model_type;
+    using PICMessenger     = amr::HybridMessenger<HybridModel_t>; // TODO edit
 
     Electromag electromagPred_{"EMPred"};
     Electromag electromagAvg_{"EMAvg"};
@@ -48,7 +53,7 @@ private:
 
     PHARE::core::Faraday<GridLayout> faraday_;
     PHARE::core::MaxwellAmpere<GridLayout> maxwellampere_;
-    PHARE::core::FermionUpdater<Fermions, Electromag, VecField, GridLayout> fermionUpdater_;
+    PHARE::core::FermionUpdater<Fermions, Electromag, VecFieldT, GridLayout> fermionUpdater_;
 
 
 public:
@@ -82,9 +87,9 @@ public:
                               double const currentTime, double const newTime) override;
 
 private:
-    using Messenger = amr::PICMessenger<PICModel>;
+    using Messenger = PICMessenger;
 
-    void clearVecField_(VecField& vecField, Indexes const&... ijk);
+    void clearVecField_(VecFieldT& vecField);
 
     void restartJ_(level_t& level, PICModel& model, Messenger& fromCoarser, double const currentTime);
                    
@@ -155,37 +160,34 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
 
     PHARE_LOG_SCOPE("SolverPPC::advanceLevel");
 
-    auto& PICModel         = dynamic_cast<PICModel&>(model);
-    auto& PICState         = PICModel.state;
+    auto& PICmodel         = dynamic_cast<PICModel&>(model);
+    auto& PICState         = PICmodel.state;
     auto& fromCoarser      = dynamic_cast<PICMessenger&>(fromCoarserMessenger);
-    auto& resourcesManager = *PICModel.resourcesManager;
+    auto& resourcesManager = *PICmodel.resourcesManager;
     auto level             = hierarchy->getPatchLevel(levelNumber);
 
 
-    restartJ_(*level, PICModel, fromCoarser, currentTime);
+    restartJ_(*level, PICmodel, fromCoarser, currentTime);
 
-    MAMF_(*level, PICModel, fromCoarser, currentTime, newTime);
+    MAMF_(*level, PICmodel, fromCoarser, currentTime, newTime);
 
-    moveFermions_(*level, PICState.fermions, PICModel, electromagAvg_, resourcesManager, fromCoarser, currentTime,
+    moveFermions_(*level, PICState.fermions, PICmodel, electromagAvg_, resourcesManager, fromCoarser, currentTime,
                   newTime);
 
-    average_(level_t& level, PICModel& model, Messenger& fromCoarser);
+    average_(*level, PICmodel, fromCoarser);
 
-    set_(level_t& level, PICModel& model, Messenger& fromCoarser);
+    set_(*level, PICmodel, fromCoarser);
 }
 
 
 // used in restartJ_
-template<typename VecField, typename... Indexes>
-void SolverPIC<PICModel, AMR_Types>::clearVecField_(VecField& vecField, Indexes const&... ijk)
+template<typename PICModel, typename AMR_Types>
+void SolverPIC<PICModel, AMR_Types>::clearVecField_(VecFieldT& vecField)
 {
-    auto& XField = vecField(Component::X);
-    auto& YField = vecField(Component::Y);
-    auto& ZField = vecField(Component::Z);
-
-    auto& XField(ijk...) = 0.;
-    auto& YField(ijk...) = 0.;
-    auto& ZField(ijk...) = 0.;
+for (auto& component : vecField)
+    {
+        component->zero();
+    }
 }
 
 // Restart current density (there's probably a better way to do this)
@@ -193,7 +195,6 @@ template<typename PICModel, typename AMR_Types>
 void SolverPIC<PICModel, AMR_Types>::restartJ_(level_t& level, PICModel& model,
                                               Messenger& fromCoarser, double const currentTime)
 {
-    using LayoutHolder<GridLayout>::layout_;
     auto& PICState         = model.state;
     auto& resourcesManager = model.resourcesManager;
 
@@ -202,7 +203,7 @@ void SolverPIC<PICModel, AMR_Types>::restartJ_(level_t& level, PICModel& model,
     for (auto& patch : level)
     {
         auto _ = resourcesManager->setOnPatch(*patch, J);
-        layout_->evalOnBox(J, [&](auto&... args) mutable { clearVecField_(J, args...); });
+        clearVecField_(J);
     }
     // TODO: check whether this is necessary
     // fromCoarser.fillCurrentGhosts(J, level.getLevelNumber(), currentTime);

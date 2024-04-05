@@ -7,11 +7,13 @@
 #include "amr/solvers/solver.hpp"
 #include "amr/solvers/solver_mhd.hpp"
 #include "amr/solvers/solver_ppc.hpp"
+#include "amr/solvers/solver_pic.hpp"
 #include "amr/level_initializer/level_initializer.hpp"
 #include "amr/level_initializer/level_initializer_factory.hpp"
 #include "amr/multiphysics_integrator.hpp"
 #include "amr/physical_models/hybrid_model.hpp"
 #include "amr/physical_models/mhd_model.hpp"
+#include "amr/physical_models/pic_model.hpp"
 #include "amr/physical_models/physical_model.hpp"
 
 namespace PHARE::solver

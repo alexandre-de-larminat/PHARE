@@ -24,7 +24,7 @@ public:
             throw std::runtime_error(
                 "Error - MaxwellAmpere - GridLayout not set, cannot proceed to calculate MaxwellAmpere()");
 
-        if (!(B.isUsable() && E.isUsable() && J.isUsable() && Bnew.isUsable()))
+        if (!(B.isUsable() && E.isUsable() && J.isUsable() && Enew.isUsable()))
             throw std::runtime_error("Error - MaxwellAmpere - not all VecField parameters are usable");
 
         this->dt_ = dt;
@@ -46,9 +46,9 @@ public:
         layout_->evalOnBox(Exnew,
                                 [&](auto&... args) mutable { ExEq_(Ex, B, Jx, Exnew, args...); });
         layout_->evalOnBox(Eynew,
-                                [&](auto&... args) mutable { EyEq_(Ey, B, Jx, Eynew, args...); });
+                                [&](auto&... args) mutable { EyEq_(Ey, B, Jy, Eynew, args...); });
         layout_->evalOnBox(Eznew,
-                                [&](auto&... args) mutable { EzEq_(Ez, B, Jx, Eznew, args...); });
+                                [&](auto&... args) mutable { EzEq_(Ez, B, Jz, Eznew, args...); });
     }
 
 
@@ -65,7 +65,7 @@ private:
     double inv_c2 = 1.0 / c2;
 
     template<typename VecField, typename Field, typename... Indexes>
-    void ExEq_(Field const& Ex, VecField const& E, VecField const& J, Field& Exnew, Indexes const&... ijk) const
+    void ExEq_(Field const& Ex, VecField const& B, Field const& Jx, Field& Exnew, Indexes const&... ijk) const
     {
         auto const& [_, By, Bz] = B();
 
@@ -82,7 +82,7 @@ private:
     }
 
     template<typename VecField, typename Field, typename... Indexes>
-    void EyEq_(Field const& Ey, VecField const& E, VecField const& J, Field& Eynew, Indexes const&... ijk) const
+    void EyEq_(Field const& Ey, VecField const& B, Field const& Jy, Field& Eynew, Indexes const&... ijk) const
     {
         auto const& [Bx, _, Bz] = B();
 
@@ -96,7 +96,7 @@ private:
     }
 
     template<typename VecField, typename Field, typename... Indexes>
-    void EzEq_(Field const& Ez, VecField const& E, VecField const& J, Field& Eznew, Indexes const&... ijk) const
+    void EzEq_(Field const& Ez, VecField const& B, Field const& Jz, Field& Eznew, Indexes const&... ijk) const
     {
         auto const& [Bx, By, _] = B();
 

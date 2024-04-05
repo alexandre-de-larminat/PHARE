@@ -28,7 +28,6 @@ namespace PHARE::core
         using field_type          = typename ElectronPopulation::field_type;
         using vecfield_type       = typename ElectronPopulation::vecfield_type;
         using Float               = typename field_type::type;
-        using tensorfield_type    = typename ElectronPopulation::tensorfield_type;
         using particle_array_type = typename ElectronPopulation::particle_array_type;
         using ParticleInitializerFactoryT
             = ParticleInitializerFactory<particle_array_type, GridLayout>;

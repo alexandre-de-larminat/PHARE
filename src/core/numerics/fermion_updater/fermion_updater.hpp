@@ -5,6 +5,7 @@
 #include "core/utilities/box/box.hpp"
 #include "core/utilities/range/range.hpp"
 #include "core/numerics/interpolator/interpolator.hpp"
+#include "core/numerics/projector/projector.hpp"
 #include "core/numerics/pusher/pusher.hpp"
 #include "core/numerics/pusher/pusher_factory.hpp"
 #include "core/numerics/boundary_condition/boundary_condition.hpp"
@@ -32,8 +33,7 @@ public:
 
     using Box               = PHARE::core::Box<int, dimension>;
     using Interpolator      = PHARE::core::Interpolator<dimension, interp_order>;
-    using VecField          = typename Ions::vecfield_type;
-    using ParticleArray     = typename Ions::particle_array_type;
+    using ParticleArray     = typename Fermions::particle_array_type;
     using Particle_t        = typename ParticleArray::Particle_t;
     using PartIterator      = typename ParticleArray::iterator;
     using ParticleRange     = IndexRange<ParticleArray>;
@@ -48,6 +48,7 @@ private:
 
     std::unique_ptr<Pusher> pusher_;
     Interpolator interpolator_;
+    Projector projector_;
 
 public:
     FermionUpdater(PHARE::initializer::PHAREDict const& dict)
@@ -57,6 +58,8 @@ public:
 
     void updatePopulations(Fermions& fermions, Electromag const& em, VecField& J, GridLayout const& layout, double dt);
 
+    void updateFermions(Fermions& fermions, GridLayout const& layout);
+
     void reset()
     {
         // clear memory
@@ -65,7 +68,7 @@ public:
 
 
 private:
-    void updateAndDepositAll_(Fermions& fermions, Electromag const& em, VecField& J, GridLayout const& layout);
+    void updateAndDepositAll_(Fermions& fermions, Electromag const& em, VecField& J, GridLayout const& layout, double dt);
 
 
     // dealloced on regridding/load balancing coarsest
@@ -77,8 +80,8 @@ private:
 
 template<typename Fermions, typename Electromag, typename VecField, typename GridLayout>
 void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updatePopulations(Fermions& fermions, 
-                                                                 Electromag const& em,
-                                                                 GridLayout const& layout, VecField& J,
+                                                                 Electromag const& em, VecField& J,
+                                                                 GridLayout const& layout, 
                                                                  double dt)
 {
     PHARE_LOG_SCOPE("FermionUpdater::updatePopulations");
@@ -86,7 +89,7 @@ void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updatePopulatio
     resetMoments(fermions);
     pusher_->setMeshAndTimeStep(layout.meshSize(), dt);
 
-    updateAndDepositAll_(fermions, J, em, layout);
+    updateAndDepositAll_(fermions, J, em, layout, dt);
 }
 
 
@@ -104,31 +107,47 @@ void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updateFermions(
 
 
 template<typename Fermions, typename Electromag, typename VecField, typename GridLayout>
-void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updateAndDepositAll_(Fermions& fermions, VecField& J,
-                                                                    Electromag const& em, GridLayout const& layout)
+void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updateAndDepositAll_(Fermions& fermions, 
+                                                                    Electromag const& em, VecField& J, GridLayout const& layout,
+                                                                    double dt)
 {
     PHARE_LOG_SCOPE("FermionUpdater::updateAndDepositAll_");
 
-    for (auto& particletype : fermions)
-    {
-        for (auto& pop : particletype)
+    auto& domain = pop.domainParticles();
+
+    auto rangeIn  = makeIndexRange(domain);
+
+    for (auto& pop : fermions.ions)
+        {        
+            auto rangeOut = pusher_->move(rangeIn, rangeIn, em, pop.mass(), interpolator_, 
+                                          layout, [](auto& rangeIn) {return rangeIn;}, 
+                                          [](auto& rangeIn) {return rangeIn;});
+            auto push = [&](auto&& rangeIn) {rangeOut};
+
+        push(makeIndexRange(pop.patchGhostParticles()));
+        push(makeIndexRange(pop.levelGhostParticles()));
+
+        projector_(J, rangeOut, rangeIn, dt);
+        
+        interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
+        }
+
+    for (auto& pop : fermions.electrons)
         {        
             auto push = [&](auto&& rangeIn) {
             auto rangeOut = pusher_->move(rangeIn, rangeIn, em, pop.mass(), interpolator_, 
                                           layout, [](auto& rangeIn) {return rangeIn;}, 
                                           [](auto& rangeIn) {return rangeIn;});
 
-            projector(J, rangeOut, rangeIn, dt);
+            projector_(J, rangeOut, rangeIn, dt);
 
-        };
+            };
+
         push(makeIndexRange(pop.patchGhostParticles()));
         push(makeIndexRange(pop.levelGhostParticles()));
         
-        interpolator_(makeIndexRange(pop.domainParticles), pop.density(), pop.flux(), layout);
-
+        interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
         }
-
-    }
 }
 
 

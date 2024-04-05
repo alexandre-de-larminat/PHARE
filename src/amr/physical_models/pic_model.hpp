@@ -25,14 +25,29 @@ template<typename GridLayoutT, typename Electromag, typename Fermions, typename 
 class PICModel : public IPhysicalModel<AMR_Types>
 {
 public:
+
+    using type_list = PHARE::core::type_list<GridLayoutT, Electromag, Fermions, AMR_Types>;
+    using Interface = IPhysicalModel<AMR_Types>;
+    using amr_types = AMR_Types;
     using patch_t   = typename AMR_Types::patch_t;
     using level_t   = typename AMR_Types::level_t;
-    using Interface = IPhysicalModel<AMR_Types>;
 
     static const std::string model_name;
-    static constexpr auto dimension = GridLayoutT::dimension;
+    using gridlayout_type              = GridLayoutT;
+    using electromag_type              = Electromag;
+    using vecfield_type                = typename Electromag::vecfield_type;
+    using field_type                   = typename vecfield_type::field_type;
+    using ions_type                    = typename Fermions::ions_type;
+    using fluid_electrons_type         = typename Fermions::fluid_electrons_type;
+    using fermions_type                = Fermions;
+    using particle_array_type          = typename Fermions::particle_array_type;
+    using hybrid_model_type            = HybridModel<GridLayoutT, Electromag, ions_type, fluid_electrons_type, AMR_Types>;
+    using resources_manager_type       = amr::ResourcesManager<gridlayout_type>;
+    static constexpr auto dimension    = GridLayoutT::dimension;
     static constexpr auto interp_order = GridLayoutT::interp_order;
-    using resources_manager_type    = amr::ResourcesManager<GridLayoutT>;
+
+    using ParticleInitializerFactory
+        = core::ParticleInitializerFactory<particle_array_type, gridlayout_type>;
 
     core::PICState<Electromag, Fermions> state; 
     std::shared_ptr<resources_manager_type> resourcesManager;
@@ -96,7 +111,7 @@ public:
 
 };
 
-template<typename GridLayoutT, typename VecFieldT, typename AMR_Types>
+template<typename GridLayoutT, typename Electromag, typename Fermions, typename AMR_Types>
 const std::string PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::model_name = "PICModel";
 
 //-------------------------------------------------------------------------

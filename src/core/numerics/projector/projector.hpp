@@ -26,15 +26,15 @@ class Projector : public LayoutHolder<GridLayout>
     using LayoutHolder<GridLayout>::layout_;
 
 public:
-    // Return J associated with a single particle. 
+    // Return J associated with a particle range. 
     // Will need to be called in the solver as it depends on its old and new positions.
-    template<typename VecField, typename GridLayout, typename ParticleRange>
+    template<typename VecField, typename ParticleRange>
     inline void operator()(VecField& J, ParticleRange& rangeOut, ParticleRange& rangeIn, double dt)
     {
         for (auto inIdx = rangeIn.ibegin(), outIdx = rangeOut.ibegin(); inIdx < rangeIn.iend();
                     ++inIdx, ++outIdx)
                 {
-                    test<GridLayout::dimension>(J, outParticles[outIdx], inParticles[inIdx], dt);
+                    test<dimension>(J, outParticles[outIdx], inParticles[inIdx], dt);
                 }   
     }
 
