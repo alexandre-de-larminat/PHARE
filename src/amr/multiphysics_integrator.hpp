@@ -23,12 +23,14 @@
 #include "amr/tagging/tagger.hpp"
 #include "amr/physical_models/hybrid_model.hpp"
 #include "amr/physical_models/mhd_model.hpp"
+#include "amr/physical_models/pic_model.hpp"
 #include "amr/physical_models/physical_model.hpp"
 #include "amr/solvers/solver.hpp"
 #include "amr/messenger_registration.hpp"
 #include "amr/level_initializer/level_initializer.hpp"
 #include "amr/solvers/solver_mhd.hpp"
 #include "amr/solvers/solver_ppc.hpp"
+#include "amr/solvers/solver_pic.hpp"
 
 #include "core/utilities/algorithm.hpp"
 

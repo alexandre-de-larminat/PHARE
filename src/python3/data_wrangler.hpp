@@ -82,7 +82,7 @@ public:
     auto getPatchLevel(size_t lvl)
     {
         return PatchLevel<_dimension, _interp_order, _nbRefinedPart>{
-            *hierarchy_, *simulator_.getPICModel(), lvl}; // EDITED
+            *hierarchy_, *simulator_.getHybridModel(), lvl};
     }
 
     auto sort_merge_1d(std::vector<PatchData<std::vector<double>, dimension>> const&& input,

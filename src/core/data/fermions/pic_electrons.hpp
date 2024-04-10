@@ -12,7 +12,7 @@
 
 
 #include "core/def.hpp"
-#include "core/pic/pic_quantities.hpp"
+#include "core/hybrid/hybrid_quantities.hpp"
 #include "core/data/vecfield/vecfield_component.hpp"
 #include "initializer/data_provider.hpp"
 #include "core/data/ions/particle_initializers/particle_initializer_factory.hpp"
@@ -37,7 +37,7 @@ namespace PHARE::core
 
 
         explicit PICElectrons(PHARE::initializer::PHAREDict const& dict)
-            : bulkVelocity_{"ElectronBulkVel", PICQuantity::Vector::Ve}
+            : bulkVelocity_{"ElectronBulkVel", HybridQuantity::Vector::Ve}
             , populations_{generate(
                   [&dict](auto ipop) { //
                       return ElectronPopulation{dict["pop" + std::to_string(ipop)]};
@@ -176,14 +176,14 @@ namespace PHARE::core
         struct MomentsProperty
         {
             std::string name;
-            typename PICQuantity::Scalar qty;
+            typename HybridQuantity::Scalar qty;
         };
 
         using MomentProperties = std::vector<MomentsProperty>;
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
         {
-            return {{{densityName(), PICQuantity::Scalar::rho}}};
+            return {{{densityName(), HybridQuantity::Scalar::rho}}};
         }
 
 
@@ -213,7 +213,7 @@ namespace PHARE::core
         //                  ends the ResourcesUser interface
         //-------------------------------------------------------------------------
 
-
+/*
         NO_DISCARD std::string to_str()
         {
             std::stringstream ss;
@@ -224,7 +224,7 @@ namespace PHARE::core
                 ss << core::to_str(pop);
             return ss.str();
         }
-
+*/
 
 
         field_type* rho_{nullptr};

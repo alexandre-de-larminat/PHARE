@@ -10,7 +10,7 @@
 
 
 #include "core/def.hpp"
-#include "core/pic/pic_quantities.hpp"
+#include "core/hybrid/hybrid_quantities.hpp"
 #include "initializer/data_provider.hpp"
 #include "core/data/ions/ion_population/particle_pack.hpp"
 
@@ -27,12 +27,12 @@ namespace PHARE::core
         using particle_resource_type           = ParticlesPack<ParticleArray>;
         using vecfield_type                    = VecField;
         double Me_ov_Mp = 1/1836.152673; // mass of an electron normalized by proton mass
-        std::string defName_ = "PICelectrons"; 
 
-        ElectronPopulation()
-            : name_{defName_}
+        ElectronPopulation(initializer::PHAREDict const& initializer)
+            : name_{initializer["name"].template to<std::string>()}
             , mass_{Me_ov_Mp}
-            , flux_{name_ + "_flux", PICQuantity::Vector::Ve} // TODO: should this is kept (for coarsening)?
+            , flux_{name_ + "_flux", HybridQuantity::Vector::Ve}
+            , particleInitializerInfo_{initializer["particle_initializer"]}
         {
         } 
 
@@ -41,7 +41,7 @@ namespace PHARE::core
 
         NO_DISCARD std::string const& name() const { return name_; }
 
-
+/*
         PHARE::initializer::PHAREDict initElectrons()
         {
         PHARE::initializer::PHAREDict dict;
@@ -63,9 +63,9 @@ namespace PHARE::core
         
         return dict;
         }
+*/
 
-
-        NO_DISCARD auto const& particleInitializerInfo() const { return initElectrons(); }
+        NO_DISCARD auto const& particleInitializerInfo() const { return particleInitializerInfo_; }
 
 
         NO_DISCARD bool isUsable() const
@@ -217,7 +217,7 @@ namespace PHARE::core
         struct MomentsProperty
         {
             std::string name;
-            typename PICQuantity::Scalar qty;
+            typename HybridQuantity::Scalar qty;
         };
 
         using MomentProperties = std::array<MomentsProperty, 1>;
@@ -226,7 +226,7 @@ namespace PHARE::core
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
         {
-            return {{{name_ + "_rho", PICQuantity::Scalar::rho}}};
+            return {{{name_ + "_rhoE", HybridQuantity::Scalar::rhoE}}};
         }
 
 
@@ -258,7 +258,7 @@ namespace PHARE::core
 
         void setBuffer(std::string const& bufferName, field_type* field)
         {
-            if (bufferName == name_ + "_rho")
+            if (bufferName == name_ + "_rhoE")
                 rho_ = field;
             else
                 throw std::runtime_error("Error - invalid density buffer name");
@@ -278,7 +278,7 @@ namespace PHARE::core
         //-------------------------------------------------------------------------
 
 
-
+/*
         NO_DISCARD std::string to_str()
         {
             std::stringstream ss;
@@ -287,13 +287,14 @@ namespace PHARE::core
             ss << "name                : " << name() << "\n";
             return ss.str();
         }
-
+*/
     private:
         std::string name_;
         double mass_;
         VecField flux_;
         field_type* rho_{nullptr};
         ParticlesPack<ParticleArray>* particles_{nullptr};
+        initializer::PHAREDict const& particleInitializerInfo_;
     };
 } // namespace PHARE::core
 

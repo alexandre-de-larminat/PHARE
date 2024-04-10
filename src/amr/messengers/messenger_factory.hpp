@@ -8,6 +8,7 @@
 #include "amr/messengers/messenger.hpp"
 #include "amr/messengers/mhd_hybrid_messenger_strategy.hpp"
 #include "amr/messengers/mhd_messenger.hpp"
+#include "amr/messengers/pic_messenger.hpp"
 #include "core/def.hpp"
 
 #include <algorithm>
@@ -32,7 +33,7 @@ NO_DISCARD std::vector<MessengerDescriptor> makeDescriptors(std::vector<std::str
 
 
 
-template<typename MHDModel, typename HybridModel, typename RefinementParams>
+template<typename MHDModel, typename HybridModel, typename PICModel, typename RefinementParams>
 class MessengerFactory
 {
     using HybridHybridMessengerStrategy_t
@@ -116,6 +117,14 @@ public:
             auto mhdResourcesManager = dynamic_cast<MHDModel const&>(coarseModel).resourcesManager;
 
             return std::make_unique<MHDMessenger<MHDModel>>(std::move(mhdResourcesManager),
+                                                            firstLevel);
+        }
+        
+        else if (messengerName == PICMessenger<PICModel>::stratName)
+        {
+            auto mhdResourcesManager = dynamic_cast<PICModel const&>(coarseModel).resourcesManager;
+
+            return std::make_unique<PICMessenger<PICModel>>(std::move(mhdResourcesManager),
                                                             firstLevel);
         }
         else

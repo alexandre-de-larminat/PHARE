@@ -71,7 +71,7 @@ void declareSimulator(PyClass&& sim)
         .def("currentTime", &Simulator::currentTime)
         .def("endTime", &Simulator::endTime)
         .def("timeStep", &Simulator::timeStep)
-        .def("to_str", &Simulator::to_str)
+        //.def("to_str", &Simulator::to_str)
         .def("domain_box", &Simulator::domainBox)
         .def("cell_width", &Simulator::cellWidth)
         .def("dump", &Simulator::dump, py::arg("timestamp"), py::arg("timestep"));

@@ -35,7 +35,7 @@ public:
     virtual std::vector<double> const& cellWidth() const = 0;
     virtual std::size_t interporder() const              = 0;
 
-    virtual std::string to_str() = 0;
+    //virtual std::string to_str() = 0;
 
     virtual ~ISimulator() {}
     virtual bool dump(double timestamp, double timestep) { return false; } // overriding optional
@@ -62,7 +62,7 @@ public:
     NO_DISCARD auto& getPICModel() { return picModel_; }
     NO_DISCARD auto& getMultiPhysicsIntegrator() { return multiphysInteg_; }
 
-    NO_DISCARD std::string to_str() override;
+    //NO_DISCARD std::string to_str() override;
 
     bool dump(double timestamp, double timestep) override
     {
@@ -341,7 +341,7 @@ Simulator<_dimension, _interp_order, _nbRefinedPart>::Simulator(
 }
 
 
-
+/*
 template<std::size_t _dimension, std::size_t _interp_order, std::size_t _nbRefinedPart>
 std::string Simulator<_dimension, _interp_order, _nbRefinedPart>::to_str()
 {
@@ -352,10 +352,10 @@ std::string Simulator<_dimension, _interp_order, _nbRefinedPart>::to_str()
     ss << "dimension            : " << dimension << "\n";
     ss << "time step            : " << dt_ << "\n";
     ss << "number of time steps : " << timeStepNbr_ << "\n";
-    ss << core::to_str(hybridModel_->state);
+    ss << core::to_str(picModel_->state); //EDITED
     return ss.str();
 }
-
+*/
 
 
 

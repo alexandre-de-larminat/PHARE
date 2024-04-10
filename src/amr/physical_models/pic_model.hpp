@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include "initializer/data_provider.hpp"
+#include "core/data/vecfield/vecfield_component.hpp"
 #include "core/models/pic_state.hpp"
 #include "amr/physical_models/physical_model.hpp"
 #include "core/data/ions/particle_initializers/particle_initializer_factory.hpp"
@@ -13,7 +14,7 @@
 #include "core/data/vecfield/vecfield.hpp"
 #include "core/def.hpp"
 
-
+#include "core/data/fermions/fermions.hpp"
 
 namespace PHARE::solver
 {
@@ -123,6 +124,7 @@ template<typename GridLayoutT, typename Electromag, typename Fermions,
          typename AMR_Types>
 void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::initialize(level_t& level)
 {
+    using InitFunctionT = PHARE::initializer::InitFunction<dimension>;
     double T = 0.0;
 
     for (auto& patch : level)
@@ -141,17 +143,25 @@ void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::initialize(level_t&
             particleInitializer->loadParticles(pop.domainParticles(), layout);
 
             // this should ideally be done only once, but it's a way to get the temperature
-            T = info["thermal_velocity_x"] * info["thermal_velocity_x"] * pop.mass();
+            auto makeT = [&pop](auto const& v, auto const& mass)-> double { return v * v * mass; };
+            auto& vth = info["thermal_velocity_x"].template to<double>();
+            T = makeT(vth, pop.mass());
+
             
         }
         // then the electrons
         for (auto& pop : electrons)
         {
             auto const& info         = pop.particleInitializerInfo(); 
-            info["nbrParticlesPerCell"] = ions.density();
-            info["bulk_velocity_x"] = ions.velocity()[0]; // as per hybrid model
-            info["bulk_velocity_y"] = ions.velocity()[1];
-            info["bulk_velocity_z"] = ions.velocity()[2];
+            info["nbrParticlesPerCell"] = int{100}; // CHECK should this differ from cell to cell?
+            /*
+            auto const& Vix = ions.velocity()[0]; // TODO more accurate would follow electrons
+            auto const& Viy = ions.velocity()[1];
+            auto const& Viz = ions.velocity()[2];
+            info["bulk_velocity_x"] = static_cast<InitFunctionT<dimension>>(Vix);
+            info["bulk_velocity_y"] = static_cast<InitFunctionT<dimension>>(Viy);
+            info["bulk_velocity_z"] = static_cast<InitFunctionT<dimension>>(Viz);
+            */
             info["thermal_velocity_x"] = sqrt( T / pop.mass() ); 
             info["thermal_velocity_y"] = info["thermal_velocity_x"];
             info["thermal_velocity_z"] = info["thermal_velocity_x"];

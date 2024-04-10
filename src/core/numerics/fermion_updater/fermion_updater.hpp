@@ -33,6 +33,7 @@ public:
 
     using Box               = PHARE::core::Box<int, dimension>;
     using Interpolator      = PHARE::core::Interpolator<dimension, interp_order>;
+    using Projector         = PHARE::core::Projector<GridLayout>;
     using ParticleArray     = typename Fermions::particle_array_type;
     using Particle_t        = typename ParticleArray::Particle_t;
     using PartIterator      = typename ParticleArray::iterator;
@@ -86,10 +87,11 @@ void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updatePopulatio
 {
     PHARE_LOG_SCOPE("FermionUpdater::updatePopulations");
 
-    resetMoments(fermions);
+    resetMoments(fermions.ions); // TODO adapt for electrons too
     pusher_->setMeshAndTimeStep(layout.meshSize(), dt);
 
-    updateAndDepositAll_(fermions, J, em, layout, dt);
+    updateFermions(fermions, layout);
+    updateAndDepositAll_(fermions, em, J, layout, dt);
 }
 
 
@@ -97,43 +99,28 @@ template<typename Fermions, typename Electromag, typename VecField, typename Gri
 void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updateFermions(Fermions& fermions, 
                                                                       GridLayout const& layout)
 {
-    for (auto& particletype : fermions)
-    {
-        particletype.computeDensity();
-        particletype.computeBulkVelocity();
-    }
+    fermions.ions.computeDensity();
+    fermions.ions.computeBulkVelocity();
+    fermions.electrons.computeDensity();
+    fermions.electrons.computeBulkVelocity();
 }
 
 
 
 template<typename Fermions, typename Electromag, typename VecField, typename GridLayout>
 void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updateAndDepositAll_(Fermions& fermions, 
-                                                                    Electromag const& em, VecField& J, GridLayout const& layout,
+                                                                    Electromag const& em, VecField& J, 
+                                                                    GridLayout const& layout,
                                                                     double dt)
 {
     PHARE_LOG_SCOPE("FermionUpdater::updateAndDepositAll_");
 
-    auto& domain = pop.domainParticles();
-
-    auto rangeIn  = makeIndexRange(domain);
 
     for (auto& pop : fermions.ions)
         {        
-            auto rangeOut = pusher_->move(rangeIn, rangeIn, em, pop.mass(), interpolator_, 
-                                          layout, [](auto& rangeIn) {return rangeIn;}, 
-                                          [](auto& rangeIn) {return rangeIn;});
-            auto push = [&](auto&& rangeIn) {rangeOut};
+            auto& domain = pop.domainParticles();
+            auto rangeIn  = makeIndexRange(domain);
 
-        push(makeIndexRange(pop.patchGhostParticles()));
-        push(makeIndexRange(pop.levelGhostParticles()));
-
-        projector_(J, rangeOut, rangeIn, dt);
-        
-        interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
-        }
-
-    for (auto& pop : fermions.electrons)
-        {        
             auto push = [&](auto&& rangeIn) {
             auto rangeOut = pusher_->move(rangeIn, rangeIn, em, pop.mass(), interpolator_, 
                                           layout, [](auto& rangeIn) {return rangeIn;}, 
@@ -143,10 +130,30 @@ void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updateAndDeposi
 
             };
 
-        push(makeIndexRange(pop.patchGhostParticles()));
-        push(makeIndexRange(pop.levelGhostParticles()));
-        
-        interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
+            push(makeIndexRange(pop.patchGhostParticles()));
+            push(makeIndexRange(pop.levelGhostParticles()));
+            
+            interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
+        }
+
+    for (auto& pop : fermions.electrons)
+        {        
+            auto& domain = pop.domainParticles();
+            auto rangeIn  = makeIndexRange(domain);
+
+            auto push = [&](auto&& rangeIn) {
+            auto rangeOut = pusher_->move(rangeIn, rangeIn, em, pop.mass(), interpolator_, 
+                                          layout, [](auto& rangeIn) {return rangeIn;}, 
+                                          [](auto& rangeIn) {return rangeIn;});
+
+            projector_(J, rangeOut, rangeIn, dt);
+
+            };
+
+            push(makeIndexRange(pop.patchGhostParticles()));
+            push(makeIndexRange(pop.levelGhostParticles()));
+            
+            interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
         }
 }
 

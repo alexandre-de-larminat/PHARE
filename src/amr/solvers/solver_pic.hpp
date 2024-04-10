@@ -6,6 +6,8 @@
 
 #include <SAMRAI/hier/Patch.h>
 #include <cstddef>
+#include <iomanip>
+#include <sstream>
 
 
 #include "amr/messengers/hybrid_messenger.hpp"
@@ -17,7 +19,6 @@
 #include "amr/solvers/solver.hpp"
 
 #include "core/data/grid/gridlayout_utils.hpp"
-#include "core/data/grid/gridlayoutdefs.hpp"
 #include "core/data/vecfield/vecfield_component.hpp"
 
 
@@ -61,8 +62,9 @@ public:
     using level_t     = typename AMR_Types::level_t;
     using hierarchy_t = typename AMR_Types::hierarchy_t;
 
-    SolverPIC()
+    SolverPIC(PHARE::initializer::PHAREDict const& dict)
         : ISolver<AMR_Types>{"PICSolver"}
+        , fermionUpdater_{dict["ion_updater"]}
     {
     }
 
@@ -101,7 +103,7 @@ private:
 
     void average_(level_t& level, PICModel& model, Messenger& fromCoarser);
 
-    void set_(level_t& level, PICModel& model, Messenger& fromCoarser);
+    //void set_(level_t& level, PICModel& model, Messenger& fromCoarser);
 
 }; // end SolverPIC
 
@@ -176,7 +178,7 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
 
     average_(*level, PICmodel, fromCoarser);
 
-    set_(*level, PICmodel, fromCoarser);
+    //set_(*level, PICmodel, fromCoarser);
 }
 
 
@@ -279,9 +281,7 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, Fermions& fer
                                                                 : level) {
                        auto _ = rm.setOnPatch(*patch, fermions); // TODO check if this is ok or if ions and electrons be treated separately
 
-                       for (auto& particletype : fermions)
-                       {
-                        for (auto& pop : particletype)
+                       for (auto& pop : fermions.ions)
                         {
                            nbrDomainParticles += pop.domainParticles().size();
                            nbrPatchGhostParticles += pop.patchGhostParticles().size();
@@ -297,7 +297,23 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, Fermions& fer
                                    + std::to_string(nbrLevelGhostOldParticles) + ") than pushable ("
                                    + std::to_string(nbrLevelGhostParticles) + ")");
                        }
+                        for (auto& pop : fermions.electrons)
+                        {
+                           nbrDomainParticles += pop.domainParticles().size();
+                           nbrPatchGhostParticles += pop.patchGhostParticles().size();
+                           nbrLevelGhostNewParticles += pop.levelGhostParticlesNew().size();
+                           nbrLevelGhostOldParticles += pop.levelGhostParticlesOld().size();
+                           nbrLevelGhostParticles += pop.levelGhostParticles().size();
+                           nbrPatchGhostParticles += pop.patchGhostParticles().size();
+
+                           if (nbrLevelGhostOldParticles < nbrLevelGhostParticles
+                               and nbrLevelGhostOldParticles > 0)
+                               throw std::runtime_error(
+                                   "Error - there are less old level ghost particles ("
+                                   + std::to_string(nbrLevelGhostOldParticles) + ") than pushable ("
+                                   + std::to_string(nbrLevelGhostParticles) + ")");
                        }
+                       
                    })
 
 
@@ -345,7 +361,7 @@ void SolverPIC<PICModel, AMR_Types>::average_(level_t& level, PICModel& model,
         PHARE::core::average(B, Bpred, Bavg);
     }
 }
-
+/*
 template<typename PICModel, typename AMR_Types>
 void SolverPIC<PICModel, AMR_Types>::set_(level_t& level, PICModel& model,
                                                  Messenger& fromCoarser)
@@ -364,7 +380,7 @@ void SolverPIC<PICModel, AMR_Types>::set_(level_t& level, PICModel& model,
         B = Bavg;
     }
 }
-
+*/
 } // namespace PHARE::solver
 
 #endif

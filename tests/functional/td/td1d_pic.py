@@ -109,7 +109,7 @@ def simulation_params(diagdir, **extra):
 def config(**options):
     sim = ph.Simulation(**options)
     ph.MaxwellianFluidModel(
-        bx=bx, by=by, bz=bz, protons={"charge": 1, "density": density, **vvv}
+        bx=bx, by=by, bz=bz, protons={"charge": 1, "density": density, **vvv}, electrons={"charge": -1, "density": density, **vvv}
     )
     ph.ElectronModel(closure="isothermal", Te=0.12)
 
@@ -121,6 +121,7 @@ def config(**options):
             write_timestamps=timestamps,
             compute_timestamps=timestamps,
         )
+        """
     for quantity in ["density", "bulkVelocity"]:
         ph.FluidDiagnostics(
             quantity=quantity,
@@ -136,12 +137,10 @@ def config(**options):
                 write_timestamps=timestamps[: particle_diagnostics["count"] + 1],
                 population_name=pop,
             )
+            """
 
     return sim
 
-
-def withTagging(diagdir):
-    return config(**simulation_params(diagdir, refinement="tagging", max_nbr_levels=3))
 
 
 def noRefinement(diagdir):
@@ -151,24 +150,16 @@ def noRefinement(diagdir):
 def make_figure():
     from scipy.optimize import curve_fit
 
-    rwT = Run("./noRefinement")
     rNoRef = Run("./noRefinement")
 
     plot_time = 11
     v = 2
 
-    BH = rwT.GetB(plot_time)
-    BwT = rwT.GetB(plot_time, merged=True, interp="linear")
     BNoRef = rNoRef.GetB(plot_time, merged=True, interp="linear")
-    JwT = rwT.GetJ(plot_time, merged=True, interp="linear")
     JNoRef = rNoRef.GetJ(plot_time, merged=True, interp="linear")
 
-    xbywT = BwT["By"][1][0]
-    bywT = BwT["By"][0](xbywT)
     xbyNoRef = BNoRef["By"][1][0]
     byNoRef = BNoRef["By"][0](xbyNoRef)
-    xjzwT = JwT["Jz"][1][0]
-    jzwT = JwT["Jz"][0](xjzwT)
     xjzNoRef = JNoRef["Jz"][1][0]
     jzNoRef = JNoRef["Jz"][0](xjzNoRef)
 
@@ -188,35 +179,16 @@ def make_figure():
     ax0, ax1, ax2 = axarr
 
     ax0.plot(xbyNoRef, byNoRef, color="k", ls="-")
-    ax0.plot(xbywT, bywT, color="royalblue", ls="-")
     ax0.plot(xbyNoRef, by(xbyNoRef), color="darkorange", ls="--")
 
     ax1.set_xlim((wT0, 195))
     ax1.set_ylim((-1.5, 2))
     ax1.plot(xbyNoRef, byNoRef, color="k", ls="-")
-    ax1.plot(xbywT, bywT, color="royalblue", ls="-")
 
-    ax2.plot(xjzwT, jzwT)
     ax2.plot(xjzNoRef, jzNoRef, color="k")
     ax2.set_xlim((wT0, 195))
     ax2.set_ylim((-1.5, 0.5))
 
-    # draw level patches
-    for ilvl, level in BH.levels().items():
-        for patch in level.patches:
-            dx = patch.layout.dl[0]
-            x0 = patch.origin[0]
-            x1 = (patch.box.upper[0] + 1) * patch.layout.dl[0]
-            for ax in (ax1, ax2, ax0):
-                ax.axvspan(
-                    x0,
-                    x1,
-                    color="royalblue",
-                    ec="k",
-                    alpha=0.2,
-                    ymin=ilvl / 4,
-                    ymax=(ilvl + 1) / 4,
-                )
 
     from pyphare.pharesee.plotting import zoom_effect
 
@@ -228,9 +200,9 @@ def make_figure():
     fig.savefig("tdtagged1d.png")
 
     # select data around the rightward TD
-    idx = np.where((xbywT > 150) & (xbywT < 190))
-    xx = xbywT[idx]
-    bby = bywT[idx]
+    idx = np.where((xbyNoRef > 150) & (xbyNoRef < 190))
+    xx = xbyNoRef[idx]
+    bby = byNoRef[idx]
 
     # now we will fit by_fit to the data
     # and we expect to find x0=172 and L=1
@@ -249,39 +221,11 @@ def make_figure():
         raise RuntimeError(f"x0 (={x0}) too far from 172")
 
 
-from tests.simulator.test_advance import AdvanceTestBase
-from pyphare.cpp import cpp_lib
-
-cpp = cpp_lib()
-
-
-test = AdvanceTestBase()
-
-
-def get_time(path, time):
-    if time is not None:
-        time = "{:.10f}".format(time)
-    from pyphare.pharesee.hierarchy import hierarchy_from
-
-    return hierarchy_from(h5_filename=path + "/ions_pop_protons_domain.h5", time=time)
-
-
-def post_advance(new_time):
-    if (
-        particle_diagnostics["idx"] < particle_diagnostics["count"]
-        and cpp.mpi_rank() == 0
-    ):
-        particle_diagnostics["idx"] += 1
-        datahier = get_time(ph.global_vars.sim.diag_options["options"]["dir"], new_time)
-        test.base_test_domain_particles_on_refined_level(datahier, new_time)
-
 
 def main():
     Simulator(noRefinement(diagdir="noRefinement")).run()
     ph.global_vars.sim = None
 
-    #Simulator(withTagging(diagdir="withTagging"), post_advance=post_advance).run()
-    #ph.global_vars.sim = None
 
     if cpp.mpi_rank() == 0:
         make_figure()

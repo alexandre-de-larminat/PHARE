@@ -269,7 +269,7 @@ namespace core
         //-------------------------------------------------------------------------
 
 
-
+/*
         NO_DISCARD std::string to_str()
         {
             std::stringstream ss;
@@ -278,7 +278,7 @@ namespace core
             ss << "name                : " << name() << "\n";
             return ss.str();
         }
-
+*/
     private:
         std::string name_;
         double mass_;

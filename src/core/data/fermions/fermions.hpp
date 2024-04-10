@@ -25,7 +25,19 @@ namespace PHARE::core
 
         Ions ions;
         PICElectrons electrons;
-
+    
+/*
+        NO_DISCARD std::string to_str() // CHECK
+        {
+            std::stringstream ss;
+            ss << "Fermions\n";
+            ss << "------------------------------------\n";
+            ss << "number of particle types  : " << 2 << "\n";
+            for (auto& particletype : (ions, electrons))
+                ss << core::to_str(particletype);
+            return ss.str();
+        }
+*/
         // ResourcesUser interface??
         
     };

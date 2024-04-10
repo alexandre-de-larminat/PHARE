@@ -218,16 +218,19 @@ def populateDict():
 
     if init_model.nbr_populations() < 0:
         raise RuntimeError("Number of populations cannot be negative")
-    add_size_t("simulation/ions/nbrPopulations", init_model.nbr_populations())
+    #add_size_t("simulation/ions/nbrPopulations", init_model.nbr_populations())
 
     partinit = "particle_initializer"
+    counter = 0
     for pop_index, pop in enumerate(init_model.populations):
-        if pop.charge < 0:
+        if modelDict[pop]["charge"] < 0.:
             pop_path = "simulation/ions/pop"
-            partinit_path = pop_path + "{:d}/".format(pop_index) + partinit + "/"
+            index = counter
+            counter += 1
+            partinit_path = pop_path + "{:d}/".format(index) + partinit + "/"
             d = modelDict[pop]
-            add_string(pop_path + "{:d}/name".format(pop_index), pop)
-            add_double(pop_path + "{:d}/mass".format(pop_index), d["mass"])
+            add_string(pop_path + "{:d}/name".format(index), pop)
+            add_double(pop_path + "{:d}/mass".format(index), d["mass"])
             add_string(partinit_path + "name", "maxwellian")
 
             addInitFunction(partinit_path + "density", fn_wrapper(d["density"]))
@@ -243,12 +246,13 @@ def populateDict():
             if "init" in d and "seed" in d["init"]:
                 pp.add_optional_size_t(partinit_path + "init/seed", d["init"]["seed"])
                 
-        if pop.charge > 0:
+        elif modelDict[pop]["charge"] > 0.:
             pop_path = "simulation/pic_electrons/pop"
-            partinit_path = pop_path + "{:d}/".format(pop_index) + partinit + "/"
+            index = pop_index - counter
+            partinit_path = pop_path + "{:d}/".format(index) + partinit + "/"
             d = modelDict[pop]
-            add_string(pop_path + "{:d}/name".format(pop_index), pop)
-            add_double(pop_path + "{:d}/mass".format(pop_index), d["mass"])
+            add_string(pop_path + "{:d}/name".format(index), pop)
+            add_double(pop_path + "{:d}/mass".format(index), d["mass"])
             add_string(partinit_path + "name", "maxwellian")
 
             addInitFunction(partinit_path + "density", fn_wrapper(d["density"]))
@@ -264,6 +268,8 @@ def populateDict():
             if "init" in d and "seed" in d["init"]:
                 pp.add_optional_size_t(partinit_path + "init/seed", d["init"]["seed"])
 
+    add_size_t("simulation/ions/nbrPopulations", counter)
+    add_size_t("simulation/pic_electrons/nbrPopulations", init_model.nbr_populations()-counter)
     add_string("simulation/electromag/name", "EM")
     add_string("simulation/electromag/electric/name", "E")
 

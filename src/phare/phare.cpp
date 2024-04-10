@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 
     auto simulator = PHARE::getSimulator(hierarchy);
 
-    std::cout << PHARE::core::to_str(*simulator) << "\n";
+    //std::cout << PHARE::core::to_str(*simulator) << "\n";
 
     simulator->initialize();
 
