@@ -299,8 +299,8 @@ void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict con
 
     // hard coded for now, should get some params later from the dict
     // same tagger as for hybrid for now
-    auto hybridTagger_ = amr::TaggerFactory<PHARETypes>::make("HybridModel", "default");
-    multiphysInteg_->registerTagger(0, maxLevelNumber_ - 1, std::move(hybridTagger_));
+    //auto hybridTagger_ = amr::TaggerFactory<PHARETypes>::make("HybridModel", "default");
+    //multiphysInteg_->registerTagger(0, maxLevelNumber_ - 1, std::move(hybridTagger_));
 
     if (dict["simulation"].contains("restarts"))
         startTime_ = restarts_init(dict["simulation"]["restarts"]);

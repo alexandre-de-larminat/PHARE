@@ -10,7 +10,7 @@
 #include "amr/physical_models/physical_model.hpp"
 #include "core/data/ions/particle_initializers/particle_initializer_factory.hpp"
 #include "amr/resources_manager/resources_manager.hpp"
-#include "amr/messengers/hybrid_messenger_info.hpp"
+#include "amr/messengers/pic_messenger_info.hpp"
 #include "core/data/vecfield/vecfield.hpp"
 #include "core/def.hpp"
 

@@ -55,7 +55,7 @@ struct PHARE_Types
         = PHARE::core::IonPopulation<ParticleArray_t, VecField_t, SymTensorField_t, GridLayout_t>;
     using Ions_t         = PHARE::core::Ions<IonPopulation_t, GridLayout_t>;
     using ElectronPopulation_t
-        = PHARE::core::ElectronPopulation<ParticleArray_t, VecField_t, GridLayout_t>;
+        = PHARE::core::ElectronPopulation<ParticleArray_t, VecField_t, SymTensorField_t, GridLayout_t>;
     using PICElectrons_t = PHARE::core::PICElectrons<ElectronPopulation_t, GridLayout_t>;
     using Fermions_t     = PHARE::core::Fermions<Ions_t, PICElectrons_t>;
     using Electrons_t    = PHARE::core::Electrons<Ions_t>;

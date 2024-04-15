@@ -87,7 +87,7 @@ void FermionUpdater<Fermions, Electromag, VecField, GridLayout>::updatePopulatio
 {
     PHARE_LOG_SCOPE("FermionUpdater::updatePopulations");
 
-    resetMoments(fermions.ions); // TODO adapt for electrons too
+    resetMoments(fermions, 0);
     pusher_->setMeshAndTimeStep(layout.meshSize(), dt);
 
     updateFermions(fermions, layout);

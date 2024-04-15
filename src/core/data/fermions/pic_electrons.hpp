@@ -37,7 +37,7 @@ namespace PHARE::core
 
 
         explicit PICElectrons(PHARE::initializer::PHAREDict const& dict)
-            : bulkVelocity_{"ElectronBulkVel", HybridQuantity::Vector::Ve}
+            : bulkVelocity_{"bulkVel", HybridQuantity::Vector::Ve}
             , populations_{generate(
                   [&dict](auto ipop) { //
                       return ElectronPopulation{dict["pop" + std::to_string(ipop)]};
@@ -75,7 +75,7 @@ namespace PHARE::core
 
         NO_DISCARD vecfield_type& velocity() { return bulkVelocity_; }
 
-        NO_DISCARD std::string densityName() const { return "rho"; }
+        NO_DISCARD std::string densityName() const { return "rhoE"; }
 
         void computeDensity()
         {
@@ -183,7 +183,7 @@ namespace PHARE::core
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
         {
-            return {{{densityName(), HybridQuantity::Scalar::rho}}};
+            return {{{densityName(), HybridQuantity::Scalar::rhoE}}};
         }
 
 

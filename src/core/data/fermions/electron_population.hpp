@@ -14,10 +14,9 @@
 #include "initializer/data_provider.hpp"
 #include "core/data/ions/ion_population/particle_pack.hpp"
 
-// Only works for a single population of electrons, but could be modified for many.
 namespace PHARE::core
 {
-    template<typename ParticleArray, typename VecField, typename GridLayout>
+    template<typename ParticleArray, typename VecField, typename TensorField, typename GridLayout>
     class ElectronPopulation
     {
     public:
@@ -41,29 +40,6 @@ namespace PHARE::core
 
         NO_DISCARD std::string const& name() const { return name_; }
 
-/*
-        PHARE::initializer::PHAREDict initElectrons()
-        {
-        PHARE::initializer::PHAREDict dict;
-
-        dict["name"]    = std::string{"maxwellian"};
-        dict["density"] = 0;
-
-        dict["bulk_velocity_x"] = 0;
-        dict["bulk_velocity_y"] = 0;
-        dict["bulk_velocity_z"] = 0;
-
-        dict["thermal_velocity_x"] = 0;
-        dict["thermal_velocity_y"] = 0;
-        dict["thermal_velocity_z"] = 0;
-
-        dict["nbr_part_per_cell"] = 100;
-        dict["charge"]            = 1.;
-        dict["basis"]             = std::string{"cartesian"};
-        
-        return dict;
-        }
-*/
 
         NO_DISCARD auto const& particleInitializerInfo() const { return particleInitializerInfo_; }
 
@@ -226,7 +202,7 @@ namespace PHARE::core
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
         {
-            return {{{name_ + "_rhoE", HybridQuantity::Scalar::rhoE}}};
+            return {{{name_ + "_rho", HybridQuantity::Scalar::rhoE}}};
         }
 
 
@@ -258,7 +234,7 @@ namespace PHARE::core
 
         void setBuffer(std::string const& bufferName, field_type* field)
         {
-            if (bufferName == name_ + "_rhoE")
+            if (bufferName == name_ + "_rho")
                 rho_ = field;
             else
                 throw std::runtime_error("Error - invalid density buffer name");
