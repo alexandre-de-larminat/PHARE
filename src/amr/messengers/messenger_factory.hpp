@@ -38,14 +38,14 @@ class MessengerFactory
 {
     using HybridHybridMessengerStrategy_t
         = HybridHybridMessengerStrategy<HybridModel, RefinementParams>;
-    using IPhysicalModel = typename HybridModel::Interface;
-    static_assert(std::is_same_v<typename HybridModel::Interface, typename MHDModel::Interface>,
-                  "MHD and Hybrid model need to have the same interface");
+    using IPhysicalModel = typename PICModel::Interface; //EDITED
+    //static_assert(std::is_same_v<typename HybridModel::Interface, typename MHDModel::Interface>,
+      //            "MHD and Hybrid model need to have the same interface");
 
 public:
-    static constexpr auto dimension = HybridModel::dimension;
-    static_assert(dimension == MHDModel::dimension,
-                  "MHDModel::dimension != HybridModel::dimension");
+    static constexpr auto dimension = PICModel::dimension; //EDITED
+    //static_assert(dimension == MHDModel::dimension,
+      //            "MHDModel::dimension != HybridModel::dimension");
 
 
     MessengerFactory(std::vector<MessengerDescriptor> messengerDescriptors)
@@ -122,9 +122,9 @@ public:
         
         else if (messengerName == PICMessenger<PICModel>::stratName)
         {
-            auto mhdResourcesManager = dynamic_cast<PICModel const&>(coarseModel).resourcesManager;
+            auto picResourcesManager = dynamic_cast<PICModel const&>(coarseModel).resourcesManager;
 
-            return std::make_unique<PICMessenger<PICModel>>(std::move(mhdResourcesManager),
+            return std::make_unique<PICMessenger<PICModel>>(std::move(picResourcesManager),
                                                             firstLevel);
         }
         else

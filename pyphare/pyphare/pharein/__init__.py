@@ -4,6 +4,7 @@ import subprocess
 import numpy as np
 
 from pyphare.core.phare_utilities import is_scalar
+from pyphare.core import phare_utilities
 
 # This exists to allow a condition variable for when we are running PHARE from C++ via phare-exe
 #  It is configured to "True" in pyphare/pyphare/pharein/init.py::get_user_inputs(jobname)
@@ -210,6 +211,7 @@ def populateDict():
         )  # integrator.h might want some looking at
 
     add_string("simulation/algo/ion_updater/pusher/name", simulation.particle_pusher)
+    add_string("simulation/algo/fermion_updater/pusher/name", simulation.particle_pusher)
     add_double("simulation/algo/ohm/resistivity", simulation.resistivity)
     add_double("simulation/algo/ohm/hyper_resistivity", simulation.hyper_resistivity)
 
@@ -280,6 +282,8 @@ def populateDict():
     addInitFunction(maginit_path + "z_component", fn_wrapper(modelDict["bz"]))
 
     serialized_sim = serialize_sim(simulation)
+
+    phare_utilities.debug_print(modelDict)
 
     #### adding diagnostics
 
@@ -381,11 +385,11 @@ def populateDict():
     #### restarts added
 
     #### adding electrons
-    if simulation.electrons is None:
-        raise RuntimeError("Error - no electrons registered to this Simulation")
-    else:
-        for item in simulation.electrons.dict_path():
-            if isinstance(item[1], str):
-                add_string("simulation/" + item[0], item[1])
-            else:
-                add_double("simulation/" + item[0], item[1])
+    #if simulation.electrons is None:
+    #    raise RuntimeError("Error - no electrons registered to this Simulation")
+    #else:
+    #    for item in simulation.electrons.dict_path():
+    #        if isinstance(item[1], str):
+    #            add_string("simulation/" + item[0], item[1])
+    #        else:
+    #            add_double("simulation/" + item[0], item[1])

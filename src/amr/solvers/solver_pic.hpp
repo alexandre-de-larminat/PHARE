@@ -91,8 +91,6 @@ public:
 private:
     using Messenger = PICMessenger;
 
-    void clearVecField_(VecFieldT& vecField);
-
     void restartJ_(level_t& level, PICModel& model, Messenger& fromCoarser, double const currentTime);
                    
     void MAMF_(level_t& level, PICModel& model, Messenger& fromCoarser, double const currentTime, double const newTime);
@@ -171,10 +169,10 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
 
     restartJ_(*level, PICmodel, fromCoarser, currentTime);
 
-    MAMF_(*level, PICmodel, fromCoarser, currentTime, newTime);
-
     moveFermions_(*level, PICState.fermions, PICmodel, electromagAvg_, resourcesManager, fromCoarser, currentTime,
                   newTime);
+
+    MAMF_(*level, PICmodel, fromCoarser, currentTime, newTime);
 
     average_(*level, PICmodel, fromCoarser);
 
@@ -182,15 +180,6 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
 }
 
 
-// used in restartJ_
-template<typename PICModel, typename AMR_Types>
-void SolverPIC<PICModel, AMR_Types>::clearVecField_(VecFieldT& vecField)
-{
-for (auto& component : vecField)
-    {
-        component->zero();
-    }
-}
 
 // Restart current density (there's probably a better way to do this)
 template<typename PICModel, typename AMR_Types>
@@ -205,7 +194,7 @@ void SolverPIC<PICModel, AMR_Types>::restartJ_(level_t& level, PICModel& model,
     for (auto& patch : level)
     {
         auto _ = resourcesManager->setOnPatch(*patch, J);
-        clearVecField_(J);
+        J.zero();
     }
     // TODO: check whether this is necessary
     // fromCoarser.fillCurrentGhosts(J, level.getLevelNumber(), currentTime);

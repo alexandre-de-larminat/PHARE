@@ -43,14 +43,14 @@ struct PHARE_Types
     using SolverPPC_t = PHARE::solver::SolverPPC<HybridModel_t, PHARE::amr::SAMRAI_Types>;
     using SolverMHD_t = PHARE::solver::SolverMHD<MHDModel_t, PHARE::amr::SAMRAI_Types>;
     using SolverPIC_t = PHARE::solver::SolverPIC<PICModel_t, PHARE::amr::SAMRAI_Types>;
-    using LevelInitializerFactory_t = PHARE::solver::LevelInitializerFactory<HybridModel_t>; // CHECK this is ok for PIC
+    using LevelInitializerFactory_t = PHARE::solver::LevelInitializerFactory<HybridModel_t, PICModel_t>;
 
     // amr deps
     using amr_types        = PHARE::amr::PHARE_Types<dimension, interp_order, nbRefinedPart>;
     using RefinementParams = typename amr_types::RefinementParams;
 
     using MessengerFactory // = amr/solver bidirectional dependency
-        = PHARE::amr::MessengerFactory<MHDModel_t, HybridModel_t, RefinementParams>;
+        = PHARE::amr::MessengerFactory<MHDModel_t, HybridModel_t, PICModel_t, RefinementParams>;
     // amr deps
 
     using MultiPhysicsIntegrator

@@ -1,7 +1,7 @@
 import atexit
 import time as timem
 import numpy as np
-
+from pyphare.core import phare_utilities
 
 life_cycles = {}
 
