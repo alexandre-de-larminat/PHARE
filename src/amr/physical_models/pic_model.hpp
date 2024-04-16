@@ -131,10 +131,9 @@ void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::initialize(level_t&
     {
         // first initialize the ions
         auto layout = amr::layoutFromPatch<gridlayout_type>(*patch);
-        auto& fermions  = state.fermions;
-        auto& ions = fermions.ions;
-        auto& electrons = fermions.electrons;
-        auto _      = this->resourcesManager->setOnPatch(*patch, state.electromag, fermions);
+        auto& ions = state.ions;
+        auto& electrons = state.pic_electrons;
+        auto _      = this->resourcesManager->setOnPatch(*patch, state.electromag, ions, electrons);
 
         for (auto& pop : ions)
         {
@@ -153,19 +152,6 @@ void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::initialize(level_t&
         for (auto& pop : electrons)
         {
             auto const& info         = pop.particleInitializerInfo(); 
-            info["nbrParticlesPerCell"] = int{100}; // CHECK should this differ from cell to cell?
-            /*
-            auto const& Vix = ions.velocity()[0]; // TODO more accurate would follow electrons
-            auto const& Viy = ions.velocity()[1];
-            auto const& Viz = ions.velocity()[2];
-            info["bulk_velocity_x"] = static_cast<InitFunctionT<dimension>>(Vix);
-            info["bulk_velocity_y"] = static_cast<InitFunctionT<dimension>>(Viy);
-            info["bulk_velocity_z"] = static_cast<InitFunctionT<dimension>>(Viz);
-            */
-            info["thermal_velocity_x"] = sqrt( T / pop.mass() ); 
-            info["thermal_velocity_y"] = info["thermal_velocity_x"];
-            info["thermal_velocity_z"] = info["thermal_velocity_x"];
-
             auto particleInitializer = ParticleInitializerFactory::create(info);
             particleInitializer->loadParticles(pop.domainParticles(), layout);
         }
@@ -181,7 +167,7 @@ void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::fillMessengerInfo(
     std::unique_ptr<amr::IMessengerInfo> const& info) const
 {
     auto& hybridInfo = dynamic_cast<amr::HybridMessengerInfo&>(*info);
-    auto& ions = state.fermions.ions;
+    auto& ions = state.ions;
 
     hybridInfo.modelMagnetic        = core::VecFieldNames{state.electromag.B};
     hybridInfo.modelElectric        = core::VecFieldNames{state.electromag.E};

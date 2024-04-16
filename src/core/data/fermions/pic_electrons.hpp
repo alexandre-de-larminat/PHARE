@@ -37,7 +37,7 @@ namespace PHARE::core
 
 
         explicit PICElectrons(PHARE::initializer::PHAREDict const& dict)
-            : bulkVelocity_{"bulkVel", HybridQuantity::Vector::Ve}
+            : bulkVelocity_{"bulkVel", HybridQuantity::Vector::V}
             , populations_{generate(
                   [&dict](auto ipop) { //
                       return ElectronPopulation{dict["pop" + std::to_string(ipop)]};
@@ -205,7 +205,7 @@ namespace PHARE::core
 
         NO_DISCARD auto getCompileTimeResourcesUserList()
         {
-            return bulkVelocity_;
+            return std::forward_as_tuple(bulkVelocity_);
         }
 
 

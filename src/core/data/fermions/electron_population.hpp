@@ -5,9 +5,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <tuple>
-#include <array>
-
 
 #include "core/def.hpp"
 #include "core/hybrid/hybrid_quantities.hpp"
@@ -16,7 +13,7 @@
 
 namespace PHARE::core
 {
-    template<typename ParticleArray, typename VecField, typename TensorField, typename GridLayout>
+    template<typename ParticleArray, typename VecField, typename GridLayout>
     class ElectronPopulation
     {
     public:
@@ -30,7 +27,7 @@ namespace PHARE::core
         ElectronPopulation(initializer::PHAREDict const& initializer)
             : name_{initializer["name"].template to<std::string>()}
             , mass_{Me_ov_Mp}
-            , flux_{name_ + "_flux", HybridQuantity::Vector::Ve}
+            , flux_{name_ + "_flux", HybridQuantity::Vector::V}
             , particleInitializerInfo_{initializer["particle_initializer"]}
         {
         } 
@@ -202,7 +199,7 @@ namespace PHARE::core
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
         {
-            return {{{name_ + "_rho", HybridQuantity::Scalar::rhoE}}};
+            return {{{name_ + "_rho", HybridQuantity::Scalar::rho}}};
         }
 
 
@@ -244,7 +241,7 @@ namespace PHARE::core
 
         NO_DISCARD auto getCompileTimeResourcesUserList()
         {
-            return flux_;
+            return std::forward_as_tuple(flux_);
         }
         
 

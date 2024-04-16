@@ -36,14 +36,14 @@ private:
     using Electromag       = typename PICModel::electromag_type;
     using Ions             = typename PICModel::ions_type;
     using Fermions         = typename PICModel::fermions_type;
+    using PICElectrons     = typename Fermions::pic_electrons_type;
     using ParticleArray    = typename Ions::particle_array_type;
     using VecFieldT        = typename PICModel::vecfield_type;
     using GridLayout       = typename PICModel::gridlayout_type;
     using ResourcesManager = typename PICModel::resources_manager_type;
     using IPhysicalModel_t = IPhysicalModel<AMR_Types>;
     using IMessenger       = amr::IMessenger<IPhysicalModel_t>;
-    using HybridModel_t    = typename PICModel::hybrid_model_type;
-    using PICMessenger     = amr::HybridMessenger<HybridModel_t>; // TODO edit
+    using PICMessenger     = amr::PICMessenger<PICModel>;
 
     Electromag electromagPred_{"EMPred"};
     Electromag electromagAvg_{"EMAvg"};
@@ -54,7 +54,7 @@ private:
 
     PHARE::core::Faraday<GridLayout> faraday_;
     PHARE::core::MaxwellAmpere<GridLayout> maxwellampere_;
-    PHARE::core::FermionUpdater<Fermions, Electromag, VecFieldT, GridLayout> fermionUpdater_;
+    PHARE::core::FermionUpdater<Ions, PICElectrons, Electromag, VecFieldT, GridLayout> fermionUpdater_;
 
 
 public:
@@ -64,7 +64,7 @@ public:
 
     SolverPIC(PHARE::initializer::PHAREDict const& dict)
         : ISolver<AMR_Types>{"PICSolver"}
-        , fermionUpdater_{dict["ion_updater"]}
+        , fermionUpdater_{dict["fermion_updater"]}
     {
     }
 
@@ -95,7 +95,7 @@ private:
                    
     void MAMF_(level_t& level, PICModel& model, Messenger& fromCoarser, double const currentTime, double const newTime);
 
-    void moveFermions_(level_t& level, Fermions& fermions, PICModel& model, Electromag& electromag,
+    void moveFermions_(level_t& level, PICModel& model, Electromag& electromag,
                        ResourcesManager& rm, Messenger& fromCoarser, double const currentTime,
                        double const newTime);
 
@@ -169,7 +169,7 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
 
     restartJ_(*level, PICmodel, fromCoarser, currentTime);
 
-    moveFermions_(*level, PICState.fermions, PICmodel, electromagAvg_, resourcesManager, fromCoarser, currentTime,
+    moveFermions_(*level, PICmodel, electromagAvg_, resourcesManager, fromCoarser, currentTime,
                   newTime);
 
     MAMF_(*level, PICmodel, fromCoarser, currentTime, newTime);
@@ -228,7 +228,7 @@ void SolverPIC<PICModel, AMR_Types>::MAMF_(level_t& level, PICModel& model, Mess
 
             resourcesManager->setTime(Epred, *patch, newTime);
         }
-        fromCoarser.fillCurrentGhosts(E, level.getLevelNumber(), newTime);
+        //fromCoarser.fillCurrentGhosts(E, level.getLevelNumber(), newTime);
     }
 
     {
@@ -256,21 +256,23 @@ This assumes interpolating flux and density is unnecessary (since bulk velocity 
 are used only in Ohm's law. 
 */
 template<typename PICModel, typename AMR_Types>
-void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, Fermions& fermions, PICModel& model,
+void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& model,
                                                   Electromag& electromag, ResourcesManager& rm,
                                                   Messenger& fromCoarser, double const currentTime,
                                                   double const newTime)
 {
     PHARE_LOG_SCOPE("SolverPPC::moveFermions_");
+    auto& ions = model.state.ions;
+    auto& electrons = model.state.pic_electrons;
 
     PHARE_DEBUG_DO(std::size_t nbrDomainParticles = 0; std::size_t nbrPatchGhostParticles = 0;
                    std::size_t nbrLevelGhostNewParticles                                  = 0;
                    std::size_t nbrLevelGhostOldParticles                                  = 0;
                    std::size_t nbrLevelGhostParticles = 0; for (auto& patch
                                                                 : level) {
-                       auto _ = rm.setOnPatch(*patch, fermions); // TODO check if this is ok or if ions and electrons be treated separately
+                       auto _ = rm.setOnPatch(*patch, ions, electrons); // TODO check if this is ok or if ions and electrons be treated separately
 
-                       for (auto& pop : fermions.ions)
+                       for (auto& pop : ions)
                         {
                            nbrDomainParticles += pop.domainParticles().size();
                            nbrPatchGhostParticles += pop.patchGhostParticles().size();
@@ -286,7 +288,7 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, Fermions& fer
                                    + std::to_string(nbrLevelGhostOldParticles) + ") than pushable ("
                                    + std::to_string(nbrLevelGhostParticles) + ")");
                        }
-                        for (auto& pop : fermions.electrons)
+                        for (auto& pop : electrons)
                         {
                            nbrDomainParticles += pop.domainParticles().size();
                            nbrPatchGhostParticles += pop.patchGhostParticles().size();
@@ -309,26 +311,26 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, Fermions& fer
     auto dt        = newTime - currentTime;
     auto& PICState = model.state;
     auto& J        = PICState.J;
-    auto& ions     = fermions.ions;
 
     for (auto& patch : level)
     {
-        auto _ = rm.setOnPatch(*patch, electromag, fermions, J);
+        auto _ = rm.setOnPatch(*patch, electromag, ions, electrons, J);
 
         auto layout = PHARE::amr::layoutFromPatch<GridLayout>(*patch);
-        fermionUpdater_.updatePopulations(fermions, electromag, J, layout, dt);
+        fermionUpdater_.updatePopulations(ions, electrons, electromag, J, layout, dt);
 
         // this needs to be done before calling the messenger
-        rm.setTime(fermions, *patch, newTime);
+        rm.setTime(ions, *patch, newTime);
+        rm.setTime(electrons, *patch, newTime);
     }
 
     // Only ion ghosts are filled since electrons don't exist on the coarser level
-    fromCoarser.fillIonGhostParticles(ions, level, newTime);
-    fromCoarser.fillIonPopMomentGhosts(ions, level, newTime);
+    //fromCoarser.fillIonGhostParticles(ions, level, newTime);
+    //fromCoarser.fillIonPopMomentGhosts(ions, level, newTime);
 
     // now Ni and Vi are calculated we can fill pure ghost nodes
     // these were not completed by the deposition of patch and levelghost particles
-    fromCoarser.fillIonMomentGhosts(ions, level, newTime);
+    //fromCoarser.fillIonMomentGhosts(ions, level, newTime);
 }
 
 template<typename PICModel, typename AMR_Types>

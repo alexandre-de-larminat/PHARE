@@ -209,7 +209,7 @@ namespace
 template<std::size_t dim, std::size_t _interp, std::size_t nbRefinedPart>
 double Simulator<dim, _interp, nbRefinedPart>::restarts_init(initializer::PHAREDict const& dict)
 {
-    rMan = restarts::RestartsManagerResolver::make_unique(*hierarchy_, *hybridModel_, dict);
+    rMan = restarts::RestartsManagerResolver::make_unique(*hierarchy_, *picModel_, dict);
 
     if (dict.contains("restart_time"))
         return (currentTime_ = dict["restart_time"].template to<double>());
@@ -222,7 +222,7 @@ double Simulator<dim, _interp, nbRefinedPart>::restarts_init(initializer::PHARED
 template<std::size_t dim, std::size_t _interp, std::size_t nbRefinedPart>
 void Simulator<dim, _interp, nbRefinedPart>::diagnostics_init(initializer::PHAREDict const& dict)
 {
-    dMan = PHARE::diagnostic::DiagnosticsManagerResolver::make_unique(*hierarchy_, *hybridModel_,
+    dMan = PHARE::diagnostic::DiagnosticsManagerResolver::make_unique(*hierarchy_, *picModel_,
                                                                       dict);
 
     if (dict.contains("fine_dump_lvl_max"))

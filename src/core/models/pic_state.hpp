@@ -26,19 +26,23 @@ class PICState : public IPhysicalState
 {
 
     using VecField = typename Electromag::vecfield_type;
+    using PICElectrons = typename Fermions::pic_electrons_type;
+    using Ions = typename Fermions::ions_type;
     
 public:
     static constexpr auto dimension = Fermions::dimension;
 
     PICState(PHARE::initializer::PHAREDict const& dict)
         : electromag{dict["electromag"]}
-        , fermions{dict}
+        , ions{dict["ions"]}
+        , pic_electrons{dict["pic_electrons"]}
         , J{"J", HybridQuantity::Vector::J}
     {
     }
 
     Electromag electromag;
-    Fermions fermions;
+    PICElectrons pic_electrons;
+    Ions ions;
     VecField J;
 
 /*
@@ -59,25 +63,25 @@ public:
 
         NO_DISCARD bool isUsable() const
         {
-            return electromag.isUsable() && fermions.isUsable() && J.isUsable();
+            return electromag.isUsable() && ions.isUsable() && pic_electrons.isUsable() && J.isUsable();
         }
 
 
 
         NO_DISCARD bool isSettable() const
         {
-            return electromag.isSettable() && fermions.isSettable() && J.isSettable();
+            return electromag.isSettable() && ions.isSettable() && pic_electrons.isSettable() && J.isSettable();
         }
 
 
         NO_DISCARD auto getCompileTimeResourcesUserList() const
         {
-            return std::forward_as_tuple(electromag, fermions);
+            return std::forward_as_tuple(electromag, ions, pic_electrons);
         }
 
         NO_DISCARD auto getCompileTimeResourcesUserList()
         {
-            return std::forward_as_tuple(electromag, fermions);
+            return std::forward_as_tuple(electromag, ions, pic_electrons);
         }
 
     //-------------------------------------------------------------------------

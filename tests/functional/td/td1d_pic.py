@@ -109,7 +109,7 @@ def simulation_params(diagdir, **extra):
 def config(**options):
     sim = ph.Simulation(**options)
     ph.MaxwellianFluidModel(
-        bx=bx, by=by, bz=bz, protons={"charge": 1, "density": density, **vvv}, electrons={"charge": -1, "density": density, **vvv}
+        bx=bx, by=by, bz=bz, protons={"charge": -1.0, "density": density, **vvv}, electrons={"charge": 1.0, "density": density, **vvv}
     )
     #ph.ElectronModel(closure="isothermal", Te=0.12)
 

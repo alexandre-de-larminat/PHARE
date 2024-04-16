@@ -4,6 +4,7 @@
 #include "core/def.hpp"
 #include "core/utilities/mpi_utils.hpp"
 #include "amr/physical_models/hybrid_model.hpp"
+#include "amr/physical_models/pic_model.hpp"
 #include "cppdict/include/dict.hpp"
 
 namespace PHARE::diagnostic
@@ -17,15 +18,19 @@ public:
 IModelView::~IModelView() {}
 
 
-
+/*
 template<typename Model>
 bool constexpr is_hybrid_model
     = std::is_same_v<solver::type_list_to_hybrid_model_t<typename Model::type_list>, Model>;
 
+template<typename Model> 
+bool constexpr is_pic_model
+    = std::is_same_v<solver::type_list_to_pic_model_t<typename Model::type_list>, Model>;
+*/
 
 
 
-template<typename Hierarchy, typename Model, std::enable_if_t<is_hybrid_model<Model>, int> = 0>
+template<typename Hierarchy, typename Model/*, std::enable_if_t<is_hybrid_model<Model>, int> = 0*/>//EDITED
 class ModelView : public IModelView
 {
     using VecField                  = typename Model::vecfield_type;
@@ -51,7 +56,6 @@ public:
     }
 
     NO_DISCARD auto& getIons() const { return model_.state.ions; }
-
 
     template<typename Action>
     void visitHierarchy(Action&& action, int minLevel = 0, int maxLevel = 0)

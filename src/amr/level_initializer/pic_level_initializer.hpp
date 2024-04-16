@@ -73,9 +73,8 @@ namespace PHARE::solver
 
             // now all particles are here
             // we must compute moments.
-            auto& ions             = picModel.state.fermions.ions;
-            auto& electrons        = picModel.state.fermions.electrons;
-            auto& fermions         = picModel.state.fermions;
+            auto& ions             = picModel.state.ions;
+            auto& electrons        = picModel.state.pic_electrons;
 
             for (auto& patch : level)
             {
@@ -84,13 +83,13 @@ namespace PHARE::solver
                 auto dataOnPatch       = resourcesManager->setOnPatch(*patch, ions, electrons);
                 auto layout            = amr::layoutFromPatch<GridLayoutT>(*patch);
 
-                core::resetMoments(fermions, 0);//Ugly af but works, TODO improve
-                core::depositParticles(fermions, layout, interpolate_, core::DomainDeposit{}, 0);
-                 core::depositParticles(fermions, layout, interpolate_, core::PatchGhostDeposit{}, 0);
+                core::resetMoments(ions); //TODO add electrons
+                core::depositParticles(ions, layout, interpolate_, core::DomainDeposit{});
+                 core::depositParticles(ions, layout, interpolate_, core::PatchGhostDeposit{});
 
                 if (!isRootLevel(levelNumber))
                 {
-                    core::depositParticles(fermions, layout, interpolate_, core::LevelGhostDeposit{}, 0);
+                    core::depositParticles(ions, layout, interpolate_, core::LevelGhostDeposit{});
                 }
 
                 ions.computeDensity();
@@ -135,7 +134,7 @@ namespace PHARE::solver
             // space and TIME interpolation. We thus need to save current values
             // in "old" messenger temporaries.
             // NOTE :  this may probably be skipped for finest level since, TBC at some point
-            // picMessenger.prepareStep(picModel, level, initDataTime);
+            //picMessenger.prepareStep(picModel, level, initDataTime);
         }
     };
 } // namespace PHARE::solver

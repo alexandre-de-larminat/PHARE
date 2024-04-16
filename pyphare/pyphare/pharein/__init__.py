@@ -225,8 +225,8 @@ def populateDict():
     partinit = "particle_initializer"
     counter = 0
     for pop_index, pop in enumerate(init_model.populations):
-        phare_utilities.debug_print(pop, pop_index, counter, modelDict[pop], modelDict[pop]["charge"])
         if modelDict[pop]["charge"] < 0.:
+            phare_utilities.debug_print("Adding ion population", modelDict[pop]["charge"])
             pop_path = "simulation/ions/pop"
             index = counter
             counter += 1
@@ -251,6 +251,7 @@ def populateDict():
                 
         elif modelDict[pop]["charge"] > 0.:
             pop_path = "simulation/pic_electrons/pop"
+            phare_utilities.debug_print("Adding electron population", modelDict[pop]["charge"])
             index = pop_index - counter
             partinit_path = pop_path + "{:d}/".format(index) + partinit + "/"
             d = modelDict[pop]

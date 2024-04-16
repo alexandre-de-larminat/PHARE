@@ -12,7 +12,7 @@ namespace PHARE
 {
 namespace core
 {
-    enum class Model { MHD, Hybrid };
+    enum class Model { MHD, Hybrid, PIC };
 
     class PhysicalStateInitializer
     {
