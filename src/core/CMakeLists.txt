@@ -28,7 +28,6 @@ set( SOURCES_INC
      data/vecfield/vecfield_component.hpp
      data/vecfield/vecfield_initializer.hpp
      hybrid/hybrid_quantities.hpp
-     pic/pic_quantities.hpp
      numerics/boundary_condition/boundary_condition.hpp
      numerics/interpolator/interpolator.hpp
      numerics/pusher/boris.hpp

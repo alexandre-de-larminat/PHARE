@@ -126,7 +126,7 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
                                           layout, [](auto& rangeIn) {return rangeIn;}, 
                                           [](auto& rangeIn) {return rangeIn;});
 
-            projector_(J, rangeOut, rangeIn, dt);
+            projector_(J, rangeOut, rangeIn, layout, dt);
 
             };
 
@@ -146,7 +146,7 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
                                           layout, [](auto& rangeIn) {return rangeIn;}, 
                                           [](auto& rangeIn) {return rangeIn;});
 
-            projector_(J, rangeOut, rangeIn, dt);
+            projector_(J, rangeOut, rangeIn, layout, dt);
 
             };
 

@@ -2,6 +2,10 @@
 #define PHARE_AMR_HIERARCHY_HPP
 
 #include <algorithm>
+#include <cinttypes>
+#include <cstdint>
+#include <cstdio>
+#include <limits>
 
 #include "core/def/phare_mpi.hpp"
 

@@ -12,20 +12,20 @@
 #include "core/data/particles/particle.hpp"
 
 #include "core/numerics/interpolator/interpolator.hpp"
-
+#include "core/data/ions/ions.hpp"
 
 namespace PHARE::core
 {
 
 // Calculate weights for a single particle, for use in calculating Esirkepov coefficients
 
-template<typename Particle>
-auto E_weights_(Particle const& part)
+template<typename Particle, typename GridLayout>
+auto E_weights_(Particle const& part, GridLayout const& layout)
 {   
-    constexpr auto interpOrder = 1 ; //TODO. just for testing
-    constexpr auto supportpts  = interpOrder + 1;
 
-    constexpr auto dimension = 1; //part.iCell.size();
+    static constexpr auto interpOrder = GridLayout::interp_order;
+    static constexpr auto supportpts  = interpOrder + 1;
+    static constexpr auto dimension   = GridLayout::dimension;
 
     using Interpolator_t = PHARE::core::Interpolator<dimension, interpOrder>;
     using Weighter_t     = PHARE::core::Weighter<interpOrder>;
@@ -65,17 +65,17 @@ template<>
 class ProjectJ<1>
 {
 public:
-    template<typename VecField, typename Particle>
+    template<typename VecField, typename Particle, typename GridLayout>
     inline void operator()(VecField& J, Particle const& partIn,
-                           Particle const& partOut, double dt)
+                           Particle const& partOut, GridLayout const& layout, double dt)
     {
         auto& Jx = J(Component::X);
         auto& Jy = J(Component::Y);
         auto& Jz = J(Component::Z);
 
         auto const& xStartIndex = partIn.iCell[0] ; // central dual node
-        auto const& S0          = E_weights_(partIn)[0];
-        auto const& S1          = E_weights_(partOut)[0];
+        auto const& S0          = E_weights_(partIn, layout)[0];
+        auto const& S1          = E_weights_(partOut, layout)[0];
         auto const& order_size  = S0.size();
 
         // requisite for appropriate centering (greatest weight at node considered)
@@ -116,9 +116,9 @@ template<>
 class ProjectJ<2>
 {
 public:
-    template<typename VecField, typename Particle>
+    template<typename VecField, typename Particle, typename GridLayout>
     inline void operator()(VecField& J, Particle const& partIn,
-                           Particle const& partOut, double dt)
+                           Particle const& partOut, GridLayout const& layout, double dt)
     {
         double one_third_ = 1./3.;
         auto& Jx = J(Component::X);
@@ -127,8 +127,8 @@ public:
 
         auto const& xStartIndex = partIn.iCell[0];
         auto const& yStartIndex = partIn.iCell[1];
-        auto const& oldWeights  = E_weights_(partIn);
-        auto const& newWeights  = E_weights_(partOut);
+        auto const& oldWeights  = E_weights_(partIn, layout);
+        auto const& newWeights  = E_weights_(partOut, layout);
 
         auto const& Sx0      = oldWeights[0];
         auto const& Sy0      = oldWeights[1];
@@ -210,9 +210,9 @@ class ProjectJ<3>
 public:
     double one_third_ = 1./3.;
     
-    template<typename VecField, typename Particle>
+    template<typename VecField, typename Particle, typename GridLayout>
     inline void operator()(VecField& J, Particle const& partIn,
-                           Particle const& partOut, double dt)
+                           Particle const& partOut, GridLayout const& layout, double dt)
     {
         auto& Jx = J(Component::X);
         auto& Jy = J(Component::Y);
@@ -222,8 +222,8 @@ public:
         auto const& yStartIndex = partIn.iCell[1];
         auto const& zStartIndex = partIn.iCell[2];
 
-        auto const& oldWeights  = E_weights_(partIn);
-        auto const& newWeights  = E_weights_(partOut);
+        auto const& oldWeights  = E_weights_(partIn, layout);
+        auto const& newWeights  = E_weights_(partOut, layout);
 
         auto const& Sx0 = oldWeights[0];
         auto const& Sy0 = oldWeights[1];
@@ -317,14 +317,14 @@ public:
 template<typename GridLayout>
 class Projector : public LayoutHolder<GridLayout>
 {
+    constexpr static auto dimension = GridLayout::dimension;
 
 public:
-    constexpr static auto interp_order = GridLayout::interp_order;
-    constexpr static auto dimension    = GridLayout::dimension;
+
     ProjectJ<dimension> projectJ_;
 
     template<typename VecField, typename ParticleRange>
-    inline void operator()(VecField& J, ParticleRange& rangeOut, ParticleRange& rangeIn, double dt)
+    inline void operator()(VecField& J, ParticleRange& rangeOut, ParticleRange& rangeIn, GridLayout const& layout, double dt)
     {
         auto& inParticles = rangeIn.array();
         auto& outParticles = rangeOut.array();
@@ -332,7 +332,7 @@ public:
         for (auto inIdx = rangeIn.ibegin(), outIdx = rangeOut.ibegin(); inIdx < rangeIn.iend();
                     ++inIdx, ++outIdx)
                 {
-                    projectJ_(J, outParticles[outIdx], inParticles[inIdx], dt);
+                    projectJ_(J, outParticles[outIdx], inParticles[inIdx], layout, dt);
                 }   
     }
 

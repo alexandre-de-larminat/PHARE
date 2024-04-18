@@ -14,7 +14,9 @@ if (test AND ${PHARE_EXEC_LEVEL_MIN} GREATER 0) # 0 = no tests
   add_subdirectory(tests/core/data/particles)
   add_subdirectory(tests/core/data/ions)
   add_subdirectory(tests/core/data/electrons)
+  add_subdirectory(tests/core/data/pic_electrons)
   add_subdirectory(tests/core/data/ion_population)
+  add_subdirectory(tests/core/data/electron_population)
   add_subdirectory(tests/core/data/maxwellian_particle_initializer)
   add_subdirectory(tests/core/data/particle_initializer)
   add_subdirectory(tests/core/utilities/box)
@@ -26,12 +28,14 @@ if (test AND ${PHARE_EXEC_LEVEL_MIN} GREATER 0) # 0 = no tests
   add_subdirectory(tests/core/numerics/interpolator)
   add_subdirectory(tests/core/numerics/pusher)
   add_subdirectory(tests/core/numerics/ampere)
+  add_subdirectory(tests/core/numerics/maxwell_ampere)
   add_subdirectory(tests/core/numerics/faraday)
   add_subdirectory(tests/core/numerics/ohm)
   add_subdirectory(tests/core/numerics/ion_updater)
 
 
   add_subdirectory(tests/initializer)
+  add_subdirectory(tests/initializer_pic)
 
 
   add_subdirectory(tests/amr/data/particles)

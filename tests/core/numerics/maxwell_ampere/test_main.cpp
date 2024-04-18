@@ -10,7 +10,7 @@
 #include "core/data/grid/gridlayout_impl.hpp"
 #include "core/data/grid/gridlayoutdefs.hpp"
 #include "core/data/vecfield/vecfield.hpp"
-#include "core/numerics/faraday/faraday.hpp"
+#include "core/numerics/ampere/maxwell_ampere.hpp"
 #include "core/utilities/box/box.hpp"
 #include "core/utilities/index/index.hpp"
 #include "core/utilities/point/point.hpp"
@@ -91,52 +91,52 @@ struct GridLayoutMock3D
 
 
 
-TEST(Faraday, canBe1D)
+TEST(MaxwellAmpere, canBe1D)
 {
-    Faraday<GridLayoutMock1D> faraday;
+    MaxwellAmpere<GridLayoutMock1D> maxwellAmpere;
 }
 
 
-TEST(Faraday, canBe2D)
+TEST(MaxwellAmpere, canBe2D)
 {
-    Faraday<GridLayoutMock2D> faraday;
+    MaxwellAmpere<GridLayoutMock2D> maxwellAmpere;
 }
 
 
-TEST(Faraday, canBe3D)
+TEST(MaxwellAmpere, canBe3D)
 {
-    Faraday<GridLayoutMock3D> faraday;
+    MaxwellAmpere<GridLayoutMock3D> maxwellAmpere;
 }
 
 
-TEST(Faraday, shouldBeGivenAGridLayoutPointerToBeOperational)
+TEST(MaxwellAmpere, shouldBeGivenAGridLayoutPointerToBeOperational)
 {
     {
         using GridLayout = GridLayout<GridLayoutImplYee<1, 1>>;
-        VecFieldMock<FieldMock<1>> B_1, E_1, Bnew_1;
-        Faraday<GridLayout> faraday1d;
+        VecFieldMock<FieldMock<1>> B_1, E_1, J_1, Enew_1;
+        MaxwellAmpere<GridLayout> MaxwellAmpere1d;
         auto layout1d = std::make_unique<TestGridLayout<GridLayout>>();
-        EXPECT_ANY_THROW(faraday1d(B_1, E_1, Bnew_1, 1.));
-        faraday1d.setLayout(layout1d.get());
+        EXPECT_ANY_THROW(MaxwellAmpere1d(B_1, E_1, J_1, Enew_1, 1.));
+        MaxwellAmpere1d.setLayout(layout1d.get());
     }
-
+/*
     {
         using GridLayout = GridLayout<GridLayoutImplYee<2, 1>>;
         VecFieldMock<FieldMock<2>> B_2, E_2, Bnew_2;
-        Faraday<GridLayout> faraday2d;
+        MaxwellAmpere<GridLayout> MaxwellAmpere2d;
         auto layout2d = std::make_unique<TestGridLayout<GridLayout>>();
-        EXPECT_ANY_THROW(faraday2d(B_2, E_2, Bnew_2, 1.));
-        faraday2d.setLayout(layout2d.get());
+        EXPECT_ANY_THROW(MaxwellAmpere2d(B_2, E_2, Bnew_2, 1.));
+        MaxwellAmpere2d.setLayout(layout2d.get());
     }
 
     {
         using GridLayout = GridLayout<GridLayoutImplYee<3, 1>>;
         VecFieldMock<FieldMock<3>> B_3, E_3, Bnew_3;
-        Faraday<GridLayout> faraday3d;
+        MaxwellAmpere<GridLayout> MaxwellAmpere3d;
         auto layout3d = std::make_unique<TestGridLayout<GridLayout>>();
-        EXPECT_ANY_THROW(faraday3d(B_3, E_3, Bnew_3, 1.));
-        faraday3d.setLayout(layout3d.get());
-    }
+        EXPECT_ANY_THROW(MaxwellAmpere3d(B_3, E_3, Bnew_3, 1.));
+        MaxwellAmpere3d.setLayout(layout3d.get());
+    }*/
 }
 
 
@@ -155,7 +155,7 @@ std::vector<double> read(std::string filename)
 
 
 
-class Faraday1DTest : public ::testing::Test
+class MaxwellAmpere1DTest : public ::testing::Test
 {
 protected:
     using GridLayoutImpl = GridLayoutImplYee<1, 1>;
@@ -167,29 +167,37 @@ protected:
     Field<NdArrayVector<1>, HybridQuantity::Scalar> Ex;
     Field<NdArrayVector<1>, HybridQuantity::Scalar> Ey;
     Field<NdArrayVector<1>, HybridQuantity::Scalar> Ez;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Bxnew;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Bynew;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Bznew;
+    Field<NdArrayVector<1>, HybridQuantity::Scalar> Jx;
+    Field<NdArrayVector<1>, HybridQuantity::Scalar> Jy;
+    Field<NdArrayVector<1>, HybridQuantity::Scalar> Jz;
+    Field<NdArrayVector<1>, HybridQuantity::Scalar> Exnew;
+    Field<NdArrayVector<1>, HybridQuantity::Scalar> Eynew;
+    Field<NdArrayVector<1>, HybridQuantity::Scalar> Eznew;
     VecField<NdArrayVector<1>, HybridQuantity> B;
     VecField<NdArrayVector<1>, HybridQuantity> E;
-    VecField<NdArrayVector<1>, HybridQuantity> Bnew;
-    Faraday<GridLayout<GridLayoutImpl>> faraday;
+    VecField<NdArrayVector<1>, HybridQuantity> J;
+    VecField<NdArrayVector<1>, HybridQuantity> Enew;
+    MaxwellAmpere<GridLayout<GridLayoutImpl>> maxwellAmpere;
 
 public:
-    Faraday1DTest()
+    MaxwellAmpere1DTest()
         : layout{{{0.1}}, {{50}}, Point{0.}}
         , Bx{"Bx", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
         , By{"By", HybridQuantity::Scalar::By, layout.allocSize(HybridQuantity::Scalar::By)}
         , Bz{"Bz", HybridQuantity::Scalar::Bz, layout.allocSize(HybridQuantity::Scalar::Bz)}
-        , Ex{"Ex", HybridQuantity::Scalar::Jx, layout.allocSize(HybridQuantity::Scalar::Jx)}
-        , Ey{"Ey", HybridQuantity::Scalar::Jy, layout.allocSize(HybridQuantity::Scalar::Jy)}
-        , Ez{"Ez", HybridQuantity::Scalar::Jz, layout.allocSize(HybridQuantity::Scalar::Jz)}
-        , Bxnew{"Bxnew", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
-        , Bynew{"Bynew", HybridQuantity::Scalar::By, layout.allocSize(HybridQuantity::Scalar::By)}
-        , Bznew{"Bznew", HybridQuantity::Scalar::Bz, layout.allocSize(HybridQuantity::Scalar::Bz)}
+        , Ex{"Ex", HybridQuantity::Scalar::Ex, layout.allocSize(HybridQuantity::Scalar::Ex)}
+        , Ey{"Ey", HybridQuantity::Scalar::Ey, layout.allocSize(HybridQuantity::Scalar::Ey)}
+        , Ez{"Ez", HybridQuantity::Scalar::Ez, layout.allocSize(HybridQuantity::Scalar::Ez)}
+        , Exnew{"Exnew", HybridQuantity::Scalar::Ex, layout.allocSize(HybridQuantity::Scalar::Ex)}
+        , Eynew{"Eynew", HybridQuantity::Scalar::Ey, layout.allocSize(HybridQuantity::Scalar::Ey)}
+        , Eznew{"Eznew", HybridQuantity::Scalar::Ez, layout.allocSize(HybridQuantity::Scalar::Ez)}
+        , Jx{"Jx", HybridQuantity::Scalar::Jx, layout.allocSize(HybridQuantity::Scalar::Jx)}
+        , Jy{"Jy", HybridQuantity::Scalar::Jy, layout.allocSize(HybridQuantity::Scalar::Jy)}
+        , Jz{"Jz", HybridQuantity::Scalar::Jz, layout.allocSize(HybridQuantity::Scalar::Jz)}
+        , J{"J", HybridQuantity::Vector::J}
         , B{"B", HybridQuantity::Vector::B}
         , E{"E", HybridQuantity::Vector::E}
-        , Bnew{"Bnew", HybridQuantity::Vector::B}
+        , Enew{"Enew", HybridQuantity::Vector::E}
     {
         B.setBuffer("B_x", &Bx);
         B.setBuffer("B_y", &By);
@@ -197,16 +205,19 @@ public:
         E.setBuffer("E_x", &Ex);
         E.setBuffer("E_y", &Ey);
         E.setBuffer("E_z", &Ez);
-        Bnew.setBuffer("Bnew_x", &Bxnew);
-        Bnew.setBuffer("Bnew_y", &Bynew);
-        Bnew.setBuffer("Bnew_z", &Bznew);
+        J.setBuffer("J_x", &Jx);
+        J.setBuffer("J_y", &Jy);
+        J.setBuffer("J_z", &Jz);
+        Enew.setBuffer("Enew_x", &Exnew);
+        Enew.setBuffer("Enew_y", &Eynew);
+        Enew.setBuffer("Enew_z", &Eznew);
     }
 };
 
 
+/*
 
-
-class Faraday2DTest : public ::testing::Test
+class MaxwellAmpere2DTest : public ::testing::Test
 {
 protected:
     using GridLayoutImpl = GridLayoutImplYee<2, 1>;
@@ -218,16 +229,16 @@ protected:
     Field<NdArrayVector<2>, HybridQuantity::Scalar> Ex;
     Field<NdArrayVector<2>, HybridQuantity::Scalar> Ey;
     Field<NdArrayVector<2>, HybridQuantity::Scalar> Ez;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Bxnew;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Bynew;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Bznew;
+    Field<NdArrayVector<2>, HybridQuantity::Scalar> Exnew;
+    Field<NdArrayVector<2>, HybridQuantity::Scalar> Eynew;
+    Field<NdArrayVector<2>, HybridQuantity::Scalar> Eznew;
     VecField<NdArrayVector<2>, HybridQuantity> B;
     VecField<NdArrayVector<2>, HybridQuantity> E;
-    VecField<NdArrayVector<2>, HybridQuantity> Bnew;
-    Faraday<GridLayout<GridLayoutImpl>> faraday;
+    VecField<NdArrayVector<2>, HybridQuantity> Enew;
+    MaxwellAmpere<GridLayout<GridLayoutImpl>> MaxwellAmpere;
 
 public:
-    Faraday2DTest()
+    MaxwellAmpere2DTest()
         : layout{{{0.1, 0.2}}, {{50, 30}}, Point{0., 0.}}
         , Bx{"Bx", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
         , By{"By", HybridQuantity::Scalar::By, layout.allocSize(HybridQuantity::Scalar::By)}
@@ -235,12 +246,13 @@ public:
         , Ex{"Ex", HybridQuantity::Scalar::Jx, layout.allocSize(HybridQuantity::Scalar::Jx)}
         , Ey{"Ey", HybridQuantity::Scalar::Jy, layout.allocSize(HybridQuantity::Scalar::Jy)}
         , Ez{"Ez", HybridQuantity::Scalar::Jz, layout.allocSize(HybridQuantity::Scalar::Jz)}
-        , Bxnew{"Bxnew", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
-        , Bynew{"Bynew", HybridQuantity::Scalar::By, layout.allocSize(HybridQuantity::Scalar::By)}
-        , Bznew{"Bznew", HybridQuantity::Scalar::Bz, layout.allocSize(HybridQuantity::Scalar::Bz)}
+        , Exnew{"Exnew", HybridQuantity::Scalar::Ex, layout.allocSize(HybridQuantity::Scalar::Bx)}
+        , Eynew{"Bynew", HybridQuantity::Scalar::Ey, layout.allocSize(HybridQuantity::Scalar::By)}
+        , Eznew{"Bznew", HybridQuantity::Scalar::Ez, layout.allocSize(HybridQuantity::Scalar::Bz)}
         , B{"B", HybridQuantity::Vector::B}
         , E{"E", HybridQuantity::Vector::E}
-        , Bnew{"Bnew", HybridQuantity::Vector::B}
+        , Enew{"Enew", HybridQuantity::Vector::E}
+        , J{"J", HybridQuantity::Vector::J}
     {
         B.setBuffer("B_x", &Bx);
         B.setBuffer("B_y", &By);
@@ -248,16 +260,16 @@ public:
         E.setBuffer("E_x", &Ex);
         E.setBuffer("E_y", &Ey);
         E.setBuffer("E_z", &Ez);
-        Bnew.setBuffer("Bnew_x", &Bxnew);
-        Bnew.setBuffer("Bnew_y", &Bynew);
-        Bnew.setBuffer("Bnew_z", &Bznew);
+        Enew.setBuffer("Bnew_x", &Exnew);
+        Enew.setBuffer("Bnew_y", &Eynew);
+        Enew.setBuffer("Bnew_z", &Eznew);
     }
 };
 
 
 
 
-class Faraday3DTest : public ::testing::Test
+class MaxwellAmpere3DTest : public ::testing::Test
 {
 protected:
     using GridLayoutImpl = GridLayoutImplYee<3, 1>;
@@ -275,15 +287,15 @@ protected:
     VecField<NdArrayVector<3>, HybridQuantity> B;
     VecField<NdArrayVector<3>, HybridQuantity> E;
     VecField<NdArrayVector<3>, HybridQuantity> Bnew;
-    Faraday<GridLayout<GridLayoutImpl>> faraday;
+    MaxwellAmpere<GridLayout<GridLayoutImpl>> MaxwellAmpere;
 
 public:
-    Faraday3DTest()
+    MaxwellAmpere3DTest()
         : layout{{{0.1, 0.2, 0.3}}, {{50, 30, 40}}, Point{0., 0., 0.}}
         , Bx{"Bx", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
         , By{"By", HybridQuantity::Scalar::By, layout.allocSize(HybridQuantity::Scalar::By)}
         , Bz{"Bz", HybridQuantity::Scalar::Bz, layout.allocSize(HybridQuantity::Scalar::Bz)}
-        , Ex{"Ex", HybridQuantity::Scalar::Jx, layout.allocSize(HybridQuantity::Scalar::Jx)} // CHECK
+        , Ex{"Ex", HybridQuantity::Scalar::Jx, layout.allocSize(HybridQuantity::Scalar::Jx)}
         , Ey{"Ey", HybridQuantity::Scalar::Jy, layout.allocSize(HybridQuantity::Scalar::Jy)}
         , Ez{"Ez", HybridQuantity::Scalar::Jz, layout.allocSize(HybridQuantity::Scalar::Jz)}
         , Bxnew{"Bxnew", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
@@ -306,12 +318,14 @@ public:
 };
 
 
+*/
 
-
-TEST_F(Faraday1DTest, Faraday1DCalculatedOk)
+TEST_F(MaxwellAmpere1DTest, MaxwellAmpere1DCalculatedOk)
 {
+    auto filename_dbxdt = std::string{"dbxdt_yee_1D_order1.txt"};
     auto filename_dbydt = std::string{"dbydt_yee_1D_order1.txt"};
     auto filename_dbzdt = std::string{"dbzdt_yee_1D_order1.txt"};
+    auto expected_dbxdt = read(filename_dbxdt);
     auto expected_dbydt = read(filename_dbydt);
     auto expected_dbzdt = read(filename_dbzdt);
 
@@ -337,23 +351,24 @@ TEST_F(Faraday1DTest, Faraday1DCalculatedOk)
         Bz(ix) = std::tanh(point[0] - 5. / 2.);
     }
 
-    faraday.setLayout(&layout);
-    faraday(B, E, Bnew, 1.);
+    maxwellAmpere.setLayout(&layout);
+    maxwellAmpere(B, E, J, Enew, 1.);
 
     auto psi_d_X = this->layout.physicalStartIndex(QtyCentering::dual, Direction::X);
     auto pei_d_X = this->layout.physicalEndIndex(QtyCentering::dual, Direction::X);
 
     for (auto ix = psi_d_X; ix <= pei_d_X; ++ix)
     {
-        EXPECT_THAT(Bynew(ix), ::testing::DoubleNear((expected_dbydt[ix]), 1e-12));
-        EXPECT_THAT(Bznew(ix), ::testing::DoubleNear((expected_dbzdt[ix]), 1e-12));
+        EXPECT_THAT(Exnew(ix), ::testing::DoubleNear((expected_dbxdt[ix]), 1e-12));
+        EXPECT_THAT(Eynew(ix), ::testing::DoubleNear((expected_dbydt[ix]), 1e-12));
+        EXPECT_THAT(Eznew(ix), ::testing::DoubleNear((expected_dbzdt[ix]), 1e-12));
     }
 }
 
 
+/*
 
-
-TEST_F(Faraday2DTest, Faraday2DCalculatedOk)
+TEST_F(MaxwellAmpere2DTest, MaxwellAmpere2DCalculatedOk)
 {
     auto filename_dbxdt = std::string{"dbxdt_yee_2D_order1.txt"};
     auto filename_dbydt = std::string{"dbydt_yee_2D_order1.txt"};
@@ -432,8 +447,8 @@ TEST_F(Faraday2DTest, Faraday2DCalculatedOk)
         }
     }
 
-    faraday.setLayout(&layout);
-    faraday(B, E, Bnew, 1.);
+    MaxwellAmpere.setLayout(&layout);
+    MaxwellAmpere(B, E, Bnew, 1.);
 
     auto psi_p_X = this->layout.physicalStartIndex(QtyCentering::primal, Direction::X);
     auto pei_p_X = this->layout.physicalEndIndex(QtyCentering::primal, Direction::X);
@@ -481,7 +496,7 @@ TEST_F(Faraday2DTest, Faraday2DCalculatedOk)
 
 
 
-TEST_F(Faraday3DTest, Faraday3DCalculatedOk)
+TEST_F(MaxwellAmpere3DTest, MaxwellAmpere3DCalculatedOk)
 {
     auto filename_dbxdt = std::string{"dbxdt_yee_3D_order1.txt"};
     auto filename_dbydt = std::string{"dbydt_yee_3D_order1.txt"};
@@ -592,8 +607,8 @@ TEST_F(Faraday3DTest, Faraday3DCalculatedOk)
         }
     }
 
-    faraday.setLayout(&layout);
-    faraday(B, E, Bnew, 1.);
+    MaxwellAmpere.setLayout(&layout);
+    MaxwellAmpere(B, E, Bnew, 1.);
 
     auto psi_p_X = this->layout.physicalStartIndex(QtyCentering::primal, Direction::X);
     auto pei_p_X = this->layout.physicalEndIndex(QtyCentering::primal, Direction::X);
@@ -654,7 +669,7 @@ TEST_F(Faraday3DTest, Faraday3DCalculatedOk)
             }
         }
     }
-}
+}*/
 
 
 

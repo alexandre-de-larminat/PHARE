@@ -55,18 +55,18 @@ PHAREDict getDict()
     return dict;
 }
 
-struct AnIonPopulation : public ::testing::Test
+struct AnElectronPopulation : public ::testing::Test
 {
-    IonPopulation<ParticleArray<1>, DummyVecField, DummyTensorField, DummyLayout> protons{
+    ElectronPopulation<ParticleArray<1>, DummyVecField, DummyLayout> electrons{
         getDict()};
     virtual ~AnElectronPopulation();
 };
 
-AnIonPopulation::~AnElectronPopulation() {}
+AnElectronPopulation::~AnElectronPopulation() {}
 
 
 
-TEST_F(AnIonPopulation, hasAMass)
+TEST_F(AnElectronPopulation, hasAMass)
 {
     EXPECT_DOUBLE_EQ(1., electrons.mass());
 }
@@ -74,15 +74,15 @@ TEST_F(AnIonPopulation, hasAMass)
 
 
 
-TEST_F(AnIonPopulation, hasAName)
+TEST_F(AnElectronPopulation, hasAName)
 {
-    EXPECT_EQ("protons", electrons.name());
+    EXPECT_EQ("electrons", electrons.name());
 }
 
 
 
 
-TEST_F(AnIonPopulation, isNonUsableUponConstruction)
+TEST_F(AnElectronPopulation, isNonUsableUponConstruction)
 {
     EXPECT_FALSE(electrons.isUsable());
 }
@@ -90,7 +90,7 @@ TEST_F(AnIonPopulation, isNonUsableUponConstruction)
 
 
 
-TEST_F(AnIonPopulation, isSettableIfNonUsable)
+TEST_F(AnElectronPopulation, isSettableIfNonUsable)
 {
     if (!electrons.isUsable())
     {
@@ -101,7 +101,7 @@ TEST_F(AnIonPopulation, isSettableIfNonUsable)
 
 
 
-TEST_F(AnIonPopulation, throwsIfOneWantsToAccessParticleBuffersWhileNotUsable)
+TEST_F(AnElectronPopulation, throwsIfOneWantsToAccessParticleBuffersWhileNotUsable)
 {
     EXPECT_ANY_THROW(auto& p = electrons.domainParticles());
     EXPECT_ANY_THROW(auto& p = electrons.patchGhostParticles());
@@ -111,7 +111,7 @@ TEST_F(AnIonPopulation, throwsIfOneWantsToAccessParticleBuffersWhileNotUsable)
 
 
 
-TEST_F(AnIonPopulation, isResourceUserAndHasGetParticleArrayNamesOK)
+TEST_F(AnElectronPopulation, isResourceUserAndHasGetParticleArrayNamesOK)
 {
     auto bufferNames = electrons.getParticleArrayNames();
     EXPECT_EQ(1, bufferNames.size());
@@ -120,16 +120,16 @@ TEST_F(AnIonPopulation, isResourceUserAndHasGetParticleArrayNamesOK)
 
 
 
-TEST_F(AnIonPopulation, isResourceUserAndHasFieldNamesAndQuantitiesOK)
+TEST_F(AnElectronPopulation, isResourceUserAndHasFieldNamesAndQuantitiesOK)
 {
     auto fieldProperties = electrons.getFieldNamesAndQuantities();
-    EXPECT_EQ(protons.name() + std::string{"_rho"}, fieldProperties[0].name);
+    EXPECT_EQ(electrons.name() + std::string{"_rho"}, fieldProperties[0].name);
     EXPECT_EQ(HybridQuantity::Scalar::rho, fieldProperties[0].qty);
 }
 
 
 
-TEST_F(AnIonPopulation, hasAVecFieldSubResource)
+TEST_F(AnElectronPopulation, hasAVecFieldSubResource)
 {
     [[maybe_unused]] DummyVecField const& vf
         = std::get<0>(electrons.getCompileTimeResourcesUserList());

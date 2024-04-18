@@ -24,13 +24,13 @@ IModelView::~IModelView() {}
 template<typename Model>
 bool constexpr is_hybrid_model
     = std::is_same_v<solver::type_list_to_hybrid_model_t<typename Model::type_list>, Model>;
-
+*/
 template<typename Model>
 bool constexpr is_pic_model
     = std::is_same_v<solver::type_list_to_pic_model_t<typename Model::type_list>, Model>;
-*/
 
-template<typename Hierarchy, typename Model/*, std::enable_if_t<is_hybrid_model<Model>, int> = 0*/>
+
+template<typename Hierarchy, typename Model, std::enable_if_t<is_pic_model<Model>, int> = 0>
 class ModelView : public IModelView
 {
 public:

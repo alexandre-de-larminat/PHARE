@@ -62,7 +62,8 @@ private:
     double Va = B_0 / std::sqrt(mu_0 * m_p * n_0); // normalized Alfven speed, non-relativistic (CHECK)
     double c_norm = c_ / Va; // normalized velocity
     double c2 = c_norm * c_norm;
-    double inv_c2 = 1.0 / c2;
+    //double inv_c2 = 1.0 / c2;
+    double inv_c2 = 1.0;
 
     template<typename VecField, typename Field, typename... Indexes>
     void ExEq_(Field const& Ex, VecField const& B, Field const& Jx, Field& Exnew, Indexes const&... ijk) const

@@ -22,11 +22,10 @@ namespace PHARE::core
         using particle_array_type              = ParticleArray;
         using particle_resource_type           = ParticlesPack<ParticleArray>;
         using vecfield_type                    = VecField;
-        double Me_ov_Mp = 1/1836.152673; // mass of an electron normalized by proton mass
 
         ElectronPopulation(initializer::PHAREDict const& initializer)
             : name_{initializer["name"].template to<std::string>()}
-            , mass_{Me_ov_Mp}
+            , mass_{initializer["mass"].template to<double>()}
             , flux_{name_ + "_flux", HybridQuantity::Vector::V}
             , particleInitializerInfo_{initializer["particle_initializer"]}
         {

@@ -211,29 +211,29 @@ def populateDict():
         )  # integrator.h might want some looking at
 
     add_string("simulation/algo/ion_updater/pusher/name", simulation.particle_pusher)
-    add_string("simulation/algo/fermion_updater/pusher/name", simulation.particle_pusher)
     add_double("simulation/algo/ohm/resistivity", simulation.resistivity)
     add_double("simulation/algo/ohm/hyper_resistivity", simulation.hyper_resistivity)
 
     init_model = simulation.model
     modelDict = init_model.model_dict
 
+    phare_utilities.debug_print("Up to here : ", simulation.clustering)
+
     if init_model.nbr_populations() < 0:
         raise RuntimeError("Number of populations cannot be negative")
     #add_size_t("simulation/ions/nbrPopulations", init_model.nbr_populations())
 
     partinit = "particle_initializer"
-    counter = 0
+    ioncounter = 0
     for pop_index, pop in enumerate(init_model.populations):
-        if modelDict[pop]["charge"] < 0.:
-            phare_utilities.debug_print("Adding ion population", modelDict[pop]["charge"])
+        if modelDict[pop]["charge"] > 0.:
+            phare_utilities.debug_print("Adding ion population")
             pop_path = "simulation/ions/pop"
-            index = counter
-            counter += 1
-            partinit_path = pop_path + "{:d}/".format(index) + partinit + "/"
+            partinit_path = pop_path + "{:d}/".format(ioncounter) + partinit + "/"
+            phare_utilities.debug_print("path = ", partinit_path)
             d = modelDict[pop]
-            add_string(pop_path + "{:d}/name".format(index), pop)
-            add_double(pop_path + "{:d}/mass".format(index), d["mass"])
+            add_string(pop_path + "{:d}/name".format(ioncounter), pop)
+            add_double(pop_path + "{:d}/mass".format(ioncounter), d["mass"])
             add_string(partinit_path + "name", "maxwellian")
 
             addInitFunction(partinit_path + "density", fn_wrapper(d["density"]))
@@ -248,15 +248,19 @@ def populateDict():
             add_string(partinit_path + "basis", "cartesian")
             if "init" in d and "seed" in d["init"]:
                 pp.add_optional_size_t(partinit_path + "init/seed", d["init"]["seed"])
+            ioncounter += 1
+            phare_utilities.debug_print("New ion counter = ", ioncounter)
                 
-        elif modelDict[pop]["charge"] > 0.:
+        elif modelDict[pop]["charge"] < 0.:
             pop_path = "simulation/pic_electrons/pop"
-            phare_utilities.debug_print("Adding electron population", modelDict[pop]["charge"])
-            index = pop_index - counter
-            partinit_path = pop_path + "{:d}/".format(index) + partinit + "/"
+            phare_utilities.debug_print("Adding electron population")
+            e_counter = pop_index - ioncounter
+            partinit_path = pop_path + "{:d}/".format(e_counter) + partinit + "/"
+            phare_utilities.debug_print("path = ", partinit_path)
+            phare_utilities.debug_print("charge = ", modelDict[pop]["charge"])
             d = modelDict[pop]
-            add_string(pop_path + "{:d}/name".format(index), pop)
-            add_double(pop_path + "{:d}/mass".format(index), d["mass"])
+            add_string(pop_path + "{:d}/name".format(e_counter), pop)
+            add_double(pop_path + "{:d}/mass".format(e_counter), d["mass"])
             add_string(partinit_path + "name", "maxwellian")
 
             addInitFunction(partinit_path + "density", fn_wrapper(d["density"]))
@@ -271,9 +275,10 @@ def populateDict():
             add_string(partinit_path + "basis", "cartesian")
             if "init" in d and "seed" in d["init"]:
                 pp.add_optional_size_t(partinit_path + "init/seed", d["init"]["seed"])
+            phare_utilities.debug_print("New electron counter = ", e_counter)
 
-    add_size_t("simulation/ions/nbrPopulations", counter)
-    add_size_t("simulation/pic_electrons/nbrPopulations", init_model.nbr_populations()-counter)
+    add_size_t("simulation/ions/nbrPopulations", ioncounter)
+    add_size_t("simulation/pic_electrons/nbrPopulations", init_model.nbr_populations()-ioncounter)
     add_string("simulation/electromag/name", "EM")
     add_string("simulation/electromag/electric/name", "E")
 
@@ -283,9 +288,9 @@ def populateDict():
     addInitFunction(maginit_path + "y_component", fn_wrapper(modelDict["by"]))
     addInitFunction(maginit_path + "z_component", fn_wrapper(modelDict["bz"]))
 
-    serialized_sim = serialize_sim(simulation)
+    phare_utilities.debug_print("Dictionary populated------------")
 
-    phare_utilities.debug_print(modelDict)
+    serialized_sim = serialize_sim(simulation)
 
     #### adding diagnostics
 
@@ -330,6 +335,8 @@ def populateDict():
         else:
             add_string(diag_path + "filePath", "phare_output")
     #### diagnostics added
+
+    phare_utilities.debug_print("Diagnostics added------------")
 
     #### adding restarts
     if simulation.restart_options is not None:
@@ -386,12 +393,18 @@ def populateDict():
         add_string(restarts_path + "serialized_simulation", serialized_sim)
     #### restarts added
 
+    phare_utilities.debug_print("Restarts added------------")
+
     #### adding electrons
-    #if simulation.electrons is None:
-    #    raise RuntimeError("Error - no electrons registered to this Simulation")
-    #else:
-    #    for item in simulation.electrons.dict_path():
-    #        if isinstance(item[1], str):
-    #            add_string("simulation/" + item[0], item[1])
-    #        else:
-    #            add_double("simulation/" + item[0], item[1])
+    if simulation.electrons is None:
+        #raise RuntimeError("Error - no electrons registered to this Simulation")
+        print("No fluid electrons registered to this Simulation")
+    else:
+        for item in simulation.electrons.dict_path():
+            if isinstance(item[1], str):
+                add_string("simulation/" + item[0], item[1])
+            else:
+                add_double("simulation/" + item[0], item[1])
+        phare_utilities.debug_print("Electrons added------------")
+    phare_utilities.debug_print("Simulation dictionary populated")
+    phare_utilities.debug_print("End of populateDict")
