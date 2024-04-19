@@ -2,10 +2,8 @@
 #define PHARE_AMR_HIERARCHY_HPP
 
 #include <algorithm>
-#include <cinttypes>
-#include <cstdint>
-#include <cstdio>
-#include <limits>
+#include <iostream>
+#include <string>
 
 #include "core/def/phare_mpi.hpp"
 
@@ -96,7 +94,10 @@ public:
     NO_DISCARD static auto make();
     NO_DISCARD auto const& cellWidth() const { return cellWidth_; }
     NO_DISCARD auto const& domainBox() const { return domainBox_; }
-    NO_DISCARD auto const& origin() const { return origin_; }
+    NO_DISCARD auto const& origin() const { 
+        printf("origin called\n");
+        return origin_; 
+        }
 
 
     auto writeRestartFile(std::string directory) const;
@@ -138,6 +139,7 @@ class DimHierarchy : public Hierarchy
     {
         auto box = domainBoxShape;
         std::for_each(std::begin(box), std::end(box), [](auto& v) { v--; });
+        printf("shapeToBox done\n");
         return box;
     }
 
@@ -170,18 +172,24 @@ struct HierarchyMaker
 
 inline HierarchyMaker::HierarchyMaker(PHARE::initializer::PHAREDict const& dict_)
     : dict{dict_}
-{
+{printf("HierarchyMaker initialized\n");
 }
 
 
 template<typename Dimension>
 std::shared_ptr<Hierarchy> HierarchyMaker::operator()(std::size_t userDim, Dimension dimension)
 {
+    printf("HierarchyMaker::operator()\n");
     if (userDim == dimension())
     {
+        printf("HierarchyMaker::operator() success\n");
         return std::make_shared<DimHierarchy<dimension()>>(dict);
     }
-    return nullptr;
+    else
+    {
+        printf("HierarchyMaker::operator() failed, dim != userDim\n");
+        return nullptr;
+    }
 }
 
 
@@ -192,9 +200,11 @@ std::shared_ptr<Hierarchy> HierarchyMaker::operator()(std::size_t userDim, Dimen
 
 inline auto Hierarchy::make()
 {
+    printf("Hierarchy::make\n");
     PHARE::initializer::PHAREDict const& theDict
         = PHARE::initializer::PHAREDictHandler::INSTANCE().dict();
     auto dim = theDict["simulation"]["dimension"].template to<int>();
+    printf("Hierarchy::make done\n");
     return core::makeAtRuntime<HierarchyMaker>(dim, HierarchyMaker{theDict});
 }
 
@@ -212,19 +222,20 @@ Hierarchy::Hierarchy(initializer::PHAREDict const& dict,
     , cellWidth_(cellWidth.data(), cellWidth.data() + dimension)
     , domainBox_(domainBox.data(), domainBox.data() + dimension)
     , origin_(origin.data(), origin.data() + dimension)
-{
+{printf("Hierarchy::Hierarchy initialized\n");
 }
 
 
 
 inline auto Hierarchy::writeRestartFile(std::string directory) const
 {
+    printf("Hierarchy::writeRestartFile\n");
     auto* restart_manager = SAMRAI::tbox::RestartManager::getManager();
 
     int timeStepIdx = 0; // samrai needs this
     restart_manager->writeRestartFile(directory, timeStepIdx);
     restart_manager->closeRestartFile();
-
+    printf("Hierarchy::writeRestartFile done\n");
     return HierarchyRestarter::getRestartFileFullPath(directory);
 }
 
@@ -244,6 +255,7 @@ void parseDimXYZType(PHARE::initializer::PHAREDict const& grid, std::string key,
         arr[1] = grid[key]["y"].template to<Type>();
     if constexpr (dimension > 2)
         arr[2] = grid[key]["z"].template to<Type>();
+    printf("Alternate parseDimXYZType done\n");
 }
 
 template<typename Type, std::size_t dimension>
@@ -251,6 +263,7 @@ auto parseDimXYZType(PHARE::initializer::PHAREDict const& grid, std::string key)
 {
     std::array<Type, dimension> arr;
     parseDimXYZType<Type, dimension>(grid, key, arr.data());
+    printf("parseDimXYZType done\n");
     return arr;
 }
 
@@ -308,6 +321,7 @@ auto griddingAlgorithmDatabase(PHARE::initializer::PHAREDict const& grid)
     int periodicity[dimension];
     std::fill_n(periodicity, dimension, 1); // 1==periodic, hardedcoded for all dims for now.
     db->putIntegerArray("periodic_dimension", periodicity, dimension);
+    printf("griddingAlgorithmDatabase done\n");
     return db;
 }
 
@@ -384,7 +398,7 @@ auto patchHierarchyDatabase(PHARE::initializer::PHAREDict const& amr)
         if (largestPatchSizeDB)
             largestPatchSizeDB->putIntegerVector(level, largestPatchSize);
     }
-
+    printf("patchHierarchyDatabase done\n");
     return hierDB;
 }
 
@@ -401,7 +415,7 @@ DimHierarchy<_dimension>::DimHierarchy(PHARE::initializer::PHAREDict const& dict
         shapeToBox(parseDimXYZType<int, dimension>(dict["simulation"]["grid"], "nbr_cells")),
         parseDimXYZType<double, dimension>(dict["simulation"]["grid"], "origin"),
         parseDimXYZType<double, dimension>(dict["simulation"]["grid"], "meshsize")}
-{
+{    std::cout << "DimHierarchy done\n";
 }
 
 

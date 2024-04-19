@@ -237,11 +237,14 @@ namespace solver
          */
         void registerAndSetupMessengers(MessengerFactory& messengerFactory)
         {
+            printf("registerAndSetupMessengers\n");
             registerMessengers_(messengerFactory);
+            printf("registerMessengers done\n");
 
             // now setup all messengers we've just created
 
             registerQuantitiesAllLevels_();
+            printf("Setup messengers done\n");
         }
 
 
@@ -761,8 +764,11 @@ namespace solver
 
         void registerQuantitiesAllLevels_()
         {
+            printf("registerQuantitiesAllLevels_\n");
             auto lastMessengerName = levelDescriptors_[0].messengerName;
+            printf("lastMessengerName = %s\n", lastMessengerName.c_str());
             registerQuantities_(0, getMessengerWithCoarser_(0));
+            printf("registerQuantities_ done\n");
 
             for (auto iLevel = 1; iLevel < nbrOfLevels_; ++iLevel)
             {
@@ -771,6 +777,7 @@ namespace solver
                 {
                     lastMessengerName = currentMessengerName;
                     registerQuantities_(iLevel, getMessengerWithCoarser_(iLevel));
+                    printf("Registered quantities for level %d\n", iLevel);
                 }
             }
         }
@@ -852,14 +859,22 @@ namespace solver
 
         IMessengerT& getMessengerWithCoarser_(int iLevel)
         {
+            printf("getMessengerWithCoarser_\n");
             auto& descriptor = levelDescriptors_[iLevel];
+            printf("Descriptor initialized\n");
             auto messenger   = messengers_[descriptor.messengerName].get();
+            printf("Messenger initialized\n");
             auto s           = messenger->name();
+            printf("Messenger name = %s\n", s.c_str());
 
             if (messenger)
+            { 
+                printf("Messenger found\n"); 
                 return *messenger;
+            }
             else
                 throw std::runtime_error("no found messenger");
+            printf("getMessengerWithCoarser_ done\n");
         }
     };
 } // namespace solver

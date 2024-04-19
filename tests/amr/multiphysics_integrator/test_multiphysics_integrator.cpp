@@ -2,21 +2,26 @@
 #include "core/def/phare_mpi.hpp"
 
 #include "tests/simulator/per_test.hpp"
+#include <cstdio>
 
 using namespace PHARE::core;
 using namespace PHARE::amr;
 using namespace PHARE::solver;
 
-static constexpr int hybridStartLevel = 0; // levels : hybrid hybrid
+static constexpr int hybridStartLevel = 1; // levels : hybrid hybrid
 static constexpr int maxLevelNbr      = 4;
 
 bool isInHybridRange(int iLevel)
 {
     return iLevel >= hybridStartLevel && iLevel < maxLevelNbr;
 }
-bool isInMHDdRange(int iLevel)
+bool isInMHDRange(int iLevel)
 {
-    return iLevel >= 0 && iLevel < hybridStartLevel;
+    return iLevel >= 1 && iLevel < hybridStartLevel;
+}
+bool isInPICRange(int iLevel)
+{
+    return iLevel >= 0 && iLevel < maxLevelNbr;
 }
 
 
@@ -56,7 +61,9 @@ public:
 
 TYPED_TEST(SimulatorTest, knowsWhichSolverisOnAGivenLevel)
 {
+    printf("sim test\n");
     TypeParam sim;
+    printf("sim declared-------------------\n");
     auto& multiphysInteg = *sim.getMultiPhysicsIntegrator();
 
     for (int iLevel = 0; iLevel < sim.hierarchy->getNumberOfLevels(); ++iLevel)
@@ -65,10 +72,15 @@ TYPED_TEST(SimulatorTest, knowsWhichSolverisOnAGivenLevel)
         {
             EXPECT_EQ(std::string{"PPC"}, multiphysInteg.solverName(iLevel));
         }
-        else if (isInMHDdRange(iLevel))
+        else if (isInMHDRange(iLevel))
         {
             EXPECT_EQ(std::string{"MHDSolver"}, multiphysInteg.solverName(iLevel));
         }
+        else if (isInPICRange(iLevel))
+        {
+            EXPECT_EQ(std::string{"PICSolver"}, multiphysInteg.solverName(iLevel));
+        }
+        printf("sim test done\n");
     }
 }
 
@@ -80,10 +92,11 @@ TYPED_TEST(SimulatorTest, allocatesModelDataOnAppropriateLevels)
     auto& hierarchy   = *sim.hierarchy;
     auto& hybridModel = *sim.getHybridModel();
     auto& mhdModel    = *sim.getMHDModel();
+    auto& picModel    = *sim.getPICModel();
 
     for (int iLevel = 0; iLevel < hierarchy.getNumberOfLevels(); ++iLevel)
     {
-        if (isInMHDdRange(iLevel))
+        if (isInMHDRange(iLevel))
         {
             auto Bid = mhdModel.resourcesManager->getIDs(mhdModel.state.B);
             auto Vid = mhdModel.resourcesManager->getIDs(mhdModel.state.V);
@@ -118,6 +131,24 @@ TYPED_TEST(SimulatorTest, allocatesModelDataOnAppropriateLevels)
                 }
             }
         }
+        else if (isInPICRange(iLevel))
+        {
+            auto Bid   = picModel.resourcesManager->getIDs(picModel.state.electromag.B);
+            auto Eid   = picModel.resourcesManager->getIDs(picModel.state.electromag.E);
+            auto IonId = picModel.resourcesManager->getIDs(picModel.state.ions);
+
+            std::array<std::vector<int> const*, 3> allIDs{{&Bid, &Eid, &IonId}};
+
+            for (auto& idVec : allIDs)
+            {
+                for (auto& id : *idVec)
+                {
+                    auto level = hierarchy.getPatchLevel(iLevel);
+                    auto patch = level->begin();
+                    EXPECT_TRUE(patch->checkAllocated(id));
+                }
+            }
+        }
     }
 }
 
@@ -130,13 +161,17 @@ TYPED_TEST(SimulatorTest, knowsWhichModelIsSolvedAtAGivenLevel)
     auto nbrOfLevels = sim.hierarchy->getNumberOfLevels();
     for (int iLevel = 0; iLevel < nbrOfLevels; ++iLevel)
     {
-        if (isInMHDdRange(iLevel))
+        if (isInMHDRange(iLevel))
         {
             EXPECT_EQ(std::string{"MHDModel"}, multiphysInteg.modelName(iLevel));
         }
         else if (isInHybridRange(iLevel))
         {
             EXPECT_EQ(std::string{"HybridModel"}, multiphysInteg.modelName(iLevel));
+        }
+        else if (isInPICRange(iLevel))
+        {
+            EXPECT_EQ(std::string{"PICModel"}, multiphysInteg.modelName(iLevel));
         }
     }
 }

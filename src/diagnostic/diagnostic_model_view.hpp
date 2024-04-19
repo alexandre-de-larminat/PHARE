@@ -30,7 +30,7 @@ bool constexpr is_pic_model
 
 
 
-template<typename Hierarchy, typename Model, std::enable_if_t<is_pic_model<Model>, int> = 0>//EDITED
+template<typename Hierarchy, typename Model/*, std::enable_if_t<is_pic_model<Model>, int> = 0*/>//EDITED
 class ModelView : public IModelView
 {
     using VecField                  = typename Model::vecfield_type;

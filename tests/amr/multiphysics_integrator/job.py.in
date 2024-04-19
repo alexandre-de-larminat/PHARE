@@ -14,9 +14,9 @@ ph.Simulation(
     cells=65,                  # integer or tuple length == dimension
     dl=1./65,                  # mesh size of the root level, float or tuple
     refinement_boxes = {
-        "L0":{"B0":[(10,),(50,)]},
-        "L1":{"B0":[(30,),(80,)]},
-        "L2":{"B0":[(72,),(144,)]}
+        #"L0":{"B0":[(10,),(50,)]},
+        #"L1":{"B0":[(30,),(80,)]},
+        #"L2":{"B0":[(72,),(144,)]}
     }
 )
 
@@ -35,8 +35,8 @@ vvv = {
 
 ph.MaxwellianFluidModel(
     bx=bx, by=by, bz=bz,
-    protons={"charge":-1, "density":density, **vvv},
-    alpha={"charge":-1, "density":density, **vvv}
+    protons={"charge":1, "density":density, **vvv},
+    electrons={"charge":-1, "density":density, **vvv}
 )
 
 ElectronModel(closure="isothermal",Te = 0.12)

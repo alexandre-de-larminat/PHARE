@@ -8,6 +8,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <cstdio>
+
 
 struct __attribute__((visibility("hidden"))) StaticIntepreter
 {
@@ -27,7 +29,7 @@ struct HierarchyMaker
 {
     HierarchyMaker(PHARE::initializer::PHAREDict& dict)
         : hierarchy{std::make_shared<PHARE::amr::DimHierarchy<_dim>>(dict)}
-    {
+    {printf("HierarchyMaker declared in per_test\n");
     }
     std::shared_ptr<PHARE::amr::Hierarchy> hierarchy;
 };
@@ -47,34 +49,44 @@ struct SimulatorTestParam : private HierarchyMaker<_dim>,
     using Hierarchy   = PHARE::amr::Hierarchy;
     using HybridModel = typename PHARETypes::HybridModel_t;
     using MHDModel    = typename PHARETypes::MHDModel_t;
+    using PICModel    = typename PHARETypes::PICModel_t;
     using HierarchyMaker<dim>::hierarchy;
 
     std::unique_ptr<PHARE::diagnostic::IDiagnosticsManager> dMan;
 
     auto& dict(std::string job_py)
     {
+        printf("Fetching dict\n");
         auto& input = StaticIntepreter::INSTANCE().input;
+        printf("Input declared\n");
         if (!input)
         {
+            printf("Input not found: make\n");
             input = std::make_shared<PHARE::initializer::PythonDataProvider>(job_py);
             input->read();
         }
+        printf("Input read\n");
         SAMRAI::hier::VariableDatabase::getDatabase();
-        return PHARE::initializer::PHAREDictHandler::INSTANCE().dict();
+        printf("VariableDatabase fetched\n");
+        auto& dict = PHARE::initializer::PHAREDictHandler::INSTANCE().dict();
+        printf("dictHandler fetched\n");
+        return dict;
     }
 
     SimulatorTestParam(std::string job_py = "job")
         : HierarchyMaker<_dim>{dict(job_py)}
         , Simulator{dict(job_py), this->hierarchy}
     {
+        printf("Initializing simulator\n");
         Simulator::initialize();
 
         if (dict(job_py)["simulation"].contains("diagnostics"))
         {
             dMan = PHARE::diagnostic::DiagnosticsManagerResolver::make_unique(
-                *this->hierarchy, *this->getHybridModel(),
+                *this->hierarchy, *this->getPICModel(), //EDITED
                 dict(job_py)["simulation"]["diagnostics"]);
         }
+        printf("Simulator initialized\n");
     }
 
 

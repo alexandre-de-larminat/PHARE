@@ -16,6 +16,7 @@
 #include <chrono>
 #include <exception>
 #include <unordered_set>
+#include <cstdio>
 
 
 namespace PHARE
@@ -283,19 +284,23 @@ void Simulator<dim, _interp, nbRefinedPart>::hybrid_init(initializer::PHAREDict 
 template<std::size_t dim, std::size_t _interp, std::size_t nbRefinedPart>
 void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict const& dict)
 {
+    printf("PIC init begins\n");
     picModel_ = std::make_shared<PICModel>(
         dict["simulation"], std::make_shared<typename PICModel::resources_manager_type>());
-
+    printf("PIC model created\n");
 
     picModel_->resourcesManager->registerResources(picModel_->state);
+    printf("PIC resources registered\n");
 
     // we register the PIC model for the all levels
     multiphysInteg_->registerModel(0, maxLevelNumber_ - 1, picModel_);
+    printf("PIC model registered\n");
 
     multiphysInteg_->registerAndInitSolver(0, maxLevelNumber_ - 1,
                                            std::make_unique<SolverPIC>(dict["simulation"]["algo"]));
-
+    printf("PIC solver registered\n");
     multiphysInteg_->registerAndSetupMessengers(messengerFactory_);
+    printf("PIC messengers registered\n");
 
     // hard coded for now, should get some params later from the dict
     // same tagger as for hybrid for now
@@ -303,15 +308,21 @@ void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict con
     //multiphysInteg_->registerTagger(0, maxLevelNumber_ - 1, std::move(hybridTagger_));
 
     if (dict["simulation"].contains("restarts"))
+    {
         startTime_ = restarts_init(dict["simulation"]["restarts"]);
-
+        printf("PIC restarts initialized\n");
+    }
     integrator_ = std::make_unique<Integrator>(dict, hierarchy_, multiphysInteg_, multiphysInteg_,
                                                startTime_, finalTime_);
-
+    printf("PIC integrator created\n");
     timeStamper = core::TimeStamperFactory::create(dict["simulation"]);
+    printf("PIC time stamper created\n");
 
     if (dict["simulation"].contains("diagnostics"))
+    {
         diagnostics_init(dict["simulation"]["diagnostics"]);
+        printf("PIC diagnostics initialized\n");
+    }
 }
 
 
@@ -332,10 +343,19 @@ Simulator<_dimension, _interp_order, _nbRefinedPart>::Simulator(
     , functors_{functors_setup(dict)}
     , multiphysInteg_{std::make_shared<MultiPhysicsIntegrator>(dict["simulation"], functors_)}
 {
+    printf("Simulator constructor---------------------\n");
     if (find_model("HybridModel"))
+    {
+        printf("HybridModel found\n");
         hybrid_init(dict);
+        printf("Hybrid initialized\n");
+    }
     else if (find_model("PICModel"))
+    {
+        printf("PICModel found\n");
         pic_init(dict);
+        printf("PIC initialized\n");
+    }
     else
         throw std::runtime_error("unsupported model");
 }
