@@ -34,12 +34,18 @@ namespace solver
                 auto fromCoarserInfo = messenger.emptyInfoFromCoarser();
                 auto fromFinerInfo   = messenger.emptyInfoFromFiner();
 
+                printf("Empty info\n");
+
                 fineModel.fillMessengerInfo(fromFinerInfo);
                 coarseModel.fillMessengerInfo(fromCoarserInfo);
+
+                printf("Filled messenger info in model\n");
 
                 // solver only fills fromFinerInfo since
                 // that's on this level it is solving equations
                 solver.fillMessengerInfo(fromFinerInfo);
+
+                printf("Filled messenger info in solver\n");
 
                 messenger.registerQuantities(std::move(fromCoarserInfo), std::move(fromFinerInfo));
             }

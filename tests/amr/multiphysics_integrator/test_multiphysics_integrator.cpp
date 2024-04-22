@@ -189,7 +189,7 @@ TYPED_TEST(SimulatorTest, returnsCorrecMessengerForEachLevel)
     // EXPECT_EQ(std::string{"MHDModel-HybridModel"}, multiphysInteg.messengerName(2));
     // EXPECT_EQ(std::string{"HybridModel-HybridModel"}, multiphysInteg.messengerName(3));
     for (int i = 0; i < sim.hierarchy->getNumberOfLevels(); i++)
-        EXPECT_EQ(std::string{"HybridModel-HybridModel"}, multiphysInteg.messengerName(i));
+        EXPECT_EQ(std::string{"PICModel-PICModel"}, multiphysInteg.messengerName(i));
 }
 
 

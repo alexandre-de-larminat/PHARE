@@ -198,7 +198,7 @@ namespace PHARE::core
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
         {
-            return {{{name_ + "_rho", HybridQuantity::Scalar::rho}}};
+            return {{{name_ + "_rhoE", HybridQuantity::Scalar::rhoE}}};
         }
 
 
@@ -230,7 +230,7 @@ namespace PHARE::core
 
         void setBuffer(std::string const& bufferName, field_type* field)
         {
-            if (bufferName == name_ + "_rho")
+            if (bufferName == name_ + "_rhoE")
                 rho_ = field;
             else
                 throw std::runtime_error("Error - invalid density buffer name");

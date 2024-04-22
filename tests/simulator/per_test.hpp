@@ -77,16 +77,17 @@ struct SimulatorTestParam : private HierarchyMaker<_dim>,
         : HierarchyMaker<_dim>{dict(job_py)}
         , Simulator{dict(job_py), this->hierarchy}
     {
-        printf("Initializing simulator\n");
+        printf("Initializing simulator-----------\n");
         Simulator::initialize();
+        printf("Simulator initialized\n");
 
         if (dict(job_py)["simulation"].contains("diagnostics"))
         {
             dMan = PHARE::diagnostic::DiagnosticsManagerResolver::make_unique(
                 *this->hierarchy, *this->getPICModel(), //EDITED
                 dict(job_py)["simulation"]["diagnostics"]);
+            printf("Diagnostics manager created\n");
         }
-        printf("Simulator initialized\n");
     }
 
 

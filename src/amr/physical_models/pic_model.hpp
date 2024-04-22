@@ -11,6 +11,7 @@
 #include "core/data/ions/particle_initializers/particle_initializer_factory.hpp"
 #include "amr/resources_manager/resources_manager.hpp"
 #include "amr/messengers/pic_messenger_info.hpp"
+#include "amr/messengers/hybrid_messenger_info.hpp"
 #include "core/data/vecfield/vecfield.hpp"
 #include "core/def.hpp"
 
@@ -124,12 +125,14 @@ template<typename GridLayoutT, typename Electromag, typename Fermions,
          typename AMR_Types>
 void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::initialize(level_t& level)
 {
+    printf("PICModel::initialize\n");
     using InitFunctionT = PHARE::initializer::InitFunction<dimension>;
     double T = 0.0;
 
     for (auto& patch : level)
     {
         // first initialize the ions
+        printf("Declaring layout\n");
         auto layout = amr::layoutFromPatch<gridlayout_type>(*patch);
         auto& ions = state.ions;
         auto& electrons = state.pic_electrons;
@@ -137,27 +140,23 @@ void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::initialize(level_t&
 
         for (auto& pop : ions)
         {
+            printf("Initializing ions\n");
             auto const& info         = pop.particleInitializerInfo();
             auto particleInitializer = ParticleInitializerFactory::create(info);
-            particleInitializer->loadParticles(pop.domainParticles(), layout);
-
-            // this should ideally be done only once, but it's a way to get the temperature
-            auto makeT = [&pop](auto const& v, auto const& mass)-> double { return v * v * mass; };
-            auto& vth = info["thermal_velocity_x"].template to<double>();
-            T = makeT(vth, pop.mass());
-
-            
+            particleInitializer->loadParticles(pop.domainParticles(), layout);         
         }
         // then the electrons
         for (auto& pop : electrons)
         {
+            printf("Initializing electrons\n");
             auto const& info         = pop.particleInitializerInfo(); 
             auto particleInitializer = ParticleInitializerFactory::create(info);
             particleInitializer->loadParticles(pop.domainParticles(), layout);
         }
+        printf("Initializing electromag\n");
         state.electromag.initialize(layout);
     }
-
+    printf("PICModel::initialize done, register for restarts\n");
     resourcesManager->registerForRestarts(*this);
 }
 
@@ -166,32 +165,34 @@ template<typename GridLayoutT, typename Electromag, typename Fermions, typename 
 void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::fillMessengerInfo(
     std::unique_ptr<amr::IMessengerInfo> const& info) const
 {
-    auto& hybridInfo = dynamic_cast<amr::HybridMessengerInfo&>(*info);
+    printf("model::fillMessengerInfo\n");
+    auto& picInfo = dynamic_cast<amr::HybridMessengerInfo&>(*info);
+    printf("THIS PRINTS??????\n");
     auto& ions = state.ions;
 
-    hybridInfo.modelMagnetic        = core::VecFieldNames{state.electromag.B};
-    hybridInfo.modelElectric        = core::VecFieldNames{state.electromag.E};
-    hybridInfo.modelIonDensity      = ions.densityName();
-    hybridInfo.modelIonBulkVelocity = core::VecFieldNames{ions.velocity()};
-    hybridInfo.modelCurrent         = core::VecFieldNames{state.J};
+    picInfo.modelMagnetic        = core::VecFieldNames{state.electromag.B};
+    picInfo.modelElectric        = core::VecFieldNames{state.electromag.E};
+    picInfo.modelIonDensity      = ions.densityName();
+    picInfo.modelIonBulkVelocity = core::VecFieldNames{ions.velocity()};
+    picInfo.modelCurrent         = core::VecFieldNames{state.J};
 
-    hybridInfo.initElectric.emplace_back(core::VecFieldNames{state.electromag.E});
-    hybridInfo.initMagnetic.emplace_back(core::VecFieldNames{state.electromag.B});
+    picInfo.initElectric.emplace_back(core::VecFieldNames{state.electromag.E});
+    picInfo.initMagnetic.emplace_back(core::VecFieldNames{state.electromag.B});
 
-    hybridInfo.ghostElectric.push_back(hybridInfo.modelElectric);
-    hybridInfo.ghostMagnetic.push_back(hybridInfo.modelMagnetic);
-    hybridInfo.ghostCurrent.push_back(core::VecFieldNames{state.J});
-    hybridInfo.ghostBulkVelocity.push_back(hybridInfo.modelIonBulkVelocity);
+    picInfo.ghostElectric.push_back(picInfo.modelElectric);
+    picInfo.ghostMagnetic.push_back(picInfo.modelMagnetic);
+    picInfo.ghostCurrent.push_back(core::VecFieldNames{state.J});
+    picInfo.ghostBulkVelocity.push_back(picInfo.modelIonBulkVelocity);
 
 
     auto transform_ = [](auto& ions, auto& inserter) {
         std::transform(std::begin(ions), std::end(ions), std::back_inserter(inserter),
                        [](auto const& pop) { return pop.name(); });
     };
-    transform_(ions, hybridInfo.interiorParticles);
-    transform_(ions, hybridInfo.levelGhostParticlesOld);
-    transform_(ions, hybridInfo.levelGhostParticlesNew);
-    transform_(ions, hybridInfo.patchGhostParticles);
+    transform_(ions, picInfo.interiorParticles);
+    transform_(ions, picInfo.levelGhostParticlesOld);
+    transform_(ions, picInfo.levelGhostParticlesNew);
+    transform_(ions, picInfo.patchGhostParticles);
 }
 
 

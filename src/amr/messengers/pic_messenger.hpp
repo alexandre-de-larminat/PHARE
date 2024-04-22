@@ -36,8 +36,9 @@ namespace amr
         registerQuantities(std::unique_ptr<IMessengerInfo> fromCoarserInfo,
                            [[maybe_unused]] std::unique_ptr<IMessengerInfo> fromFinerInfo) override
         {
-            std::unique_ptr<PICMessengerInfo> mhdInfo{
-                dynamic_cast<PICMessengerInfo*>(fromCoarserInfo.release())};
+            printf("PICMessenger::registerQuantities\n");
+            std::unique_ptr<HybridMessengerInfo> xInfo{
+                dynamic_cast<HybridMessengerInfo*>(fromCoarserInfo.release())};
         }
 
 
@@ -65,12 +66,12 @@ namespace amr
 
         std::unique_ptr<IMessengerInfo> emptyInfoFromCoarser() override
         {
-            return std::make_unique<PICMessengerInfo>();
+            return std::make_unique<HybridMessengerInfo>();
         }
 
         std::unique_ptr<IMessengerInfo> emptyInfoFromFiner() override
         {
-            return std::make_unique<PICMessengerInfo>();
+            return std::make_unique<HybridMessengerInfo>();
         }
 
 

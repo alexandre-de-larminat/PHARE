@@ -415,7 +415,7 @@ DimHierarchy<_dimension>::DimHierarchy(PHARE::initializer::PHAREDict const& dict
         shapeToBox(parseDimXYZType<int, dimension>(dict["simulation"]["grid"], "nbr_cells")),
         parseDimXYZType<double, dimension>(dict["simulation"]["grid"], "origin"),
         parseDimXYZType<double, dimension>(dict["simulation"]["grid"], "meshsize")}
-{    std::cout << "DimHierarchy done\n";
+{    printf("DimHierarchy done\n");
 }
 
 

@@ -128,7 +128,7 @@ def config(**options):
             write_timestamps=timestamps,
             compute_timestamps=timestamps,
         )
-
+        
     for pop in sim.model.populations:
         for quantity in ["domain"]:
             ph.ParticleDiagnostics(
@@ -137,7 +137,7 @@ def config(**options):
                 write_timestamps=timestamps[: particle_diagnostics["count"] + 1],
                 population_name=pop,
             )
-            """
+"""
 
     return sim
 
@@ -197,7 +197,7 @@ def make_figure():
     for ax in (ax0, ax1, ax2):
         ax.axvline(wT0 + plot_time * v, color="r")
 
-    fig.savefig("tdtagged1d.png")
+    fig.savefig("tdtagged1d_pic.png")
 
     # select data around the rightward TD
     idx = np.where((xbyNoRef > 150) & (xbyNoRef < 190))
@@ -225,10 +225,8 @@ def make_figure():
 def main():
     Simulator(noRefinement(diagdir="noRefinement")).run()
     ph.global_vars.sim = None
-
-
-    if cpp.mpi_rank() == 0:
-        make_figure()
+    
+    make_figure()
 
 
 if __name__ == "__main__":

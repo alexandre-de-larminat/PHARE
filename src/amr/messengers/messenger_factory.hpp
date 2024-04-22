@@ -73,6 +73,7 @@ public:
         {
             return {};
         }
+        printf("name() returns %s\n", coarseModel.name()+ "-" + fineModel.name());
     }
 
 
@@ -108,7 +109,6 @@ public:
 
             return std::make_unique<HybridMessenger<HybridModel>>(std::move(messengerStrategy));
         }
-
 
 
 

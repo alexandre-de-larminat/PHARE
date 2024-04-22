@@ -534,7 +534,7 @@ namespace amr
                 }
                 else
                 {
-                    throw std::runtime_error("Resources not found !");
+                    throw std::runtime_error("Resources not found ! set internal");
                 }
             }
         }
@@ -559,7 +559,7 @@ namespace amr
                 }
                 else
                 {
-                    throw std::runtime_error("Resources not found !");
+                    throw std::runtime_error("Resources not found ! allocate");
                 }
             }
         }

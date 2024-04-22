@@ -76,12 +76,12 @@ public:
 
         NO_DISCARD auto getCompileTimeResourcesUserList() const
         {
-            return std::forward_as_tuple(electromag, ions, pic_electrons);
+            return std::forward_as_tuple(electromag, ions, pic_electrons, J);
         }
 
         NO_DISCARD auto getCompileTimeResourcesUserList()
         {
-            return std::forward_as_tuple(electromag, ions, pic_electrons);
+            return std::forward_as_tuple(electromag, ions, pic_electrons, J);
         }
 
     //-------------------------------------------------------------------------

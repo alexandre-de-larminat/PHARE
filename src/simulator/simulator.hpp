@@ -304,8 +304,8 @@ void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict con
 
     // hard coded for now, should get some params later from the dict
     // same tagger as for hybrid for now
-    //auto hybridTagger_ = amr::TaggerFactory<PHARETypes>::make("HybridModel", "default");
-    //multiphysInteg_->registerTagger(0, maxLevelNumber_ - 1, std::move(hybridTagger_));
+    auto picTagger_ = amr::TaggerFactory<PHARETypes>::make("PICModel", "default");
+    multiphysInteg_->registerTagger(0, maxLevelNumber_ - 1, std::move(picTagger_));
 
     if (dict["simulation"].contains("restarts"))
     {
@@ -354,7 +354,7 @@ Simulator<_dimension, _interp_order, _nbRefinedPart>::Simulator(
     {
         printf("PICModel found\n");
         pic_init(dict);
-        printf("PIC initialized\n");
+        printf("PIC initialized----------------------\n");
     }
     else
         throw std::runtime_error("unsupported model");
@@ -388,7 +388,12 @@ void Simulator<_dimension, _interp_order, _nbRefinedPart>::initialize()
             std::runtime_error("cannot initialize  - simulator already isInitialized");
 
         if (integrator_ != nullptr)
+        {
+            printf("Integrator_ not null, initializing\n");
             integrator_->initialize();
+            printf("Integrator initialized\n");
+        }
+            
         else
             throw std::runtime_error("Error - Simulator has no integrator");
     }
@@ -410,9 +415,14 @@ void Simulator<_dimension, _interp_order, _nbRefinedPart>::initialize()
     }
 
     isInitialized = true;
-
+    printf("Simulator initialized\n");
     if (hierarchy_->isFromRestart())
+    {
+        printf("Hierarchy is from restart\n");
         hierarchy_->closeRestartFile();
+        printf("Closed restart file\n");
+    }
+        
 }
 
 
@@ -421,6 +431,7 @@ void Simulator<_dimension, _interp_order, _nbRefinedPart>::initialize()
 template<std::size_t _dimension, std::size_t _interp_order, std::size_t _nbRefinedPart>
 double Simulator<_dimension, _interp_order, _nbRefinedPart>::advance(double dt)
 {
+    printf("Simulator::advance\n");
     double dt_new = 0;
 
     if (!integrator_)
@@ -428,8 +439,10 @@ double Simulator<_dimension, _interp_order, _nbRefinedPart>::advance(double dt)
 
     try
     {
+        printf("Simulator::advance try\n");
         PHARE_LOG_SCOPE("Simulator::advance");
         dt_new       = integrator_->advance(dt);
+        printf("Simulator: integrator advanced\n");
         currentTime_ = startTime_ + ((*timeStamper) += dt);
     }
     catch (std::runtime_error const& e)

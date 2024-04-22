@@ -8,6 +8,9 @@
 #include "hybrid_tagger.hpp"
 #include "hybrid_tagger_strategy.hpp"
 #include "default_hybrid_tagger_strategy.hpp"
+#include "pic_tagger.hpp"
+#include "pic_tagger_strategy.hpp"
+#include "default_pic_tagger_strategy.hpp"
 #include "core/def.hpp"
 
 namespace PHARE::amr
@@ -32,6 +35,18 @@ std::unique_ptr<Tagger> TaggerFactory<PHARE_T>::make(std::string modelName, std:
         {
             using HTS = DefaultHybridTaggerStrategy<HybridModel>;
             return std::make_unique<HT>(std::make_unique<HTS>());
+        }
+    }
+    
+    if (modelName == "PICModel")
+    {
+        using PICModel = typename PHARE_T::PICModel_t;
+        using PT          = PICTagger<PICModel>;
+
+        if (methodName == "default")
+        {
+            using PTS = DefaultPICTaggerStrategy<PICModel>;
+            return std::make_unique<PT>(std::make_unique<PTS>());
         }
     }
     return nullptr;

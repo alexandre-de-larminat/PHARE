@@ -39,6 +39,7 @@ namespace PHARE::solver
                                 amr::IMessenger<IPhysicalModelT>& messenger, double initDataTime,
                                 bool isRegridding) override
         {
+            printf("PICLevelInitializer::initialize\n");
             core::Interpolator<dimension, interp_order> interpolate_;
             auto& picModel = static_cast<PICModel&>(model);
             auto& level       = amr_types::getLevel(*hierarchy, levelNumber);
@@ -47,15 +48,20 @@ namespace PHARE::solver
 
             if (isRootLevel(levelNumber))
             {
+                printf("Is root level\n");
                 PHARE_LOG_START("picLevelInitializer::initialize : root level init");
+                printf("Logging started; initializing\n");
                 model.initialize(level);
+                printf("Root level initialized\n");
                 messenger.fillRootGhosts(model, level, initDataTime);
+                printf("Root ghosts filled\n");
                 PHARE_LOG_STOP("picLevelInitializer::initialize : root level init");
                 std::cout << "Initialized level " << levelNumber << "\n";
             }
 
             else
             {
+                printf("Not root level\n");
                 if (isRegridding)
                 {
                     std::cout << "regriding level " << levelNumber << "\n";
@@ -73,12 +79,13 @@ namespace PHARE::solver
 
             // now all particles are here
             // we must compute moments.
+            printf("Decalring particles\n");
             auto& ions             = picModel.state.ions;
             auto& electrons        = picModel.state.pic_electrons;
 
             for (auto& patch : level)
             {
-
+                printf("Computing moments\n");
                 auto& resourcesManager = picModel.resourcesManager;
                 auto dataOnPatch       = resourcesManager->setOnPatch(*patch, ions, electrons);
                 auto layout            = amr::layoutFromPatch<GridLayoutT>(*patch);
@@ -116,6 +123,7 @@ namespace PHARE::solver
 
             if (isRootLevel(levelNumber))
             {
+                printf("Computing E\n");
                 auto& E = picModel.state.electromag.E;
 
                 for (auto& patch : level)

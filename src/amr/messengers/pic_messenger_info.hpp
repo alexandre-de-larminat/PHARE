@@ -5,9 +5,7 @@
 
 
 
-namespace PHARE
-{
-namespace amr
+namespace PHARE::amr
 {
     class PICMessengerInfo : public IMessengerInfo
     {
@@ -15,8 +13,5 @@ namespace amr
         virtual ~PICMessengerInfo() = default;
     };
 
-} // namespace amr
-
-
-} // namespace PHARE
+} // namespace PHARE::amr
 #endif
