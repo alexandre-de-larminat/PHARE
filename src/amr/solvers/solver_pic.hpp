@@ -10,12 +10,12 @@
 #include <sstream>
 
 
-#include "amr/messengers/hybrid_messenger.hpp"
-#include "amr/messengers/hybrid_messenger_info.hpp"
+#include "amr/messengers/pic_messenger.hpp"
+#include "amr/messengers/pic_messenger_info.hpp"
 #include "amr/resources_manager/amr_utils.hpp"
 
 #include "amr/physical_models/physical_model.hpp"
-#include "amr/physical_models/hybrid_model.hpp"
+#include "amr/physical_models/pic_model.hpp"
 #include "amr/solvers/solver.hpp"
 
 #include "core/data/grid/gridlayout_utils.hpp"
@@ -45,7 +45,7 @@ private:
     using IMessenger       = amr::IMessenger<IPhysicalModel_t>;
     using PICMessenger     = amr::PICMessenger<PICModel>;
 
-    Electromag electromagPred_{"EMPred"};
+    Electromag electromagNew_{"EMNew"};
     Electromag electromagAvg_{"EMAvg"};
 
     // are these ever called elsewhere? maybe delete
@@ -101,7 +101,6 @@ private:
 
     void average_(level_t& level, PICModel& model, Messenger& fromCoarser);
 
-    //void set_(level_t& level, PICModel& model, Messenger& fromCoarser);
 
 }; // end SolverPIC
 
@@ -110,7 +109,7 @@ template<typename PICModel, typename AMR_Types>
 void SolverPIC<PICModel, AMR_Types>::registerResources(IPhysicalModel_t& model)
 {
     auto& pmodel = dynamic_cast<PICModel&>(model);
-    pmodel.resourcesManager->registerResources(electromagPred_);
+    pmodel.resourcesManager->registerResources(electromagNew_);
     pmodel.resourcesManager->registerResources(electromagAvg_);
 }
 
@@ -122,7 +121,7 @@ void SolverPIC<PICModel, AMR_Types>::allocate(IPhysicalModel_t& model,
                                                  double const allocateTime) const
 {
     auto& pmodel = dynamic_cast<PICModel&>(model);
-    pmodel.resourcesManager->allocate(electromagPred_, patch, allocateTime);
+    pmodel.resourcesManager->allocate(electromagNew_, patch, allocateTime);
     pmodel.resourcesManager->allocate(electromagAvg_, patch, allocateTime);
 }
 
@@ -135,10 +134,10 @@ void SolverPIC<PICModel, AMR_Types>::fillMessengerInfo(
     auto& hybridInfo = dynamic_cast<amr::HybridMessengerInfo&>(*info);
 
     auto const& Eavg  = electromagAvg_.E;
-    auto const& Bpred = electromagPred_.B;
+    auto const& Bnew = electromagNew_.B;
 
     hybridInfo.ghostElectric.emplace_back(core::VecFieldNames{Eavg});
-    hybridInfo.initMagnetic.emplace_back(core::VecFieldNames{Bpred});
+    hybridInfo.initMagnetic.emplace_back(core::VecFieldNames{Bnew});
 }
 
 template<typename PICModel, typename AMR_Types>
@@ -158,14 +157,14 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
     // Average B in time and set Bavg to B
 
 
-    PHARE_LOG_SCOPE("SolverPPC::advanceLevel");
+    PHARE_LOG_SCOPE("SolverPIC::advanceLevel");
 
     auto& PICmodel         = dynamic_cast<PICModel&>(model);
     auto& PICState         = PICmodel.state;
     auto& fromCoarser      = dynamic_cast<PICMessenger&>(fromCoarserMessenger);
     auto& resourcesManager = *PICmodel.resourcesManager;
     auto level             = hierarchy->getPatchLevel(levelNumber);
-
+    auto& electromag       = PICState.electromag;
 
     restartJ_(*level, PICmodel, fromCoarser, currentTime);
 
@@ -176,7 +175,6 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
 
     average_(*level, PICmodel, fromCoarser);
 
-    //set_(*level, PICmodel, fromCoarser);
 }
 
 
@@ -212,21 +210,21 @@ void SolverPIC<PICModel, AMR_Types>::MAMF_(level_t& level, PICModel& model, Mess
     auto& electromag       = PICState.electromag;
 
     {
-        PHARE_LOG_SCOPE("SolverPPC::MAMF_.maxwellampere");
+        PHARE_LOG_SCOPE("SolverPIC::MAMF_.maxwellampere");
 
         auto& B     = electromag.B;
         auto& E     = electromag.E;
-        auto& Epred = electromagPred_.E;
+        auto& Enew = electromagNew_.E;
         auto& J     = PICState.J;
 
         for (auto& patch : level)
         {
-            auto _      = resourcesManager->setOnPatch(*patch, Epred, B, E, J);
+            auto _      = resourcesManager->setOnPatch(*patch, Enew, B, E, J);
             auto layout = PHARE::amr::layoutFromPatch<GridLayout>(*patch);
             auto __     = core::SetLayout(&layout, maxwellampere_);
-            maxwellampere_(B, E, J, Epred, dt);
+            maxwellampere_(B, E, J, Enew, dt);
 
-            resourcesManager->setTime(Epred, *patch, newTime);
+            resourcesManager->setTime(Enew, *patch, newTime);
         }
         //fromCoarser.fillCurrentGhosts(E, level.getLevelNumber(), newTime);
     }
@@ -234,26 +232,24 @@ void SolverPIC<PICModel, AMR_Types>::MAMF_(level_t& level, PICModel& model, Mess
     {
         PHARE_LOG_SCOPE("SolverPPC::MAMF_.faraday");
 
-        auto& Bpred = electromagPred_.B;
-        auto& Epred = electromagPred_.E;
+        auto& Bnew = electromagNew_.B;
+        auto& Enew = electromagNew_.E;
         auto& B     = electromag.B;
 
         for (auto& patch : level)
         {
-            auto _      = resourcesManager->setOnPatch(*patch, Bpred, B, Epred);
+            auto _      = resourcesManager->setOnPatch(*patch, Bnew, B, Enew);
             auto layout = PHARE::amr::layoutFromPatch<GridLayout>(*patch);
             auto __     = core::SetLayout(&layout, faraday_);
-            faraday_(B, Epred, Bpred, dt);
-            resourcesManager->setTime(Bpred, *patch, newTime);
+            faraday_(B, Enew, Bnew, dt);
+            resourcesManager->setTime(Bnew, *patch, newTime);
         }
     }
 }
 
 /* 
-Electrons are to be treated as an ion population for the time being. The population should be dynamically 
+TODO: electrons should be dynamically 
 created with the level and deleted with it.
-This assumes interpolating flux and density is unnecessary (since bulk velocity and electron density 
-are used only in Ohm's law. 
 */
 template<typename PICModel, typename AMR_Types>
 void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& model,
@@ -261,7 +257,7 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& mod
                                                   Messenger& fromCoarser, double const currentTime,
                                                   double const newTime)
 {
-    PHARE_LOG_SCOPE("SolverPPC::moveFermions_");
+    PHARE_LOG_SCOPE("SolverPIC::moveFermions_");
     auto& ions = model.state.ions;
     auto& electrons = model.state.pic_electrons;
 
@@ -270,7 +266,7 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& mod
                    std::size_t nbrLevelGhostOldParticles                                  = 0;
                    std::size_t nbrLevelGhostParticles = 0; for (auto& patch
                                                                 : level) {
-                       auto _ = rm.setOnPatch(*patch, ions, electrons); // TODO check if this is ok or if ions and electrons be treated separately
+                       auto _ = rm.setOnPatch(*patch, ions, electrons);
 
                        for (auto& pop : ions)
                         {
@@ -337,41 +333,22 @@ template<typename PICModel, typename AMR_Types>
 void SolverPIC<PICModel, AMR_Types>::average_(level_t& level, PICModel& model,
                                                  Messenger& fromCoarser)
 {
-    PHARE_LOG_SCOPE("SolverPPC::average_");
+    PHARE_LOG_SCOPE("SolverPIC::average_");
 
     auto& PICState      = model.state;
     auto& resourcesManager = model.resourcesManager;
 
-    auto& Bpred = electromagPred_.B;
+    auto& Bnew = electromagNew_.B;
     auto& Bavg  = electromagAvg_.B;
     auto& B     = PICState.electromag.B;
 
     for (auto& patch : level)
     {
-        auto _ = resourcesManager->setOnPatch(*patch, Bpred, Bavg, B);
-        PHARE::core::average(B, Bpred, Bavg);
+        auto _ = resourcesManager->setOnPatch(*patch, Bnew, Bavg, B);
+        PHARE::core::average(B, Bnew, Bavg);
     }
 }
-/*
-template<typename PICModel, typename AMR_Types>
-void SolverPIC<PICModel, AMR_Types>::set_(level_t& level, PICModel& model,
-                                                 Messenger& fromCoarser)
-{
-    PHARE_LOG_SCOPE("SolverPPC::set_");
 
-    auto& PICState      = model.state;
-    auto& resourcesManager = model.resourcesManager;
-
-    auto& Bavg  = electromagAvg_.B;
-    auto& B     = PICState.electromag.B;
-
-    for (auto& patch : level)
-    {
-        auto _ = resourcesManager->setOnPatch(*patch, Bavg, B);
-        B = Bavg;
-    }
-}
-*/
 } // namespace PHARE::solver
 
 #endif

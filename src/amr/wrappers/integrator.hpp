@@ -33,13 +33,10 @@ public:
     static constexpr std::size_t dimension = _dimension;
 
     double advance(double dt) { 
-        printf("Integrator::advanceHierarchy\n");
         return timeRefIntegrator_->advanceHierarchy(dt); }
 
     void initialize() { 
-        printf("Integrator::initializeHierarchy\n");
         timeRefIntegrator_->initializeHierarchy(); 
-        printf("Integrator::initializeHierarchy done\n");
         }
 
 

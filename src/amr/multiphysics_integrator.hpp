@@ -476,7 +476,6 @@ namespace solver
                             double const currentTime, double const newTime, bool const firstStep,
                             bool const lastStep, bool const regridAdvance = false) override
         {
-            printf("advanceLevel\n");
             PHARE_LOG_SCOPE("Multiphys::advanceLevel");
 
             if (regridAdvance)
@@ -745,7 +744,6 @@ namespace solver
                 {
                     messengers_[*messengerName]
                         = std::move(factory.create(*messengerName, coarseModel, fineModel, iLevel));
-                    printf("Created messenger\n");
                 }
 
                 levelDescriptors_[iLevel].messengerName = *messengerName;
@@ -783,11 +781,8 @@ namespace solver
 
         void registerQuantitiesAllLevels_()
         {
-            printf("registerQuantitiesAllLevels_\n");
             auto lastMessengerName = levelDescriptors_[0].messengerName;
-            printf("lastMessengerName = %s\n", lastMessengerName.c_str());
             registerQuantities_(0, getMessengerWithCoarser_(0));
-            printf("registerQuantities_ done\n");
 
             for (auto iLevel = 1; iLevel < nbrOfLevels_; ++iLevel)
             {
@@ -796,7 +791,6 @@ namespace solver
                 {
                     lastMessengerName = currentMessengerName;
                     registerQuantities_(iLevel, getMessengerWithCoarser_(iLevel));
-                    printf("Registered quantities for level %d\n", iLevel);
                 }
             }
         }
@@ -878,18 +872,12 @@ namespace solver
 
         IMessengerT& getMessengerWithCoarser_(int iLevel)
         {
-            printf("getMessengerWithCoarser_\n");
             auto& descriptor = levelDescriptors_[iLevel];
-            printf("Descriptor declared\n");
-            printf("Messenger name = %s\n", descriptor.messengerName.c_str());
             auto messenger   = messengers_[descriptor.messengerName].get();
-            printf("Messenger declared\n");
             auto s           = messenger->name();
-            printf("Messenger name = %s\n", s.c_str());
 
             if (messenger != nullptr)
             { 
-                printf("Messenger found\n"); 
                 return *messenger;
             }
             else

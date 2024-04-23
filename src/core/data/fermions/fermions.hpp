@@ -14,18 +14,9 @@ namespace PHARE::core
         using vecfield_type             = typename Ions::vecfield_type;
         using particle_array_type       = typename Ions::particle_array_type;
         using ions_type                 = Ions;
-        using fluid_electrons_type      = Electrons<ions_type>;
         using pic_electrons_type         = PICElectrons;
         static constexpr auto dimension = Ions::dimension;
 
-        explicit Fermions(PHARE::initializer::PHAREDict const& dict)
-        : ions{dict["ions"]}
-        , electrons{dict["pic_electrons"]}
-        {
-        }
-
-        Ions ions;
-        PICElectrons electrons;
     
 /*
         NO_DISCARD std::string to_str() // CHECK

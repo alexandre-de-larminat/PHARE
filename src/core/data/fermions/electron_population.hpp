@@ -26,7 +26,7 @@ namespace PHARE::core
         ElectronPopulation(initializer::PHAREDict const& initializer)
             : name_{initializer["name"].template to<std::string>()}
             , mass_{initializer["mass"].template to<double>()}
-            , flux_{name_ + "_flux", HybridQuantity::Vector::V}
+            , flux_{name_ + "_flux", HybridQuantity::Vector::Ve}
             , particleInitializerInfo_{initializer["particle_initializer"]}
         {
         } 

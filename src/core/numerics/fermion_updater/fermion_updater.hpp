@@ -87,7 +87,7 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
 {
     PHARE_LOG_SCOPE("FermionUpdater::updatePopulations");
 
-    resetMoments(ions); //TODO add electrons
+    resetMoments(ions, electrons);
     pusher_->setMeshAndTimeStep(layout.meshSize(), dt);
 
     updateFermions(ions, electrons, layout);

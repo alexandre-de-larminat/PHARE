@@ -284,26 +284,22 @@ void Simulator<dim, _interp, nbRefinedPart>::hybrid_init(initializer::PHAREDict 
 template<std::size_t dim, std::size_t _interp, std::size_t nbRefinedPart>
 void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict const& dict)
 {
-    printf("PIC init begins\n");
     picModel_ = std::make_shared<PICModel>(
         dict["simulation"], std::make_shared<typename PICModel::resources_manager_type>());
-    printf("PIC model created\n");
 
     picModel_->resourcesManager->registerResources(picModel_->state);
-    printf("PIC resources registered\n");
 
     // we register the PIC model for the all levels
     multiphysInteg_->registerModel(0, maxLevelNumber_ - 1, picModel_);
-    printf("PIC model registered\n");
 
     multiphysInteg_->registerAndInitSolver(0, maxLevelNumber_ - 1,
                                            std::make_unique<SolverPIC>(dict["simulation"]["algo"]));
-    printf("PIC solver registered\n");
+
     multiphysInteg_->registerAndSetupMessengers(messengerFactory_);
-    printf("PIC messengers registered\n");
+
 
     // hard coded for now, should get some params later from the dict
-    // same tagger as for hybrid for now
+    // same tagger as hybrid for now, but duplicated to use PICModel instead.
     auto picTagger_ = amr::TaggerFactory<PHARETypes>::make("PICModel", "default");
     multiphysInteg_->registerTagger(0, maxLevelNumber_ - 1, std::move(picTagger_));
 
@@ -314,9 +310,8 @@ void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict con
     }
     integrator_ = std::make_unique<Integrator>(dict, hierarchy_, multiphysInteg_, multiphysInteg_,
                                                startTime_, finalTime_);
-    printf("PIC integrator created\n");
+
     timeStamper = core::TimeStamperFactory::create(dict["simulation"]);
-    printf("PIC time stamper created\n");
 
     if (dict["simulation"].contains("diagnostics"))
     {
@@ -346,9 +341,7 @@ Simulator<_dimension, _interp_order, _nbRefinedPart>::Simulator(
     printf("Simulator constructor---------------------\n");
     if (find_model("HybridModel"))
     {
-        printf("HybridModel found\n");
         hybrid_init(dict);
-        printf("Hybrid initialized\n");
     }
     else if (find_model("PICModel"))
     {
@@ -415,12 +408,9 @@ void Simulator<_dimension, _interp_order, _nbRefinedPart>::initialize()
     }
 
     isInitialized = true;
-    printf("Simulator initialized\n");
     if (hierarchy_->isFromRestart())
     {
-        printf("Hierarchy is from restart\n");
         hierarchy_->closeRestartFile();
-        printf("Closed restart file\n");
     }
         
 }
@@ -431,7 +421,6 @@ void Simulator<_dimension, _interp_order, _nbRefinedPart>::initialize()
 template<std::size_t _dimension, std::size_t _interp_order, std::size_t _nbRefinedPart>
 double Simulator<_dimension, _interp_order, _nbRefinedPart>::advance(double dt)
 {
-    printf("Simulator::advance\n");
     double dt_new = 0;
 
     if (!integrator_)
@@ -439,10 +428,8 @@ double Simulator<_dimension, _interp_order, _nbRefinedPart>::advance(double dt)
 
     try
     {
-        printf("Simulator::advance try\n");
         PHARE_LOG_SCOPE("Simulator::advance");
         dt_new       = integrator_->advance(dt);
-        printf("Simulator: integrator advanced\n");
         currentTime_ = startTime_ + ((*timeStamper) += dt);
     }
     catch (std::runtime_error const& e)

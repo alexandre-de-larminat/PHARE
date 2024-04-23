@@ -124,7 +124,7 @@ TEST_F(AnElectronPopulation, isResourceUserAndHasFieldNamesAndQuantitiesOK)
 {
     auto fieldProperties = electrons.getFieldNamesAndQuantities();
     EXPECT_EQ(electrons.name() + std::string{"_rhoE"}, fieldProperties[0].name);
-    EXPECT_EQ(HybridQuantity::Scalar::rho, fieldProperties[0].qty);
+    EXPECT_EQ(HybridQuantity::Scalar::rhoE, fieldProperties[0].qty);
 }
 
 

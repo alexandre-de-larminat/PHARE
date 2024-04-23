@@ -109,7 +109,7 @@ def simulation_params(diagdir, **extra):
 def config(**options):
     sim = ph.Simulation(**options)
     ph.MaxwellianFluidModel(
-        bx=bx, by=by, bz=bz, protons={"charge": 1., "density": density, **vvv}, electrons={"charge": -1., "density": density, **vvv}
+        bx=bx, by=by, bz=bz, protons={"charge": 1., "density": density, **vvv}, electrons={"charge": -1., "mass":.1, "density": density, **vvv}
     )
     #ph.ElectronModel(closure="isothermal", Te=0.12)
 
@@ -121,14 +121,14 @@ def config(**options):
             write_timestamps=timestamps,
             compute_timestamps=timestamps,
         )
-        """
+        
     for quantity in ["density", "bulkVelocity"]:
         ph.FluidDiagnostics(
             quantity=quantity,
             write_timestamps=timestamps,
             compute_timestamps=timestamps,
         )
-        
+        """
     for pop in sim.model.populations:
         for quantity in ["domain"]:
             ph.ParticleDiagnostics(
@@ -197,7 +197,7 @@ def make_figure():
     for ax in (ax0, ax1, ax2):
         ax.axvline(wT0 + plot_time * v, color="r")
 
-    fig.savefig("tdtagged1d_pic.png")
+    fig.savefig("td1d_pic.png")
 
     # select data around the rightward TD
     idx = np.where((xbyNoRef > 150) & (xbyNoRef < 190))

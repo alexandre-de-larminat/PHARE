@@ -40,10 +40,8 @@ public:
     using vecfield_type                = typename Electromag::vecfield_type;
     using field_type                   = typename vecfield_type::field_type;
     using ions_type                    = typename Fermions::ions_type;
-    using fluid_electrons_type         = typename Fermions::fluid_electrons_type;
     using fermions_type                = Fermions;
     using particle_array_type          = typename Fermions::particle_array_type;
-    using hybrid_model_type            = HybridModel<GridLayoutT, Electromag, ions_type, fluid_electrons_type, AMR_Types>;
     using resources_manager_type       = amr::ResourcesManager<gridlayout_type>;
     static constexpr auto dimension    = GridLayoutT::dimension;
     static constexpr auto interp_order = GridLayoutT::interp_order;
@@ -167,7 +165,6 @@ void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::fillMessengerInfo(
 {
     printf("model::fillMessengerInfo\n");
     auto& picInfo = dynamic_cast<amr::HybridMessengerInfo&>(*info);
-    printf("THIS PRINTS??????\n");
     auto& ions = state.ions;
 
     picInfo.modelMagnetic        = core::VecFieldNames{state.electromag.B};

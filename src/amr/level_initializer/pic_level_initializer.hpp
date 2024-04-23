@@ -48,15 +48,10 @@ namespace PHARE::solver
 
             if (isRootLevel(levelNumber))
             {
-                printf("Is root level\n");
                 PHARE_LOG_START("picLevelInitializer::initialize : root level init");
-                printf("Logging started; initializing\n");
                 model.initialize(level);
-                printf("Root level initialized\n");
                 messenger.fillRootGhosts(model, level, initDataTime);
-                printf("Root ghosts filled\n");
                 PHARE_LOG_STOP("picLevelInitializer::initialize : root level init");
-                std::cout << "Initialized level " << levelNumber << "\n";
             }
 
             else
@@ -79,24 +74,26 @@ namespace PHARE::solver
 
             // now all particles are here
             // we must compute moments.
-            printf("Decalring particles\n");
-            auto& ions             = picModel.state.ions;
-            auto& electrons        = picModel.state.pic_electrons;
+            
 
             for (auto& patch : level)
             {
+                printf("Declaring particles\n");
+                auto& ions             = picModel.state.ions;
+                auto& electrons        = picModel.state.pic_electrons;
+
                 printf("Computing moments\n");
                 auto& resourcesManager = picModel.resourcesManager;
                 auto dataOnPatch       = resourcesManager->setOnPatch(*patch, ions, electrons);
                 auto layout            = amr::layoutFromPatch<GridLayoutT>(*patch);
 
-                core::resetMoments(ions); //TODO add electrons
-                core::depositParticles(ions, layout, interpolate_, core::DomainDeposit{});
-                 core::depositParticles(ions, layout, interpolate_, core::PatchGhostDeposit{});
+                core::resetMoments(ions, electrons);
+                core::depositParticles(ions, electrons, layout, interpolate_, core::DomainDeposit{});
+                 core::depositParticles(ions, electrons, layout, interpolate_, core::PatchGhostDeposit{});
 
                 if (!isRootLevel(levelNumber))
                 {
-                    core::depositParticles(ions, layout, interpolate_, core::LevelGhostDeposit{});
+                    core::depositParticles(ions, electrons, layout, interpolate_, core::LevelGhostDeposit{});
                 }
 
                 ions.computeDensity();

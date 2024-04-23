@@ -4,19 +4,17 @@
 #include <iterator>
 
 #include "core/numerics/interpolator/interpolator.hpp"
-#include "core/data/fermions/fermions.hpp"
+#include "core/data/ions/ions.hpp"
+#include "core/data/fermions/pic_electrons.hpp"
 
 
 namespace PHARE
 {
 namespace core
 {
-    template<typename Fermions>
-    void resetMoments(Fermions& fermions, int picmodel) //TODO add some if-model-is-x?
+    template<typename Ions, typename PICElectrons>
+    void resetMoments(Ions& ions, PICElectrons& electrons) //TODO add some if-model-is-x?
     {
-        auto& ions = fermions.ions;
-        auto& electrons = fermions.electrons;
-
         for (auto& pop : ions)
         {
             pop.density().zero();
@@ -28,6 +26,7 @@ namespace core
             pop.flux().zero();
         }
     }
+
     template<typename Ions>
     void resetMoments(Ions& ions) //TODO add some if-model-is-x?
     {
@@ -50,14 +49,11 @@ namespace core
     };
 
 
-    template<typename Fermions, typename GridLayout, typename DepositTag>
-    void depositParticles(Fermions& fermions, GridLayout& layout,
+    template<typename Ions, typename PICElectrons, typename GridLayout, typename DepositTag>
+    void depositParticles(Ions& ions, PICElectrons& electrons, GridLayout& layout,
                           Interpolator<GridLayout::dimension, GridLayout::interp_order> interpolate,
-                          DepositTag, int picmodel)
+                          DepositTag)
     {
-        auto& ions = fermions.ions;
-        auto& electrons = fermions.electrons;
-
         for (auto& pop : ions)
         {
             auto& density = pop.density();
@@ -101,7 +97,8 @@ namespace core
             }
         }
     }
-        template<typename Ions, typename GridLayout, typename DepositTag>
+    
+    template<typename Ions, typename GridLayout, typename DepositTag>
     void depositParticles(Ions& ions, GridLayout& layout,
                           Interpolator<GridLayout::dimension, GridLayout::interp_order> interpolate,
                           DepositTag)
