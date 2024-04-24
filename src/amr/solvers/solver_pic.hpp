@@ -35,8 +35,7 @@ class SolverPIC : public ISolver<AMR_Types>
 private:
     using Electromag       = typename PICModel::electromag_type;
     using Ions             = typename PICModel::ions_type;
-    using Fermions         = typename PICModel::fermions_type;
-    using PICElectrons     = typename Fermions::pic_electrons_type;
+    using PICElectrons     = typename PICModel::pic_electrons_type;
     using ParticleArray    = typename Ions::particle_array_type;
     using VecFieldT        = typename PICModel::vecfield_type;
     using GridLayout       = typename PICModel::gridlayout_type;
@@ -323,6 +322,15 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& mod
     // Only ion ghosts are filled since electrons don't exist on the coarser level
     //fromCoarser.fillIonGhostParticles(ions, level, newTime);
     //fromCoarser.fillIonPopMomentGhosts(ions, level, newTime);
+
+    for (auto& patch : level)
+    {
+        auto _      = rm.setOnPatch(*patch, electromag, ions, electrons);
+        auto layout = PHARE::amr::layoutFromPatch<GridLayout>(*patch);
+        fermionUpdater_.updateFermions(ions, electrons, layout);
+
+        // no need to update time, since it has been done before
+    }
 
     // now Ni and Vi are calculated we can fill pure ghost nodes
     // these were not completed by the deposition of patch and levelghost particles

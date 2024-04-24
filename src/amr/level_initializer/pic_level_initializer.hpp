@@ -8,8 +8,9 @@
 #include "amr/physical_models/physical_model.hpp"
 #include "amr/resources_manager/amr_utils.hpp"
 #include "core/data/grid/gridlayout_utils.hpp"
-#include "core/data/fermions/fermions.hpp"
+
 #include "core/numerics/interpolator/interpolator.hpp"
+#include "core/numerics/moments/moments.hpp"
 #include "initializer/data_provider.hpp"
 
 namespace PHARE::solver

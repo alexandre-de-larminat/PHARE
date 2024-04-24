@@ -40,7 +40,7 @@ public:
     using vecfield_type                = typename Electromag::vecfield_type;
     using field_type                   = typename vecfield_type::field_type;
     using ions_type                    = typename Fermions::ions_type;
-    using fermions_type                = Fermions;
+    using pic_electrons_type           = typename Fermions::pic_electrons_type;
     using particle_array_type          = typename Fermions::particle_array_type;
     using resources_manager_type       = amr::ResourcesManager<gridlayout_type>;
     static constexpr auto dimension    = GridLayoutT::dimension;

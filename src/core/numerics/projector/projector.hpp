@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <array>
 #include <cstddef>
 
 #include "core/data/grid/gridlayoutdefs.hpp"
@@ -13,6 +14,14 @@
 
 #include "core/numerics/interpolator/interpolator.hpp"
 #include "core/data/ions/ions.hpp"
+
+#include "core/utilities/point/point.hpp"
+#include "core/def.hpp"
+#include "core/logger.hpp"
+#include "core/hybrid/hybrid_quantities.hpp"
+#include "core/data/grid/gridlayoutdefs.hpp"
+#include "core/utilities/range/range.hpp"
+
 
 namespace PHARE::core
 {
@@ -31,7 +40,7 @@ auto E_weights_(Particle const& part, GridLayout const& layout)
     using Weighter_t     = PHARE::core::Weighter<interpOrder>;
     Weighter_t weighter_;
     std::array<double, supportpts> weights;
-    std::vector<std::vector<double>> vec_weights;
+    std::vector<std::vector<double>> vec_weights(dimension, std::vector<double>(supportpts+2));
     
     for (uint i = 0; i < dimension; ++i)
     {
@@ -39,12 +48,18 @@ auto E_weights_(Particle const& part, GridLayout const& layout)
         auto startIndex = part.iCell[i] - Interpolator_t::template computeStartLeftShift<QtyCentering, QtyCentering::dual>(part.delta[i]);
         weighter_.computeWeight(position, startIndex, weights);
 
+        printf("Size of weights: %d\n", weights.size());
+
         // Add 0.0 to the beginning and end of the weights for calculation purposes
         std::vector<double> vec_weights_i(std::begin(weights), std::end(weights));
         vec_weights_i.insert(vec_weights_i.begin(), 0.0);
         vec_weights_i.insert(vec_weights_i.end(), 0.0);
 
-        vec_weights.push_back(vec_weights_i);
+        printf("Size of vec_weights_i: %d\n", vec_weights_i.size());
+        vec_weights[i] = vec_weights_i;
+        printf("Size of vec_weights: %d\n", vec_weights.size());
+        printf("Size of vec_weights[i]: %d\n", vec_weights[i].size());
+        printf("vec_weights[i][0] = %f, vec_weights[i][1] = %f\n", vec_weights[i][0], vec_weights[i][1]);
 
     }
 
@@ -69,20 +84,34 @@ public:
     inline void operator()(VecField& J, Particle const& partIn,
                            Particle const& partOut, GridLayout const& layout, double dt)
     {
+        printf("Projecting J for a particle in 1D.\n");
         auto& Jx = J(Component::X);
         auto& Jy = J(Component::Y);
         auto& Jz = J(Component::Z);
+        printf("Got J components.\n");
 
         auto const& xStartIndex = partIn.iCell[0] ; // central dual node
-        auto const& S0          = E_weights_(partIn, layout)[0];
-        auto const& S1          = E_weights_(partOut, layout)[0];
+
+        auto const& weightsIn  = E_weights_(partIn, layout);
+        auto const& weightsOut = E_weights_(partOut, layout);
+        auto const& S0          = weightsIn[0];
+        auto const& S1          = weightsOut[0];
         auto const& order_size  = S0.size();
+
 
         // requisite for appropriate centering (greatest weight at node considered)
         int iCorr = order_size/2;
-        if (S0[1] > S0[S0.size()-2]) { 
+        printf("\nChopped iCorr.\n");
+        printf("Order size: %d\n", order_size);
+        printf("S0.size() = %d\n", S0.size());
+        printf("E_weights_ size: %d\n", E_weights_(partIn, layout).size());
+        printf("S0[0] = %f, S0[1] = %f\n", S0[0], S0[1]);
+        printf("S0[2] = %f, S0[3] = %f\n", S0[2], S0[3]);
+        printf("S0[1] = %f, S0[order_size-2] = %f\n", S0[1], S0[order_size-2]);
+        if (S0[1] > S0[order_size-2]) { 
             iCorr -= 1;
         }
+        printf("Got iCorr = %d\n", iCorr);
 
         double charge_weight = partIn.charge * partIn.weight;
             
@@ -94,20 +123,34 @@ public:
 
         std::vector<double> Wl(order_size);
         std::vector<double> Wt(order_size);
+        printf("Initialized coefficients and declared vectors.\n");
 
 
         for (uint i = 0; i < order_size; ++i)
         {
-            auto x = xStartIndex + i - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
-
             Wl[i] = S0[i] - S1[i];
             Wt[i] = 0.5 * ( S0[i] + S1[i] );
-
+            printf("Calculated Wl and Wt for i = %d\n", i);
+        }
+        for (uint i = 1; i < order_size; ++i)
+        {
             Jx_p[i] = Jx_p[i-1] + cr_p * Wl[i-1];
+            printf("Calculated Jx_p for i = %d\n", i);
+        }
+        for (uint i = 0; i < order_size; ++i)
+        {
+            auto x = xStartIndex + i - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
+            printf("x = %d\n", x);
+            printf("Jx_p[i] = %f\n", Jx_p[i]);
+            printf("Jx(0) = %f\n", Jx(0));
+
             Jx(x) += Jx_p[i];
+            printf("Computed Jx");
             Jy(x)  += cry_p_1D * Wt[i];
             Jz(x)  += crz_p_1D2D * Wt[i];
+            printf("Computed Jy and Jz");
         }
+        printf("Projected J for a particle in 1D.\n");
     }
 }; // END ProjectJ<1> specialization
 
@@ -326,13 +369,17 @@ public:
     template<typename VecField, typename ParticleRange>
     inline void operator()(VecField& J, ParticleRange& rangeOut, ParticleRange& rangeIn, GridLayout const& layout, double dt)
     {
+        printf("Projector::operator()\n");
         auto& inParticles = rangeIn.array();
         auto& outParticles = rangeOut.array();
+        printf("Made particle arrays\n");
 
         for (auto inIdx = rangeIn.ibegin(), outIdx = rangeOut.ibegin(); inIdx < rangeIn.iend();
                     ++inIdx, ++outIdx)
                 {
+                    printf("Attempting to project J for a particle\n");
                     projectJ_(J, outParticles[outIdx], inParticles[inIdx], layout, dt);
+                    printf("Projected J for a particle\n");
                 }   
     }
 

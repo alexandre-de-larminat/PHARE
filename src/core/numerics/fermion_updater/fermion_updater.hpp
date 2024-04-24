@@ -11,7 +11,6 @@
 #include "core/numerics/boundary_condition/boundary_condition.hpp"
 #include "core/numerics/moments/moments.hpp"
 #include "core/data/ions/ions.hpp"
-#include "core/data/fermions/fermions.hpp"
 
 #include "initializer/data_provider.hpp"
 
@@ -64,7 +63,7 @@ public:
     void reset()
     {
         // clear memory
-        // tmp_particles_ = std::move(ParticleArray{Box{}});
+        //tmp_particles_ = std::move(ParticleArray{Box{}});
     }
 
 
@@ -73,31 +72,29 @@ private:
 
 
     // dealloced on regridding/load balancing coarsest
-    // ParticleArray tmp_particles_{Box{}}; //{std::make_unique<ParticleArray>(Box{})};
+    //ParticleArray tmp_particles_{Box{}}; //{std::make_unique<ParticleArray>(Box{})};
 };
 
 
 
 
 template<typename Ions, typename PICElectrons, typename Electromag, typename VecField, typename GridLayout>
-void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updatePopulations(Ions& ions, PICElectrons& electrons, 
-                                                                 Electromag const& em, VecField& J,
-                                                                 GridLayout const& layout, 
-                                                                 double dt)
+void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updatePopulations(
+                    Ions& ions, PICElectrons& electrons, Electromag const& em, VecField& J,
+                    GridLayout const& layout, double dt)
 {
     PHARE_LOG_SCOPE("FermionUpdater::updatePopulations");
 
     resetMoments(ions, electrons);
     pusher_->setMeshAndTimeStep(layout.meshSize(), dt);
 
-    updateFermions(ions, electrons, layout);
     updateAndDepositAll_(ions, electrons, em, J, layout, dt);
 }
 
 
 template<typename Ions, typename PICElectrons, typename Electromag, typename VecField, typename GridLayout>
-void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updateFermions(Ions& ions, PICElectrons& electrons, 
-                                                                      GridLayout const& layout)
+void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updateFermions(
+                    Ions& ions, PICElectrons& electrons, GridLayout const& layout)
 {
     ions.computeDensity();
     ions.computeBulkVelocity();
@@ -108,52 +105,61 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
 
 
 template<typename Ions, typename PICElectrons, typename Electromag, typename VecField, typename GridLayout>
-void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updateAndDepositAll_(Ions& ions, PICElectrons& electrons, 
-                                                                    Electromag const& em, VecField& J, 
-                                                                    GridLayout const& layout,
-                                                                    double dt)
+void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updateAndDepositAll_(
+    Ions& ions, PICElectrons& electrons, Electromag const& em, VecField& J, 
+    GridLayout const& layout, double dt)
 {
     PHARE_LOG_SCOPE("FermionUpdater::updateAndDepositAll_");
 
-
+    printf("FermionUpdater::updateAndDepositAll_\n");
     for (auto& pop : ions)
         {        
+            printf("pushing ions\n");
             auto& domain = pop.domainParticles();
+            printf("Made domain\n");
             auto rangeIn  = makeIndexRange(domain);
+            auto rangeOut  = makeIndexRange(domain);
+            printf("Made ranges\n");
 
-            auto push = [&](auto&& rangeIn) {
-            auto rangeOut = pusher_->move(rangeIn, rangeIn, em, pop.mass(), interpolator_, 
-                                          layout, [](auto& rangeIn) {return rangeIn;}, 
-                                          [](auto& rangeIn) {return rangeIn;});
+            auto particlesOut = pusher_->move(rangeIn, rangeOut, em, pop.mass(), interpolator_, 
+                                          layout, [](auto& particleRange) { return particleRange; }, 
+                                          [](auto& particleRange) { return particleRange; });
+            printf("Pushed particles\n");            
 
-            projector_(J, rangeOut, rangeIn, layout, dt);
+            projector_(J, particlesOut, rangeIn, layout, dt);
+            printf("Projected J\n");
 
-            };
-
-            push(makeIndexRange(pop.patchGhostParticles()));
-            push(makeIndexRange(pop.levelGhostParticles()));
             
-            interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
+            //push(makeIndexRange(pop.patchGhostParticles()));
+            //push(makeIndexRange(pop.levelGhostParticles()));
+            
+            interpolator_(particlesOut, pop.density(), pop.flux(), layout);
+            printf("Interpolated density and flux. END push ions\n");
         }
 
     for (auto& pop : electrons)
         {        
+            printf("pushing electrons\n");
             auto& domain = pop.domainParticles();
+            printf("Made domain\n");
             auto rangeIn  = makeIndexRange(domain);
+            auto rangeOut  = makeIndexRange(domain);
+            printf("Made ranges\n");
 
-            auto push = [&](auto&& rangeIn) {
-            auto rangeOut = pusher_->move(rangeIn, rangeIn, em, pop.mass(), interpolator_, 
-                                          layout, [](auto& rangeIn) {return rangeIn;}, 
-                                          [](auto& rangeIn) {return rangeIn;});
+            auto particlesOut = pusher_->move(rangeIn, rangeOut, em, pop.mass(), interpolator_, 
+                                          layout, [](auto& particleRange) { return particleRange; }, 
+                                          [](auto& particleRange) { return particleRange; });
+            printf("Pushed particles\n");            
 
-            projector_(J, rangeOut, rangeIn, layout, dt);
+            projector_(J, particlesOut, rangeIn, layout, dt);
+            printf("Projected J\n");
 
-            };
-
-            push(makeIndexRange(pop.patchGhostParticles()));
-            push(makeIndexRange(pop.levelGhostParticles()));
             
-            interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
+            //push(makeIndexRange(pop.patchGhostParticles()));
+            //push(makeIndexRange(pop.levelGhostParticles()));
+            
+            interpolator_(particlesOut, pop.density(), pop.flux(), layout);
+            printf("Interpolated density and flux. END push electrons\n");
         }
 }
 
