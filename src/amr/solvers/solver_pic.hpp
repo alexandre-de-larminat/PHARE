@@ -346,14 +346,18 @@ void SolverPIC<PICModel, AMR_Types>::average_(level_t& level, PICModel& model,
     auto& PICState      = model.state;
     auto& resourcesManager = model.resourcesManager;
 
-    auto& Bnew = electromagNew_.B;
+    auto& Bnew  = electromagNew_.B;
     auto& Bavg  = electromagAvg_.B;
     auto& B     = PICState.electromag.B;
+    auto& Enew  = electromagNew_.E;
+    auto& E     = PICState.electromag.E;
 
     for (auto& patch : level)
     {
-        auto _ = resourcesManager->setOnPatch(*patch, Bnew, Bavg, B);
+        auto _ = resourcesManager->setOnPatch(*patch, Bnew, Bavg, B, Enew, E);
         PHARE::core::average(B, Bnew, Bavg);
+        PHARE::core::average(Bnew, Bnew, B);
+        PHARE::core::average(Enew, Enew, E);
     }
 }
 

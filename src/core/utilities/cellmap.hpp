@@ -398,9 +398,15 @@ inline void CellMap<dim, cell_index_t>::update(Array& items, std::size_t itemInd
     // with at its right cell.
     // It could not be in the map at 'oldCell', in that case we want to add it.
     auto& oldList = cellIndexes_(local_(oldCell));
+    printf("oldList made\n");
     if (oldList.is_indexed(itemIndex))
+    {
+        printf("Removing from oldList\n");
         oldList.remove(itemIndex);
+        printf("Removed from oldList\n");
+    }
     add(items, itemIndex);
+    printf("Added to new cell\n");
 }
 
 

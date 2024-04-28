@@ -82,28 +82,33 @@ public:
                        ParticleSelector secondSelector) override
     {
         PHARE_LOG_SCOPE("Boris::move_no_bc");
+        printf("Boris::move_no_bc\n");
 
         // push the particles of half a step
         // rangeIn : t=n, rangeOut : t=n+1/2
         // Do not partition on this step - this is to keep all domain and ghost
         //   particles consistent. see: https://github.com/PHAREHUB/PHARE/issues/571
         prePushStep_(rangeIn, rangeOut);
-
+        printf("prePushStep_\n");
         rangeOut = firstSelector(rangeOut);
+        printf("firstSelector\n");
 
 
         double const dto2m = 0.5 * dt_ / mass;
         for (auto idx = rangeOut.ibegin(); idx < rangeOut.iend(); ++idx)
         {
             auto& currPart = rangeOut.array()[idx];
+            printf("idx: %d\n", idx);
 
             //  get electromagnetic fields interpolated on the particles of rangeOut stop at newEnd.
             //  get the particle velocity from t=n to t=n+1
             accelerate_(currPart, interpolator(currPart, emFields, layout), dto2m);
+            printf("accelerate_\n");
 
             // now advance the particles from t=n+1/2 to t=n+1 using v_{n+1} just calculated
             // and get a pointer to the first leaving particle
             postPushStep_(rangeOut, idx);
+            printf("postPushStep_\n"); 
         }
 
         return secondSelector(rangeOut);
@@ -183,7 +188,9 @@ private:
         auto& particles = range.array();
         auto newCell    = advancePosition_(particles[idx], particles[idx]);
         if (newCell != particles[idx].iCell)
+        {
             particles.change_icell(newCell, idx);
+        }
     }
 
 
