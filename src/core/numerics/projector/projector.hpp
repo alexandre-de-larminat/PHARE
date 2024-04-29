@@ -124,7 +124,6 @@ public:
             if (x >= 0 and x < Jx.size()) 
             {
                 Jx(x) += Jx_p[i];
-                //printf("Jx(%d) = %f\n", x, Jx(x));
                 Jy(x)  += cry_p_1D * Wt[i];
                 Jz(x)  += crz_p_1D2D * Wt[i];
             }
