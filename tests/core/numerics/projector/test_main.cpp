@@ -60,7 +60,7 @@ auto E_weights_computer()
 
     using Particle = typename ParticleArray<dim>::Particle_t;
 
-    static const int nbr_tests = 100;
+    static const int nbr_tests = 1000;
 
     std::array<double, nbr_tests> normalizedPositions;
     std::vector<double> weightsSums(nbr_tests*dim);
@@ -79,24 +79,25 @@ auto E_weights_computer()
  
     // now for each random position, calculate
     // the start index and the N(interp_order) weights
-    for (auto i = 0u; i < nbr_tests; ++i)
+    for (auto i = 0u; i < nbr_tests*dim ; i+=(1*dim))
     {
-        auto icell = static_cast<int>(normalizedPositions[i]);
-        auto delta = normalizedPositions[i] - icell;
+        auto smol_i = i/dim;
+        auto icell = static_cast<int>(normalizedPositions[smol_i]);
+        auto delta = normalizedPositions[smol_i] - icell;
         Particle particle{1., 1., ConstArray<int, dim>(icell), ConstArray<double, dim>(delta), {0., 10., 0.}};
-        weights_[i] = E_weights_(particle, layout);
+        weights_[smol_i] = E_weights_(particle, layout);
 
-        weightsSums[i] = std::accumulate(std::begin(weights_[i][0]), std::end(weights_[i][0]), 0.);
-        if (dim==2)
+        weightsSums[i] = std::accumulate(std::begin(weights_[smol_i][0]), std::end(weights_[smol_i][0]), 0.);
+        if (dim > 1)
         {
-            weightsSums[i+1] = std::accumulate(std::begin(weights_[i][1]), std::end(weights_[i][1]), 0.);
+            weightsSums[i+1] = std::accumulate(std::begin(weights_[smol_i][1]), std::end(weights_[smol_i][1]), 0.);
         }
-        if (dim==3)
+        if (dim > 2)
         {
-            weightsSums[i+2] = std::accumulate(std::begin(weights_[i][2]), std::end(weights_[i][2]), 0.);
-        }    } 
+            weightsSums[i+2] = std::accumulate(std::begin(weights_[smol_i][2]), std::end(weights_[smol_i][2]), 0.);
+        }   
+    } 
   
-    
     return weightsSums;
 }
 
@@ -111,6 +112,32 @@ TEST(Weights_for_Esirkepov1D, ComputesWeightThatSumIsOne)
     EXPECT_TRUE(std::all_of(std::begin(weightsSums2), std::end(weightsSums2), equalsOne));
 
     auto weightsSums3 = E_weights_computer<1, 3>();
+    EXPECT_TRUE(std::all_of(std::begin(weightsSums3), std::end(weightsSums3), equalsOne));
+}
+
+TEST(Weights_for_Esirkepov2D, ComputesWeightThatSumIsOne)
+{
+    auto weightsSums1 = E_weights_computer<2, 1>();
+    auto equalsOne = [](double sum) { return std::abs(sum - 1.) < 1e-10; };
+    EXPECT_TRUE(std::all_of(std::begin(weightsSums1), std::end(weightsSums1), equalsOne));
+
+    auto weightsSums2 = E_weights_computer<2, 2>();
+    EXPECT_TRUE(std::all_of(std::begin(weightsSums2), std::end(weightsSums2), equalsOne));
+
+    auto weightsSums3 = E_weights_computer<2, 3>();
+    EXPECT_TRUE(std::all_of(std::begin(weightsSums3), std::end(weightsSums3), equalsOne));
+}
+
+TEST(Weights_for_Esirkepov3D, ComputesWeightThatSumIsOne)
+{
+    auto weightsSums1 = E_weights_computer<3, 1>();
+    auto equalsOne = [](double sum) { return std::abs(sum - 1.) < 1e-10; };
+    EXPECT_TRUE(std::all_of(std::begin(weightsSums1), std::end(weightsSums1), equalsOne));
+
+    auto weightsSums2 = E_weights_computer<3, 2>();
+    EXPECT_TRUE(std::all_of(std::begin(weightsSums2), std::end(weightsSums2), equalsOne));
+
+    auto weightsSums3 = E_weights_computer<3, 3>();
     EXPECT_TRUE(std::all_of(std::begin(weightsSums3), std::end(weightsSums3), equalsOne));
 }
 

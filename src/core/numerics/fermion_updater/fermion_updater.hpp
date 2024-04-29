@@ -147,9 +147,13 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
                                           layout, [](auto& particleRange) { return particleRange; }, 
                                           inDomainBox);
             printf("Pushed particles in domain\n");
-
-            domain.erase(makeRange(domain, inDomain.iend(), domain.size()));
-            //erase particles leaving domain            
+            if (inDomain.iend() != domain.size())
+            {
+                printf("inDomain.iend() = %d\n", inDomain.iend());
+                printf("domain.size() = %d\n", domain.size());
+                domain.erase(makeRange(domain, inDomain.iend(), domain.size())); //erase particles leaving domain  
+            }          
+            printf("Erased particles leaving domain\n");
 
             projector_(J, inDomain, rangeIn, layout, dt);
             printf("Projected J for domain particles\n");
@@ -190,8 +194,13 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
                                           inDomainBox);
             printf("Pushed particles in domain\n");
 
-            domain.erase(makeRange(domain, inDomain.iend(), domain.size()));
-            //erase particles leaving domain            
+            if (inDomain.iend() != domain.size())
+            {
+                printf("inDomain.iend() = %d\n", inDomain.iend());
+                printf("domain.size() = %d\n", domain.size());
+                domain.erase(makeRange(domain, inDomain.iend(), domain.size())); //erase particles leaving domain  
+            }          
+            printf("Erased particles leaving domain\n");         
 
             projector_(J, inDomain, rangeIn, layout, dt);
             printf("Projected J for domain particles\n");

@@ -73,6 +73,11 @@ def vthy(x):
 def vthz(x):
     return T(x)
 
+mass_electron = 1./100
+
+def vthe(x):
+    return T(x)/mass_electron
+
 
 vvv = {
     "vbulkx": vx,
@@ -83,6 +88,14 @@ vvv = {
     "vthz": vthz,
 }
 
+vvv_electrons = {
+    "vbulkx": vx,
+    "vbulky": vy,
+    "vbulkz": vz,
+    "vthx": vthe,
+    "vthy": vthe,
+    "vthz": vthe,
+}
 
 # used to only test on the early particle diagnostic files
 particle_diagnostics = {"count": 10, "idx": 0}
@@ -109,7 +122,8 @@ def simulation_params(diagdir, **extra):
 def config(**options):
     sim = ph.Simulation(**options)
     ph.MaxwellianFluidModel(
-        bx=bx, by=by, bz=bz, protons={"charge": 1., "density": density, **vvv}, electrons={"charge": -1., "mass":.1, "density": density, **vvv}
+        bx=bx, by=by, bz=bz, protons={"charge": 1., "density": density, **vvv}, electrons={"charge": -1., 
+        "mass":mass_electron, "density": density, **vvv_electrons}
     )
     #ph.ElectronModel(closure="isothermal", Te=0.12)
 

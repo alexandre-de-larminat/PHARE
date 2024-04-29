@@ -97,9 +97,10 @@ public:
             iCorr -= 1;
         }
 
+        double dl = 1.; //TODO adapt to user input
         double charge_weight = partIn.charge * partIn.weight;
             
-        double cr_p = charge_weight/dt;   // current density in the evaluated dimension, assuming dx=1
+        double cr_p = charge_weight/dt * dl;   // current density in the evaluated dimension
         double cry_p_1D = charge_weight*partIn.v[1];   // current density in the y-direction in 1D
         double crz_p_1D2D = charge_weight*partIn.v[2]; // current density in the z-direction in 1D or 2D
 
@@ -168,9 +169,14 @@ public:
             jCorr -= 1;
         }
 
+        std::array<double, 2> dl;
+
+        dl[0] = 1.;
+        dl[1] = 1.;
         double charge_weight = partIn.charge * partIn.weight; // CHECK weight factors in the cell volume
      
-        double cr_p = charge_weight/dt;  // current density in the evaluated dimension
+        double crx_p = charge_weight/dt * dl[0];  // current density in the evaluated dimension
+        double cry_p = charge_weight/dt * dl[1];  // current density in the evaluated dimension
         double crz_p_1D2D = charge_weight*partIn.v[2]; // current density in the z-direction in 1D or 2D
 
         std::vector<std::vector<double>> Jx_p(order_size, std::vector<double>(order_size, 0.));
@@ -208,13 +214,15 @@ public:
                 auto x = xStartIndex + i - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
                 auto y = yStartIndex + j - jCorr;
 
-                Jx_p[i][j] = Jx_p[i-1][j] + cr_p * Wx[i-1][j];
-                Jx(x, y) += Jx_p[i][j] ;
+                Jx_p[i][j] = Jx_p[i-1][j] + crx_p * Wx[i-1][j];
+                Jy_p[i][j] = Jy_p[i][j-1] + cry_p * Wy[i][j-1];
 
-                Jy_p[i][j] = Jy_p[i][j-1] + cr_p * Wy[i][j-1];
-                Jy(x, y) += Jy_p[i][j] ;
-
-                Jz(x, y) += crz_p_1D2D * Wz[i][j];
+                if (x >= 0 and x < Jx.size() and y >= 0 and y < Jy.size()) 
+                {
+                    Jx(x, y) += Jx_p[i][j];
+                    Jy(x, y) += Jy_p[i][j];
+                    Jz(x, y) += crz_p_1D2D * Wz[i][j];
+                }  
             }
         }
 
@@ -268,9 +276,19 @@ public:
             kCorr -= 1;
         }
 
+
+
+        std::array<double, 3> dl;
+
+        dl[0] = 1.;
+        dl[1] = 1.;
+        dl[2] = 1.;
+
         double charge_weight = partIn.charge * partIn.weight; // CHECK: assumes weight factors in the cell volume
             
-        double cr_p = charge_weight/dt; // current density in the evaluated dimension
+        double crx_p = charge_weight/dt * dl[0]; // current density in the evaluated dimension
+        double cry_p = charge_weight/dt * dl[1]; // current density in the evaluated dimension
+        double crz_p = charge_weight/dt * dl[2]; // current density in the evaluated dimension
 
         std::vector<std::vector<std::vector<double>>> Jx_p(order_size, std::vector<std::vector<double>>(order_size, std::vector<double>(order_size, 0.)));
 
@@ -318,14 +336,16 @@ public:
                 auto y = yStartIndex + j - jCorr;
                 auto z = zStartIndex + k - kCorr;
 
-                Jx_p[i][j][k] = Jx_p[i-1][j][k] + cr_p * Wx[i-1][j][k];
-                Jx(x, y, z) += Jx_p[i][j][k] ;
+                Jx_p[i][j][k] = Jx_p[i-1][j][k] + crx_p * Wx[i-1][j][k];
+                Jy_p[i][j][k] = Jy_p[i][j-1][k] + cry_p * Wy[i][j-1][k];
+                Jz_p[i][j][k] = Jz_p[i][j][k-1] + crz_p * Wz[i][j][k-1];
 
-                Jy_p[i][j][k] = Jy_p[i][j-1][k] + cr_p * Wy[i][j-1][k];
-                Jy(x, y, z) += Jy_p[i][j][k] ;
-
-                Jz_p[i][j][k] = Jz_p[i][j][k-1] + cr_p * Wz[i][j][k-1];
-                Jz(x, y, z) += Jz_p[i][j][k] ;
+                if (x >= 0 and x < Jx.size() and y >= 0 and y < Jy.size() and z >= 0 and z < Jz.size()) 
+                {
+                    Jx(x, y, z) += Jx_p[i][j][k] ;
+                    Jy(x, y, z) += Jy_p[i][j][k] ;
+                    Jz(x, y, z) += Jz_p[i][j][k] ;
+                }
 
                 }
             }
