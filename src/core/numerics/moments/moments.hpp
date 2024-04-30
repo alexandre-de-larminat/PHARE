@@ -13,7 +13,7 @@ namespace PHARE
 namespace core
 {
     template<typename Ions, typename PICElectrons>
-    void resetMoments(Ions& ions, PICElectrons& electrons) //TODO add some if-model-is-x?
+    void resetMoments(Ions& ions, PICElectrons& electrons)
     {
         for (auto& pop : ions)
         {
@@ -28,7 +28,7 @@ namespace core
     }
 
     template<typename Ions>
-    void resetMoments(Ions& ions) //TODO add some if-model-is-x?
+    void resetMoments(Ions& ions)
     {
         for (auto& pop : ions)
         {

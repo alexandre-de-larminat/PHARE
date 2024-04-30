@@ -184,12 +184,10 @@ public:
     void change_icell(Cell const& newCell, std::size_t particleIndex)
     {
         auto oldCell                    = particles_[particleIndex].iCell;
-        printf("changing particle %ld from cell %d to cell %d\n", particleIndex, oldCell, newCell);
         particles_[particleIndex].iCell = newCell;
-        printf("particle %ld is now in cell %d\n", particleIndex, particles_[particleIndex].iCell);
+       
         if (!box_.isEmpty())
         {
-            printf("updating cellmap\n");
             cellMap_.update(particles_, particleIndex, oldCell);
         }
     }

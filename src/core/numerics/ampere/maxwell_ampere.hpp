@@ -2,6 +2,7 @@
 #define PHARE_CORE_NUMERICS_MAXWELL_AMPERE_HPP
 
 #include <cstddef>
+#include <cstdio>
 
 #include "core/data/grid/gridlayoutdefs.hpp"
 #include "core/data/grid/gridlayout_utils.hpp"
@@ -63,7 +64,7 @@ private:
     double c_norm = c_ / Va; // normalized velocity
     double c2 = c_norm * c_norm;
     //double inv_c2 = 1.0 / c2;
-    double inv_c2 = 1.0;
+    double inv_c2 = 0.01;
 
     template<typename VecField, typename Field, typename... Indexes>
     void ExEq_(Field const& Ex, VecField const& B, Field const& Jx, Field& Exnew, Indexes const&... ijk) const
@@ -71,15 +72,19 @@ private:
         auto const& [_, By, Bz] = B();
 
         if constexpr (dimension == 1)
+        {
             Exnew(ijk...) = Ex(ijk...) - dt_ * inv_c2 * Jx(ijk...) ; 
-
+        }
         if constexpr (dimension == 2)
+        {
             Exnew(ijk...) = Ex(ijk...) + dt_ * inv_c2 * (layout_->template deriv<Direction::Y>(Bz, {ijk...}) 
                             - Jx(ijk...) );
-
+        }
         if constexpr (dimension == 3)
+        {
             Exnew(ijk...) = Ex(ijk...) + dt_ * inv_c2 * (layout_->template deriv<Direction::Y>(Bz, {ijk...})
                             - layout_->template deriv<Direction::Z>(By, {ijk...}) - Jx(ijk...));
+        }   
     }
 
     template<typename VecField, typename Field, typename... Indexes>
@@ -88,12 +93,15 @@ private:
         auto const& [Bx, _, Bz] = B();
 
         if constexpr (dimension == 1 || dimension == 2)
+        {
             Eynew(ijk...) = Ey(ijk...) - dt_ * inv_c2 *( layout_->template deriv<Direction::X>(Bz, {ijk...}) 
                             + Jy(ijk...));
-
+        }
         if constexpr (dimension == 3)
+        {
             Eynew(ijk...) = Ey(ijk...) + dt_ * inv_c2 * (layout_->template deriv<Direction::Z>(Bx, {ijk...})
                             - layout_->template deriv<Direction::X>(Bz, {ijk...}) -  Jy(ijk...));
+        }
     }
 
     template<typename VecField, typename Field, typename... Indexes>
@@ -102,12 +110,16 @@ private:
         auto const& [Bx, By, _] = B();
 
         if constexpr (dimension == 1)
+        {
             Eznew(ijk...) = Ez(ijk...) + dt_ * inv_c2 * (layout_->template deriv<Direction::X>(By, {ijk...}) 
                             - Jz(ijk...));
+        }
 
         if constexpr (dimension == 2 || dimension == 3)
+        {
             Eznew(ijk...) = Ez(ijk...) - dt_ * inv_c2 * (layout_->template deriv<Direction::X>(By, {ijk...})
                             - layout_->template deriv<Direction::Y>(Bx, {ijk...})- Jz(ijk...));
+        }
     }
 };
 

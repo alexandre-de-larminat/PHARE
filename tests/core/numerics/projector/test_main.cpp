@@ -51,31 +51,39 @@ struct DummyVecField
 };
 
 
-
-template<std::size_t dimension_, std::size_t interp_order_>
-auto E_weights_computer()
+template<std::size_t dimension_>
+auto ParticleMaker(const int& nbr_tests)
 {
     static const int dim = dimension_;
-    static const int interp_order = interp_order_;
 
     using Particle = typename ParticleArray<dim>::Particle_t;
 
-    static const int nbr_tests = 1000;
+    //static const int nbr_tests = nbr_tests;
 
-    std::array<double, nbr_tests> normalizedPositions;
-    std::vector<double> weightsSums(nbr_tests*dim);
-    DummyLayout<dim, interp_order> layout;
-
-    std::vector<std::vector<std::vector<double>>> weights_(nbr_tests, std::vector<std::vector<double>>(dim, std::vector<double>(interp_order + 3)));
+    std::vector<double> normalizedPositions(nbr_tests);
 
     std::random_device rd;  // Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
     std::uniform_real_distribution<> dis(5, 10);
-
-
-    // generate the nbr_tests random (normalized) particle position
+    
     std::generate(std::begin(normalizedPositions), std::end(normalizedPositions),
                       [&dis, &gen]() { return dis(gen); });
+
+    return normalizedPositions;
+} 
+
+template<std::size_t dimension_, std::size_t interp_order_>
+auto E_weights_computer()
+{
+    static const int nbr_tests = 1000;
+    static const int dim = dimension_;
+    static const int interp_order = interp_order_;
+
+    auto normalizedPositions = ParticleMaker<dim>(nbr_tests);
+    std::vector<double> weightsSums(nbr_tests*dim);
+    DummyLayout<dim, interp_order> layout;
+
+    std::vector<std::vector<std::vector<double>>> weights_(nbr_tests, std::vector<std::vector<double>>(dim, std::vector<double>(interp_order + 3)));
  
     // now for each random position, calculate
     // the start index and the N(interp_order) weights
@@ -139,6 +147,66 @@ TEST(Weights_for_Esirkepov3D, ComputesWeightThatSumIsOne)
 
     auto weightsSums3 = E_weights_computer<3, 3>();
     EXPECT_TRUE(std::all_of(std::begin(weightsSums3), std::end(weightsSums3), equalsOne));
+}
+
+
+TEST(Weights_for_Esirkepov1D, CenterAppropriately)
+{
+    static const int dim = 1;
+    static const int interp_order = 1;
+
+    using Particle = typename ParticleArray<dim>::Particle_t;
+
+    static const int nbr_tests = 100;
+
+    std::array<double, nbr_tests> normalizedPositions;
+    std::vector<double> weightsSums(nbr_tests*dim);
+    DummyLayout<dim, interp_order> layout;
+
+    std::vector<std::vector<std::vector<double>>> weights_(nbr_tests, std::vector<std::vector<double>>(dim, std::vector<double>(interp_order + 3)));
+
+    std::random_device rd;  // Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
+    std::uniform_real_distribution<> dis(5, 10);
+
+
+    // generate the nbr_tests random (normalized) particle position
+    std::generate(std::begin(normalizedPositions), std::end(normalizedPositions),
+                      [&dis, &gen]() { return dis(gen); });
+ 
+    // now for each random position, calculate
+    // the start index and the N(interp_order) weights
+    for (auto i = 0u; i < nbr_tests ; ++i)
+    {
+        auto icell = static_cast<int>(normalizedPositions[i]);
+        auto delta = normalizedPositions[i] - icell;
+        Particle particle{1., 1., ConstArray<int, dim>(icell), ConstArray<double, dim>(delta), 
+        {0., 10., 0.}};
+        weights_[i] = E_weights_(particle, layout);
+
+        auto const& xStartIndex = particle.iCell[0] ; // central dual node
+
+        auto const& weightsIn  = E_weights_(particle, layout);
+        auto const& S0          = weightsIn[0];
+        auto const& order_size  = S0.size();
+
+        std::vector<double> Jx(layout.nbrCells()[0], 0.); // sham current density
+
+        // requisite for appropriate centering (greatest weight at node considered)
+        int iCorr = order_size/2;
+        if (S0[1] > S0[order_size-2]) 
+        { 
+            iCorr -= 1;
+        }
+        for (uint j = 0; j < order_size; ++j)
+        {
+            auto x = xStartIndex + j - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
+                
+            Jx[x] += S0[j];
+        }
+
+        EXPECT_EQ(Jx[xStartIndex], *std::max_element(std::begin(Jx), std::end(Jx)));
+    } 
 }
 
 

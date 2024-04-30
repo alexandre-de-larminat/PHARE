@@ -239,6 +239,8 @@ class FluidDiagnostics_(Diagnostics):
 
         if self.population_name is None:
             self.quantity = "/ions/" + self.quantity
+        elif self.population_name == "electrons":
+            self.quantity = "/pic_electrons/pop/" + self.population_name + "/" + self.quantity
         else:
             if not population_in_model(self.population_name):
                 raise ValueError(
@@ -322,7 +324,10 @@ class ParticleDiagnostics(Diagnostics):
                 )
             )
 
-        self.quantity = "/ions/pop/" + self.population_name + "/" + self.quantity
+        if self.population_name=="electrons":
+            self.quantity = "/pic_electrons/pop/" + self.population_name + "/" + self.quantity
+        else:
+            self.quantity = "/ions/pop/" + self.population_name + "/" + self.quantity
 
     def space_box(self, **kwargs):
         if "extent" not in kwargs and self.quantity == "space_box":

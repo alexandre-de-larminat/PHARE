@@ -75,21 +75,22 @@ class ProjectJ<1>
 {
 public:
     template<typename VecField, typename Particle, typename GridLayout>
-    inline void operator()(VecField& J, Particle const& partIn,
-                           Particle const& partOut, GridLayout const& layout, double dt)
+    inline void operator()(VecField& J, Particle const& partOut,
+                           Particle const& partIn, GridLayout const& layout, double dt)
     {
         auto& Jx = J(Component::X);
         auto& Jy = J(Component::Y);
         auto& Jz = J(Component::Z);
 
-        auto const& xStartIndex = partIn.iCell[0] ; // central dual node
+        auto const& xOldStartIndex = partIn.iCell[0] ; // central dual node
+        auto const& xNewStartIndex = partOut.iCell[0] ;
 
-        auto const& weightsIn  = E_weights_(partIn, layout);
-        auto const& weightsOut = E_weights_(partOut, layout);
-        auto const& S0          = weightsIn[0];
-        auto const& S1          = weightsOut[0];
+        auto const& weightsOld  = E_weights_(partIn, layout);
+        auto const& weightsNew = E_weights_(partOut, layout);
+        auto const& S0          = weightsOld[0];
         auto const& order_size  = S0.size();
 
+        std::vector<double> S1(order_size, 0.);
 
         // requisite for appropriate centering (greatest weight at node considered)
         int iCorr = order_size/2;
@@ -98,11 +99,11 @@ public:
         }
 
         double dl = 1.; //TODO adapt to user input
-        double charge_weight = partIn.charge * partIn.weight;
+        double charge_density = partIn.charge * partIn.weight; // CHECK weight factors in the cell volume
             
-        double cr_p = charge_weight/dt * dl;   // current density in the evaluated dimension
-        double cry_p_1D = charge_weight*partIn.v[1];   // current density in the y-direction in 1D
-        double crz_p_1D2D = charge_weight*partIn.v[2]; // current density in the z-direction in 1D or 2D
+        double crx_p = charge_density/dt * dl;   // current density in (x) for 1 particle
+        double cry_p = charge_density*partIn.v[1];  // current density in the y-direction in 1D
+        double crz_p = charge_density*partIn.v[2]; // current density in the z-direction in 1D
 
         std::vector<double> Jx_p(order_size, 0.);
 
@@ -111,22 +112,26 @@ public:
 
         for (uint i = 0; i < order_size; ++i)
         {
-            Wl[i] = S0[i] - S1[i];
-            Wt[i] = 0.5 * ( S0[i] + S1[i] );
-        }
-        for (uint i = 1; i < order_size; ++i)
-        {
-            Jx_p[i] = Jx_p[i-1] + cr_p * Wl[i-1];
+            S1[i + xNewStartIndex - xOldStartIndex] = weightsNew[0][i];
         }
         for (uint i = 0; i < order_size; ++i)
         {
-            auto x = xStartIndex + i - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
+            Wl[i] = S0[i] - S1[i]; // longitudinal current (x)
+            Wt[i] = 0.5 * ( S0[i] + S1[i] ); // transverse currents (y, z)
+        }
+        for (uint i = 1; i < order_size; ++i)
+        {
+            Jx_p[i] = Jx_p[i-1] + crx_p * Wl[i-1]; // local current made by the particle
+        }
+        for (uint i = 0; i < order_size; ++i)
+        {
+            auto x = xOldStartIndex + i - iCorr; // x = xOldStartIndex for maximal weight
 
             if (x >= 0 and x < Jx.size()) 
             {
                 Jx(x) += Jx_p[i];
-                Jy(x)  += cry_p_1D * Wt[i];
-                Jz(x)  += crz_p_1D2D * Wt[i];
+                Jy(x) += cry_p * Wt[i];
+                Jz(x) += crz_p * Wt[i];
             }
         }
     }
@@ -138,32 +143,42 @@ class ProjectJ<2>
 {
 public:
     template<typename VecField, typename Particle, typename GridLayout>
-    inline void operator()(VecField& J, Particle const& partIn,
-                           Particle const& partOut, GridLayout const& layout, double dt)
+    inline void operator()(VecField& J, Particle const& partOut,
+                           Particle const& partIn, GridLayout const& layout, double dt)
     {
         double one_third_ = 1./3.;
         auto& Jx = J(Component::X);
         auto& Jy = J(Component::Y);
         auto& Jz = J(Component::Z);
 
-        auto const& xStartIndex = partIn.iCell[0];
-        auto const& yStartIndex = partIn.iCell[1];
+        auto const& xOldStartIndex = partIn.iCell[0];
+        auto const& yOldStartIndex = partIn.iCell[1];
+        auto const& xNewStartIndex = partOut.iCell[0];
+        auto const& yNewStartIndex = partOut.iCell[1];
         auto const& oldWeights  = E_weights_(partIn, layout);
         auto const& newWeights  = E_weights_(partOut, layout);
 
         auto const& Sx0      = oldWeights[0];
         auto const& Sy0      = oldWeights[1];
-        auto const& Sx1      = newWeights[0];
-        auto const& Sy1      = newWeights[1];
-
         auto const& order_size = Sx0.size();
+
+        std::vector<double> Sx1(order_size);
+        std::vector<double> Sy1(order_size);
+
+        for (auto i = 0u; i < order_size; ++i)
+        {
+            Sx1[i] = newWeights[0][i + xNewStartIndex - xOldStartIndex];
+            Sy1[i] = newWeights[1][i + yNewStartIndex - yOldStartIndex];
+        }
+
+
 
         // requisite for appropriate centering
         int iCorr = order_size/2;
-
         if (Sx0[1] > Sx0[Sx0.size()-2]) { 
             iCorr -= 1;
         }
+
         int jCorr = order_size/2;
         if (Sy0[1] > Sy0[Sy0.size()-2]) {
             jCorr -= 1;
@@ -173,11 +188,11 @@ public:
 
         dl[0] = 1.;
         dl[1] = 1.;
-        double charge_weight = partIn.charge * partIn.weight; // CHECK weight factors in the cell volume
+        double charge_density = partIn.charge * partIn.weight; // CHECK weight factors in the cell volume
      
-        double crx_p = charge_weight/dt * dl[0];  // current density in the evaluated dimension
-        double cry_p = charge_weight/dt * dl[1];  // current density in the evaluated dimension
-        double crz_p_1D2D = charge_weight*partIn.v[2]; // current density in the z-direction in 1D or 2D
+        double crx_p = charge_density/dt * dl[0];  // current density in the evaluated dimension
+        double cry_p = charge_density/dt * dl[1];  // current density in the evaluated dimension
+        double crz_p = charge_density*partIn.v[2]; // current density in the z-direction in 1D or 2D
 
         std::vector<std::vector<double>> Jx_p(order_size, std::vector<double>(order_size, 0.));
         std::vector<std::vector<double>> Jy_p(order_size, std::vector<double>(order_size, 0.));
@@ -202,7 +217,8 @@ public:
             {
                 Wx[i][j] = DSx[i] * (Sy0[j] + 0.5*DSy[j]);
                 Wy[i][j] = DSy[j] * (Sx0[i] + 0.5*DSx[i]);
-                Wz[i][j] = Sx0[i] * Sy0[j] + 0.5*DSx[i]*Sy0[j] + 0.5*Sx0[i]*DSy[j] + one_third_*DSx[i]*DSy[j];
+                Wz[i][j] = Sx0[i] * Sy0[j] + 0.5*DSx[i]*Sy0[j] + 0.5*Sx0[i]*DSy[j] 
+                + one_third_*DSx[i]*DSy[j];
             }
         }
 
@@ -211,8 +227,8 @@ public:
         {
             for(auto j = 0u; j < order_size; ++j)
             {
-                auto x = xStartIndex + i - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
-                auto y = yStartIndex + j - jCorr;
+                auto x = xOldStartIndex + i - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
+                auto y = yOldStartIndex + j - jCorr;
 
                 Jx_p[i][j] = Jx_p[i-1][j] + crx_p * Wx[i-1][j];
                 Jy_p[i][j] = Jy_p[i][j-1] + cry_p * Wy[i][j-1];
@@ -221,7 +237,7 @@ public:
                 {
                     Jx(x, y) += Jx_p[i][j];
                     Jy(x, y) += Jy_p[i][j];
-                    Jz(x, y) += crz_p_1D2D * Wz[i][j];
+                    Jz(x, y) += crz_p * Wz[i][j];
                 }  
             }
         }
@@ -239,16 +255,19 @@ public:
     double one_third_ = 1./3.;
     
     template<typename VecField, typename Particle, typename GridLayout>
-    inline void operator()(VecField& J, Particle const& partIn,
-                           Particle const& partOut, GridLayout const& layout, double dt)
+    inline void operator()(VecField& J, Particle const& partOut,
+                           Particle const& partIn, GridLayout const& layout, double dt)
     {
         auto& Jx = J(Component::X);
         auto& Jy = J(Component::Y);
         auto& Jz = J(Component::Z);
 
-        auto const& xStartIndex = partIn.iCell[0];
-        auto const& yStartIndex = partIn.iCell[1];
-        auto const& zStartIndex = partIn.iCell[2];
+        auto const& xOldStartIndex = partIn.iCell[0];
+        auto const& yOldStartIndex = partIn.iCell[1];
+        auto const& zOldStartIndex = partIn.iCell[2];
+        auto const& xNewStartIndex = partOut.iCell[0];
+        auto const& yNewStartIndex = partOut.iCell[1];
+        auto const& zNewStartIndex = partOut.iCell[2];
 
         auto const& oldWeights  = E_weights_(partIn, layout);
         auto const& newWeights  = E_weights_(partOut, layout);
@@ -256,11 +275,18 @@ public:
         auto const& Sx0 = oldWeights[0];
         auto const& Sy0 = oldWeights[1];
         auto const& Sz0 = oldWeights[2];
-        auto const& Sx1 = newWeights[0];
-        auto const& Sy1 = newWeights[1];
-        auto const& Sz1 = newWeights[2];
-
         auto const& order_size  = Sx0.size();
+
+        std::vector<double> Sx1(order_size);
+        std::vector<double> Sy1(order_size);
+        std::vector<double> Sz1(order_size);
+
+        for (auto i = 0u; i < order_size; ++i)
+        {
+            Sx1[i] = newWeights[0][i + xNewStartIndex - xOldStartIndex];
+            Sy1[i] = newWeights[1][i + yNewStartIndex - yOldStartIndex];
+            Sz1[i] = newWeights[2][i + zNewStartIndex - zOldStartIndex];
+        }
 
         // requisite for appropriate centering
         int iCorr = order_size/2;
@@ -332,9 +358,9 @@ public:
             {
                 for (auto k = 0u; k < order_size; ++k)
                 {
-                auto x = xStartIndex + i - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
-                auto y = yStartIndex + j - jCorr;
-                auto z = zStartIndex + k - kCorr;
+                auto x = xOldStartIndex + i - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
+                auto y = yOldStartIndex + j - jCorr;
+                auto z = zOldStartIndex + k - kCorr;
 
                 Jx_p[i][j][k] = Jx_p[i-1][j][k] + crx_p * Wx[i-1][j][k];
                 Jy_p[i][j][k] = Jy_p[i][j-1][k] + cry_p * Wy[i][j-1][k];
@@ -357,10 +383,8 @@ public:
 template<typename GridLayout>
 class Projector : public LayoutHolder<GridLayout>
 {
-    constexpr static auto dimension = GridLayout::dimension;
-
 public:
-
+    constexpr static auto dimension = GridLayout::dimension;
     ProjectJ<dimension> projectJ_;
 
     template<typename VecField, typename ParticleRange>
