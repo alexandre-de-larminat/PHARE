@@ -22,8 +22,8 @@ def config():
     sim = ph.Simulation(
         smallest_patch_size=15,
         largest_patch_size=25,
-        time_step_nbr=1000,
-        time_step=0.001,
+        time_step_nbr=100,
+        time_step=0.01,
         # boundary_types="periodic",
         cells=(100, 100),
         dl=(0.2, 0.2),
@@ -108,6 +108,11 @@ def config():
 
     def vthz(x, y):
         return np.sqrt(T(x, y))
+    
+    mass_electron = 0.01
+
+    def vth_electrons(x, y):
+        return np.sqrt(T(x, y))/mass_electron
 
     vvv = {
         "vbulkx": vx,
@@ -119,12 +124,22 @@ def config():
         "nbr_part_per_cell": 100,
     }
 
+    vvv_electrons = {
+        "vbulkx": vx,
+        "vbulky": vy,
+        "vbulkz": vz,
+        "vthx": vth_electrons,
+        "vthy": vth_electrons,
+        "vthz": vth_electrons,
+        "nbr_part_per_cell": 100,
+    }
+
     ph.MaxwellianFluidModel(
         bx=bx,
         by=by,
         bz=bz,
         protons={"charge": 1, "density": density, **vvv, "init": {"seed": 12334}},
-        electrons={"charge": -1, "density": density, **vvv, "init": {"seed:": 12334}},
+        #electrons={"charge": -1, "mass": mass_electron, "density": density, **vvv_electrons},
     )
 
     dt = 10 * sim.time_step
