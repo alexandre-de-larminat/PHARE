@@ -36,7 +36,7 @@ public:
     virtual std::vector<double> const& cellWidth() const = 0;
     virtual std::size_t interporder() const              = 0;
 
-    //virtual std::string to_str() = 0;
+    virtual std::string to_str() = 0;
 
     virtual ~ISimulator() {}
     virtual bool dump(double timestamp, double timestep) { return false; } // overriding optional
@@ -63,7 +63,7 @@ public:
     NO_DISCARD auto& getPICModel() { return picModel_; }
     NO_DISCARD auto& getMultiPhysicsIntegrator() { return multiphysInteg_; }
 
-    //NO_DISCARD std::string to_str() override;
+    NO_DISCARD std::string to_str() override;
 
     bool dump(double timestamp, double timestep) override
     {
@@ -256,11 +256,10 @@ void Simulator<dim, _interp, nbRefinedPart>::hybrid_init(initializer::PHAREDict 
     hybridModel_->resourcesManager->registerResources(hybridModel_->state);
 
     // we register the hybrid model for all possible levels in the hierarchy
-    // since for now it is the only model available, same for the solver
-    // EDIT: applies only up to the penultimate level
-    multiphysInteg_->registerModel(0, maxLevelNumber_ - 2, hybridModel_);
+    // since for now, same for the solver
+    multiphysInteg_->registerModel(0, maxLevelNumber_ - 1, hybridModel_);
 
-    multiphysInteg_->registerAndInitSolver(0, maxLevelNumber_ - 2,
+    multiphysInteg_->registerAndInitSolver(0, maxLevelNumber_ - 1,
                                            std::make_unique<SolverPPC>(dict["simulation"]["algo"]));
 
     multiphysInteg_->registerAndSetupMessengers(messengerFactory_);
@@ -306,7 +305,6 @@ void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict con
     if (dict["simulation"].contains("restarts"))
     {
         startTime_ = restarts_init(dict["simulation"]["restarts"]);
-        printf("PIC restarts initialized\n");
     }
     integrator_ = std::make_unique<Integrator>(dict, hierarchy_, multiphysInteg_, multiphysInteg_,
                                                startTime_, finalTime_);
@@ -316,7 +314,6 @@ void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict con
     if (dict["simulation"].contains("diagnostics"))
     {
         diagnostics_init(dict["simulation"]["diagnostics"]);
-        printf("PIC diagnostics initialized\n");
     }
 }
 
@@ -338,23 +335,20 @@ Simulator<_dimension, _interp_order, _nbRefinedPart>::Simulator(
     , functors_{functors_setup(dict)}
     , multiphysInteg_{std::make_shared<MultiPhysicsIntegrator>(dict["simulation"], functors_)}
 {
-    printf("Simulator constructor---------------------\n");
     if (find_model("HybridModel"))
     {
         hybrid_init(dict);
     }
     else if (find_model("PICModel"))
     {
-        printf("PICModel found\n");
         pic_init(dict);
-        printf("PIC initialized----------------------\n");
     }
     else
         throw std::runtime_error("unsupported model");
 }
 
 
-/*
+
 template<std::size_t _dimension, std::size_t _interp_order, std::size_t _nbRefinedPart>
 std::string Simulator<_dimension, _interp_order, _nbRefinedPart>::to_str()
 {
@@ -368,7 +362,7 @@ std::string Simulator<_dimension, _interp_order, _nbRefinedPart>::to_str()
     ss << core::to_str(picModel_->state); //EDITED
     return ss.str();
 }
-*/
+
 
 
 
@@ -382,9 +376,7 @@ void Simulator<_dimension, _interp_order, _nbRefinedPart>::initialize()
 
         if (integrator_ != nullptr)
         {
-            printf("Integrator_ not null, initializing\n");
             integrator_->initialize();
-            printf("Integrator initialized\n");
         }
             
         else

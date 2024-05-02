@@ -26,13 +26,13 @@ namespace core
         }
     }
 
-/*
+
     template<typename T>
     NO_DISCARD std::string to_str(T&& t)
     {
         return t.to_str();
     }
-*/
+
 
 
     template<typename Container, typename ContainedT = typename Container::value_type>

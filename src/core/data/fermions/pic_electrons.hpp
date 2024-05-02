@@ -213,7 +213,7 @@ namespace PHARE::core
         //                  ends the ResourcesUser interface
         //-------------------------------------------------------------------------
 
-/*
+
         NO_DISCARD std::string to_str()
         {
             std::stringstream ss;
@@ -223,8 +223,7 @@ namespace PHARE::core
             for (auto& pop : populations_)
                 ss << core::to_str(pop);
             return ss.str();
-        }
-*/
+        }    
 
 
         field_type* rho_{nullptr};

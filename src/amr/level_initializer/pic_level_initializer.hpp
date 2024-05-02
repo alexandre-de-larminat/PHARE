@@ -40,7 +40,6 @@ namespace PHARE::solver
                                 amr::IMessenger<IPhysicalModelT>& messenger, double initDataTime,
                                 bool isRegridding) override
         {
-            printf("PICLevelInitializer::initialize\n");
             core::Interpolator<dimension, interp_order> interpolate_;
             auto& picModel = static_cast<PICModel&>(model);
             auto& level       = amr_types::getLevel(*hierarchy, levelNumber);
@@ -57,7 +56,6 @@ namespace PHARE::solver
 
             else
             {
-                printf("Not root level\n");
                 if (isRegridding)
                 {
                     std::cout << "regriding level " << levelNumber << "\n";
@@ -79,11 +77,9 @@ namespace PHARE::solver
 
             for (auto& patch : level)
             {
-                printf("Declaring particles\n");
                 auto& ions             = picModel.state.ions;
                 auto& electrons        = picModel.state.pic_electrons;
 
-                printf("Computing moments\n");
                 auto& resourcesManager = picModel.resourcesManager;
                 auto dataOnPatch       = resourcesManager->setOnPatch(*patch, ions, electrons);
                 auto layout            = amr::layoutFromPatch<GridLayoutT>(*patch);
@@ -121,7 +117,6 @@ namespace PHARE::solver
 
             if (isRootLevel(levelNumber))
             {
-                printf("Computing E\n");
                 auto& E = picModel.state.electromag.E;
 
                 for (auto& patch : level)

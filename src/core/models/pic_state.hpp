@@ -18,19 +18,17 @@ namespace PHARE::core
 
 /**
  * @brief The PICState class is a concrete implementation of a IPhysicalState.
- * It holds an Electromag and an Fermion object manipulated by a  PIC concrete type of
+ * It holds an Electromag, Ions and PICElectrons objects manipulated by a  PIC concrete type of
  * ISolver
  */
-template<typename Electromag, typename Fermions>
+template<typename Electromag, typename Ions, typename PICElectrons>
 class PICState : public IPhysicalState
 {
 
     using VecField = typename Electromag::vecfield_type;
-    using PICElectrons = typename Fermions::pic_electrons_type;
-    using Ions = typename Fermions::ions_type;
     
 public:
-    static constexpr auto dimension = Fermions::dimension;
+    static constexpr auto dimension = Ions::dimension;
 
     PICState(PHARE::initializer::PHAREDict const& dict)
         : electromag{dict["electromag"]}
@@ -45,17 +43,17 @@ public:
     Ions ions;
     VecField J;
 
-/*
-    NO_DISCARD std::string to_str() // CHECK
+
+    NO_DISCARD std::string to_str()
     {
         std::stringstream ss;
         ss << "PIC State\n";
         ss << "------------------------------------\n";
-        for (auto& particletype : fermions)
-            ss << core::to_str(particletype);
+        ss << core::to_str(ions);
+        ss << core::to_str(pic_electrons);
         return ss.str();
     }
-*/
+
 
     //-------------------------------------------------------------------------
     //                  start the ResourcesUser interface

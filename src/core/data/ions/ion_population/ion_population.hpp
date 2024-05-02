@@ -88,7 +88,7 @@ namespace core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - ion domain");
             }
         }
 
@@ -108,7 +108,7 @@ namespace core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - ion patchChost");
             }
         }
 
@@ -127,7 +127,7 @@ namespace core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - ion levelGhost");
             }
         }
 
@@ -148,7 +148,7 @@ namespace core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - ion levelGhostOld");
             }
         }
 
@@ -162,7 +162,7 @@ namespace core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - ion levelGhostNew");
             }
         }
 

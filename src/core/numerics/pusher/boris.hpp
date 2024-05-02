@@ -82,7 +82,6 @@ public:
                        ParticleSelector secondSelector) override
     {
         PHARE_LOG_SCOPE("Boris::move_no_bc");
-        printf("Boris::move_no_bc\n");
 
         // push the particles of half a step
         // rangeIn : t=n, rangeOut : t=n+1/2

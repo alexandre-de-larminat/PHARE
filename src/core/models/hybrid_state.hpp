@@ -44,7 +44,7 @@ namespace core
         Ions ions;
         VecField J;
         Electrons electrons;
-/*
+
         NO_DISCARD std::string to_str()
         {
             std::stringstream ss;
@@ -53,7 +53,7 @@ namespace core
             ss << core::to_str(ions);
             return ss.str();
         }
-*/
+
 
         //-------------------------------------------------------------------------
         //                  start the ResourcesUser interface

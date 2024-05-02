@@ -114,7 +114,6 @@ def simulation_params(diagdir, **extra):
         "time_step": 0.04,
         "boundary_types": "periodic",
         "cells": 200,
-        "hyper_resistivity": 0.01,
         "dl": 1.0,
         "diag_options": {
             "format": "phareh5",
@@ -132,7 +131,7 @@ def config(**options):
         protons={"charge": 1., "density": density, **vvv}, 
         electrons={"charge": -1., "mass":mass_electron, "density": density, **vvv_electrons}
     )
-    #ph.ElectronModel(closure="isothermal", Te=0.12)
+
 
     timestamps = all_timestamps(sim)
 

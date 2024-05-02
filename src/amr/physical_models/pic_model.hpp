@@ -15,7 +15,6 @@
 #include "core/data/vecfield/vecfield.hpp"
 #include "core/def.hpp"
 
-#include "core/data/fermions/fermions.hpp"
 
 namespace PHARE::solver
 {
@@ -23,12 +22,12 @@ namespace PHARE::solver
  * @brief The PICModel class is a concrete implementation of a IPhysicalModel. The class
  * holds a PICState and a ResourcesManager.
  */
-template<typename GridLayoutT, typename Electromag, typename Fermions, typename AMR_Types>
+template<typename GridLayoutT, typename Electromag, typename Ions, typename PICElectrons, typename AMR_Types>
 class PICModel : public IPhysicalModel<AMR_Types>
 {
 public:
 
-    using type_list = PHARE::core::type_list<GridLayoutT, Electromag, Fermions, AMR_Types>;
+    using type_list = PHARE::core::type_list<GridLayoutT, Electromag, Ions, PICElectrons, AMR_Types>;
     using Interface = IPhysicalModel<AMR_Types>;
     using amr_types = AMR_Types;
     using patch_t   = typename AMR_Types::patch_t;
@@ -39,9 +38,9 @@ public:
     using electromag_type              = Electromag;
     using vecfield_type                = typename Electromag::vecfield_type;
     using field_type                   = typename vecfield_type::field_type;
-    using ions_type                    = typename Fermions::ions_type;
-    using pic_electrons_type           = typename Fermions::pic_electrons_type;
-    using particle_array_type          = typename Fermions::particle_array_type;
+    using ions_type                    = Ions;
+    using pic_electrons_type           = PICElectrons;
+    using particle_array_type          = typename Ions::particle_array_type;
     using resources_manager_type       = amr::ResourcesManager<gridlayout_type>;
     static constexpr auto dimension    = GridLayoutT::dimension;
     static constexpr auto interp_order = GridLayoutT::interp_order;
@@ -49,7 +48,7 @@ public:
     using ParticleInitializerFactory
         = core::ParticleInitializerFactory<particle_array_type, gridlayout_type>;
 
-    core::PICState<Electromag, Fermions> state; 
+    core::PICState<Electromag, Ions, PICElectrons> state; 
     std::shared_ptr<resources_manager_type> resourcesManager;
 
 
@@ -111,26 +110,22 @@ public:
 
 };
 
-template<typename GridLayoutT, typename Electromag, typename Fermions, typename AMR_Types>
-const std::string PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::model_name = "PICModel";
+template<typename GridLayoutT, typename Electromag, typename Ions, typename PICElectrons, typename AMR_Types>
+const std::string PICModel<GridLayoutT, Electromag, Ions, PICElectrons, AMR_Types>::model_name = "PICModel";
 
 //-------------------------------------------------------------------------
 //                             definitions
 //-------------------------------------------------------------------------
 
 
-template<typename GridLayoutT, typename Electromag, typename Fermions,
-         typename AMR_Types>
-void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::initialize(level_t& level)
+template<typename GridLayoutT, typename Electromag, typename Ions, typename PICElectrons, typename AMR_Types>
+void PICModel<GridLayoutT, Electromag, Ions, PICElectrons, AMR_Types>::initialize(level_t& level)
 {
-    printf("PICModel::initialize\n");
     using InitFunctionT = PHARE::initializer::InitFunction<dimension>;
-    double T = 0.0;
 
     for (auto& patch : level)
     {
         // first initialize the ions
-        printf("Declaring layout\n");
         auto layout = amr::layoutFromPatch<gridlayout_type>(*patch);
         auto& ions = state.ions;
         auto& electrons = state.pic_electrons;
@@ -138,7 +133,6 @@ void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::initialize(level_t&
 
         for (auto& pop : ions)
         {
-            printf("Initializing ions\n");
             auto const& info         = pop.particleInitializerInfo();
             auto particleInitializer = ParticleInitializerFactory::create(info);
             particleInitializer->loadParticles(pop.domainParticles(), layout);         
@@ -146,24 +140,22 @@ void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::initialize(level_t&
         // then the electrons
         for (auto& pop : electrons)
         {
-            printf("Initializing electrons\n");
             auto const& info         = pop.particleInitializerInfo(); 
             auto particleInitializer = ParticleInitializerFactory::create(info);
             particleInitializer->loadParticles(pop.domainParticles(), layout);
         }
-        printf("Initializing electromag\n");
+
         state.electromag.initialize(layout);
     }
-    printf("PICModel::initialize done, register for restarts\n");
     resourcesManager->registerForRestarts(*this);
 }
 
 // TODO adapt to PIC messenger
-template<typename GridLayoutT, typename Electromag, typename Fermions, typename AMR_Types>
-void PICModel<GridLayoutT, Electromag, Fermions, AMR_Types>::fillMessengerInfo(
+template<typename GridLayoutT, typename Electromag, typename Ions, typename PICElectrons, typename AMR_Types>
+void PICModel<GridLayoutT, Electromag, Ions, PICElectrons, AMR_Types>::fillMessengerInfo(
     std::unique_ptr<amr::IMessengerInfo> const& info) const
 {
-    printf("model::fillMessengerInfo\n");
+    printf("PICModel::fillMessengerInfo\n");
     auto& picInfo = dynamic_cast<amr::HybridMessengerInfo&>(*info);
     auto& ions = state.ions;
 

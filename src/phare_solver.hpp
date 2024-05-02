@@ -26,20 +26,20 @@ struct PHARE_Types
     static auto constexpr nbRefinedPart = nbRefinedPart_;
 
     // core deps
-    using core_types   = PHARE::core::PHARE_Types<dimension, interp_order>;
-    using VecField_t   = typename core_types::VecField_t;
-    using Electromag_t = typename core_types::Electromag_t;
-    using Ions_t       = typename core_types::Ions_t;
-    using GridLayout_t = typename core_types::GridLayout_t;
-    using Electrons_t  = typename core_types::Electrons_t;
-    using Fermions_t   = typename core_types::Fermions_t;
+    using core_types     = PHARE::core::PHARE_Types<dimension, interp_order>;
+    using VecField_t     = typename core_types::VecField_t;
+    using Electromag_t   = typename core_types::Electromag_t;
+    using Ions_t         = typename core_types::Ions_t;
+    using GridLayout_t   = typename core_types::GridLayout_t;
+    using Electrons_t    = typename core_types::Electrons_t;
+    using PICElectrons_t = typename core_types::PICElectrons_t;
     // core deps
 
     using IPhysicalModel = PHARE::solver::IPhysicalModel<PHARE::amr::SAMRAI_Types>;
     using HybridModel_t  = PHARE::solver::HybridModel<GridLayout_t, Electromag_t, Ions_t,
                                                      Electrons_t, PHARE::amr::SAMRAI_Types>;
     using MHDModel_t  = PHARE::solver::MHDModel<GridLayout_t, VecField_t, PHARE::amr::SAMRAI_Types>;
-    using PICModel_t  = PHARE::solver::PICModel<GridLayout_t, Electromag_t, Fermions_t, PHARE::amr::SAMRAI_Types>;
+    using PICModel_t  = PHARE::solver::PICModel<GridLayout_t, Electromag_t, Ions_t, PICElectrons_t, PHARE::amr::SAMRAI_Types>;
     using SolverPPC_t = PHARE::solver::SolverPPC<HybridModel_t, PHARE::amr::SAMRAI_Types>;
     using SolverMHD_t = PHARE::solver::SolverMHD<MHDModel_t, PHARE::amr::SAMRAI_Types>;
     using SolverPIC_t = PHARE::solver::SolverPIC<PICModel_t, PHARE::amr::SAMRAI_Types>;

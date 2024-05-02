@@ -30,7 +30,6 @@ struct PHARE_Types
     using Electrons_t                     = typename core_types::Electrons_t;
     using PICElectrons_t                  = typename core_types::PICElectrons_t;
     using ElectronPopulation_t            = typename core_types::ElectronPopulation_t;
-    using Fermions_t                      = typename core_types::Fermions_t;
     using ParticleInitializerFactory      = typename core_types::ParticleInitializerFactory;
 
 

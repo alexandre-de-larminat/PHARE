@@ -134,26 +134,26 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
         });
     };
 
-    printf("FermionUpdater::updateAndDepositAll_\n");
+    //printf("FermionUpdater::updateAndDepositAll_\n");
     for (auto& pop : ions)
         {        
-            printf("pushing ions\n");
+            //printf("pushing ions\n");
             auto& domain = pop.domainParticles();
             auto rangeIn  = makeIndexRange(domain);
             auto rangeOut  = makeIndexRange(domain);
-            printf("Made domain and ranges\n");
+            //printf("Made domain and ranges\n");
 
             auto inDomain = pusher_->move(rangeIn, rangeOut, em, pop.mass(), interpolator_, 
                                           layout, [](auto& particleRange) { return particleRange; }, 
                                           inDomainBox);
-            printf("Pushed particles in domain\n");
+            //printf("Pushed particles in domain\n");
             
             domain.erase(makeRange(domain, inDomain.iend(), domain.size())); //erase particles leaving domain  
                      
-            printf("Erased particles leaving domain\n");
+            //printf("Erased particles leaving domain\n");
 
             projector_(J, inDomain, rangeIn, layout, dt);
-            printf("Projected J for domain particles\n");
+            //printf("Projected J for domain particles\n");
 
             auto pushAndCopyInDomain = [&](auto&& particleRange) {
                 auto inGhostLayerRange = pusher_->move(particleRange, particleRange, em, pop.mass(),
@@ -175,27 +175,27 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
                 pushAndCopyInDomain(makeIndexRange(pop.levelGhostParticles()));
 
             interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
-            printf("Interpolated density and flux. END push ions\n");
+            //printf("Interpolated density and flux. END push ions\n");
         }
 
     for (auto& pop : electrons)
         {        
-            printf("pushing electrons\n");
+            //printf("pushing electrons\n");
             auto& domain = pop.domainParticles();
             auto rangeIn  = makeIndexRange(domain);
             auto rangeOut  = makeIndexRange(domain);
-            printf("Made domain and ranges\n");
+            //printf("Made domain and ranges\n");
 
             auto inDomain = pusher_->move(rangeIn, rangeOut, em, pop.mass(), interpolator_, 
                                           layout, [](auto& particleRange) { return particleRange; }, 
                                           inDomainBox);
-            printf("Pushed particles in domain\n");
+            //printf("Pushed particles in domain\n");
 
             domain.erase(makeRange(domain, inDomain.iend(), domain.size())); //erase particles leaving domain           
-            printf("Erased particles leaving domain\n");         
+            //printf("Erased particles leaving domain\n");         
 
             projector_(J, inDomain, rangeIn, layout, dt);
-            printf("Projected J for domain particles\n");
+            //printf("Projected J for domain particles\n");
 
             auto pushAndCopyInDomain = [&](auto&& particleRange) {
                 auto inGhostLayerRange = pusher_->move(particleRange, particleRange, em, pop.mass(),
@@ -217,7 +217,7 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
                 pushAndCopyInDomain(makeIndexRange(pop.levelGhostParticles()));
 
             interpolator_(makeIndexRange(domain), pop.density(), pop.flux(), layout);
-            printf("Interpolated density and flux. END push electrons\n");
+            //printf("Interpolated density and flux. END push electrons\n");
         }
 }
 

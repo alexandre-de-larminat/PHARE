@@ -100,10 +100,13 @@ public:
 
         double dl = 1.; //TODO adapt to user input
         double charge_density = partIn.charge * partIn.weight; // CHECK weight factors in the cell volume
+
+        double vy_halfn = (partIn.v[1] + partOut.v[2])/2;
+        double vz_halfn = (partIn.v[2] + partOut.v[2])/2;
             
-        double crx_p = charge_density/dt * dl;   // current density in (x) for 1 particle
-        double cry_p = charge_density*partIn.v[1];  // current density in the y-direction in 1D
-        double crz_p = charge_density*partIn.v[2]; // current density in the z-direction in 1D
+        double crx_p = charge_density / dt * dl;   // current density in (x) for 1 particle
+        double cry_p = charge_density * vy_halfn;  // current density in the y-direction in 1D
+        double crz_p = charge_density * vz_halfn; // current density in the z-direction in 1D
 
         std::vector<double> Jx_p(order_size, 0.);
 

@@ -136,7 +136,6 @@ class DimHierarchy : public Hierarchy
     {
         auto box = domainBoxShape;
         std::for_each(std::begin(box), std::end(box), [](auto& v) { v--; });
-        printf("shapeToBox done\n");
         return box;
     }
 
@@ -169,7 +168,7 @@ struct HierarchyMaker
 
 inline HierarchyMaker::HierarchyMaker(PHARE::initializer::PHAREDict const& dict_)
     : dict{dict_}
-{printf("HierarchyMaker initialized\n");
+{
 }
 
 
@@ -389,7 +388,7 @@ auto patchHierarchyDatabase(PHARE::initializer::PHAREDict const& amr)
         if (largestPatchSizeDB)
             largestPatchSizeDB->putIntegerVector(level, largestPatchSize);
     }
-    printf("patchHierarchyDatabase done\n");
+
     return hierDB;
 }
 
@@ -406,7 +405,7 @@ DimHierarchy<_dimension>::DimHierarchy(PHARE::initializer::PHAREDict const& dict
         shapeToBox(parseDimXYZType<int, dimension>(dict["simulation"]["grid"], "nbr_cells")),
         parseDimXYZType<double, dimension>(dict["simulation"]["grid"], "origin"),
         parseDimXYZType<double, dimension>(dict["simulation"]["grid"], "meshsize")}
-{    printf("DimHierarchy done\n");
+{
 }
 
 

@@ -300,7 +300,7 @@ namespace core
         //                  ends the ResourcesUser interface
         //-------------------------------------------------------------------------
 
-/*
+
         NO_DISCARD std::string to_str()
         {
             std::stringstream ss;
@@ -311,7 +311,7 @@ namespace core
                 ss << core::to_str(pop);
             return ss.str();
         }
-*/
+
         NO_DISCARD bool sameMasses() const { return sameMasses_; }
 
 

@@ -73,7 +73,6 @@ public:
         {
             return {};
         }
-        printf("name() returns %s\n", coarseModel.name()+ "-" + fineModel.name());
     }
 
 

@@ -239,12 +239,10 @@ namespace solver
         {
             printf("registerAndSetupMessengers\n");
             registerMessengers_(messengerFactory);
-            printf("registerMessengers done\n");
 
             // now setup all messengers we've just created
 
             registerQuantitiesAllLevels_();
-            printf("Setup messengers done\n");
         }
 
 
@@ -262,7 +260,6 @@ namespace solver
 
         std::string messengerName(int iLevel)
         {
-            printf("Getting messengerName\n");
             auto& messenger = getMessengerWithCoarser_(iLevel);
             return messenger.name();
         }
@@ -307,25 +304,19 @@ namespace solver
                                  = std::shared_ptr<SAMRAI::hier::PatchLevel>(),
                                  bool const allocateData = true) override
         {
-            printf("initializeLevelData\n");
             auto& model            = getModel_(levelNumber);
             auto& solver           = getSolver_(levelNumber);
             auto& messenger        = getMessengerWithCoarser_(levelNumber);
             auto& levelInitializer = getLevelInitializer(model.name());
 
-            printf("First quantites declared\n");
-
             bool const isRegridding = oldLevel != nullptr;
             auto level              = hierarchy->getPatchLevel(levelNumber);
-
-            printf("level fetched\n");
 
             std::cout << "init level " << levelNumber << " with regriding = " << isRegridding
                       << "\n";
             PHARE_LOG_START("initializeLevelData::allocate block");
             if (allocateData)
             {
-                printf("allocateData\n");
                 for (auto patch : *level)
                 {
                     model.allocate(*patch, initDataTime);
@@ -337,7 +328,6 @@ namespace solver
             PHARE_LOG_STOP("initializeLevelData::allocate block");
             if (isRegridding)
             {
-                printf("isRegridding\n");
                 // regriding the current level has broken schedules for which
                 // this level is the source or destination
                 // we therefore need to rebuild them
@@ -352,12 +342,10 @@ namespace solver
             }
             else
             {
-                printf("not regridding: Register level\n");
                 // we're not regriding, just making a new level
                 messenger.registerLevel(hierarchy, levelNumber);
             }
 
-            printf("initialize level\n");
             levelInitializer.initialize(hierarchy, levelNumber, oldLevel, model, messenger,
                                         initDataTime, isRegridding);
         }
@@ -371,7 +359,7 @@ namespace solver
             // handle samrai restarts / schedule creation
             //  allocation of patch datas which may not want to be saved to restart files will
             //   likely need to go here somehow https://github.com/PHAREHUB/PHARE/issues/664
-            printf("resetHierarchyConfiguration\n");
+
             if (!restartInitialized_
                 and SAMRAI::tbox::RestartManager::getManager()->isFromRestart())
             {
@@ -718,13 +706,10 @@ namespace solver
                 if (iLevel == 0)
                 {
                     coarseLevelNumber = fineLevelNumber;
-                    printf("Level = 0\n");
                 }
 
                 auto& coarseModel = getModel_(coarseLevelNumber);
                 auto& fineModel   = getModel_(fineLevelNumber);
-                printf("coarseModel = %s\n", coarseModel.name().c_str());
-                printf("fineModel = %s\n", fineModel.name().c_str());
 
                 registerMessenger_(messengerFactory, coarseModel, fineModel, iLevel);
             }
@@ -759,7 +744,6 @@ namespace solver
 
         void registerQuantities_(int iLevel, IMessengerT& messenger)
         {
-            printf("registerQuantities_-------------\n");
             auto coarseLevelNumber = iLevel - 1;
             auto fineLevelNumber   = iLevel;
 
@@ -771,7 +755,6 @@ namespace solver
             auto& coarseModel = getModel_(coarseLevelNumber);
             auto& fineModel   = getModel_(fineLevelNumber);
             auto& solver      = getSolver_(iLevel);
-            printf("Got models and solver\n");
 
             MessengerRegistration::registerQuantities(messenger, coarseModel, fineModel, solver);
         }

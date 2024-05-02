@@ -34,8 +34,6 @@ namespace solver
                 auto fromCoarserInfo = messenger.emptyInfoFromCoarser();
                 auto fromFinerInfo   = messenger.emptyInfoFromFiner();
 
-                printf("Empty info\n");
-
                 fineModel.fillMessengerInfo(fromFinerInfo);
                 coarseModel.fillMessengerInfo(fromCoarserInfo);
 

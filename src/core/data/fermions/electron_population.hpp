@@ -77,7 +77,7 @@ namespace PHARE::core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - electron domain");
             }
         }
 
@@ -97,7 +97,7 @@ namespace PHARE::core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - electron patchGhost");
             }
         }
 
@@ -116,7 +116,7 @@ namespace PHARE::core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - electron levelGhost");
             }
         }
 
@@ -137,7 +137,7 @@ namespace PHARE::core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - electron levelGhostOld");
             }
         }
 
@@ -151,7 +151,7 @@ namespace PHARE::core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - electron levelGhostNew");
             }
         }
 
@@ -250,7 +250,7 @@ namespace PHARE::core
         //-------------------------------------------------------------------------
 
 
-/*
+
         NO_DISCARD std::string to_str()
         {
             std::stringstream ss;
@@ -259,7 +259,7 @@ namespace PHARE::core
             ss << "name                : " << name() << "\n";
             return ss.str();
         }
-*/
+
     private:
         std::string name_;
         double mass_;
