@@ -16,7 +16,7 @@
 namespace PHARE::diagnostic::h5
 {
 /*
- * It is assumed thateach patch has equal number of populations
+ * It is assumed that each patch has equal number of populations
  *
  * Possible outputs
  *
@@ -73,6 +73,11 @@ void ParticlesDiagnosticWriter<H5Writer>::createFiles(DiagnosticProperties& diag
         std::string tree{"/ions/pop/" + pop.name() + "/"};
         checkCreateFileFor_(diagnostic, fileData_, tree, "domain", "levelGhost", "patchGhost");
     }
+    for (auto const& pop : this->h5Writer_.modelView().getElectrons())
+    {
+        std::string tree{"/pic_electrons/pop/" + pop.name() + "/"};
+        checkCreateFileFor_(diagnostic, fileData_, tree, "domain", "levelGhost", "patchGhost");
+    }
 }
 
 template<typename H5Writer>
@@ -99,6 +104,14 @@ void ParticlesDiagnosticWriter<H5Writer>::getDataSetInfo(DiagnosticProperties& d
     for (auto& pop : h5Writer.modelView().getIons())
     {
         std::string tree{"/ions/pop/" + pop.name() + "/"};
+        auto& popAttr = patchAttributes[lvlPatchID][pop.name()];
+        checkInfo(tree, "domain", popAttr, pop.domainParticles());
+        checkInfo(tree, "levelGhost", popAttr, pop.levelGhostParticles());
+        checkInfo(tree, "patchGhost", popAttr, pop.patchGhostParticles());
+    }
+    for (auto& pop : h5Writer.modelView().getElectrons())
+    {
+        std::string tree{"/pic_electrons/pop/" + pop.name() + "/"};
         auto& popAttr = patchAttributes[lvlPatchID][pop.name()];
         checkInfo(tree, "domain", popAttr, pop.domainParticles());
         checkInfo(tree, "levelGhost", popAttr, pop.levelGhostParticles());
@@ -157,6 +170,13 @@ void ParticlesDiagnosticWriter<H5Writer>::initDataSets(
             initIfActive(lvl, tree, attr, pop.name(), patchID, "levelGhost");
             initIfActive(lvl, tree, attr, pop.name(), patchID, "patchGhost");
         }
+        for (auto& pop : h5Writer.modelView().getElectrons())
+        {
+            std::string tree{"/pic_electrons/pop/" + pop.name() + "/"};
+            initIfActive(lvl, tree, attr, pop.name(), patchID, "domain");
+            initIfActive(lvl, tree, attr, pop.name(), patchID, "levelGhost");
+            initIfActive(lvl, tree, attr, pop.name(), patchID, "patchGhost");
+        }
     };
 
     initDataSets_(patchIDs, patchAttributes, maxLevel, initPatch);
@@ -182,6 +202,13 @@ void ParticlesDiagnosticWriter<H5Writer>::write(DiagnosticProperties& diagnostic
         checkWrite(tree, "levelGhost", pop.levelGhostParticles());
         checkWrite(tree, "patchGhost", pop.patchGhostParticles());
     }
+    for (auto& pop : h5Writer.modelView().getElectrons())
+    {
+        std::string tree{"/pic_electrons/pop/" + pop.name() + "/"};
+        checkWrite(tree, "domain", pop.domainParticles());
+        checkWrite(tree, "levelGhost", pop.levelGhostParticles());
+        checkWrite(tree, "patchGhost", pop.patchGhostParticles());
+    }
 }
 
 
@@ -203,6 +230,13 @@ void ParticlesDiagnosticWriter<H5Writer>::writeAttributes(
     for (auto& pop : h5Writer.modelView().getIons())
     {
         std::string tree = "/ions/pop/" + pop.name() + "/";
+        checkWrite(tree, "domain", pop);
+        checkWrite(tree, "levelGhost", pop);
+        checkWrite(tree, "patchGhost", pop);
+    }
+    for (auto& pop : h5Writer.modelView().getElectrons())
+    {
+        std::string tree = "/pic_electrons/pop/" + pop.name() + "/";
         checkWrite(tree, "domain", pop);
         checkWrite(tree, "levelGhost", pop);
         checkWrite(tree, "patchGhost", pop);

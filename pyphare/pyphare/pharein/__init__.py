@@ -221,7 +221,6 @@ def populateDict():
 
     if init_model.nbr_populations() < 0:
         raise RuntimeError("Number of populations cannot be negative")
-    #add_size_t("simulation/ions/nbrPopulations", init_model.nbr_populations())
 
     partinit = "particle_initializer"
     ioncounter = 0

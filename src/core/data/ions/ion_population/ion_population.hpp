@@ -108,7 +108,7 @@ namespace core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers - ion patchChost");
+                throw std::runtime_error("Error - cannot provide access to particle buffers - ion patchGhost");
             }
         }
 

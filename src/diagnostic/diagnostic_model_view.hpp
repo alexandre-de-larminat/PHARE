@@ -30,7 +30,7 @@ bool constexpr is_pic_model
 
 
 
-template<typename Hierarchy, typename Model/*, std::enable_if_t<is_pic_model<Model>, int> = 0*/> //EDITED
+template<typename Hierarchy, typename Model, std::enable_if_t<is_pic_model<Model>, int> = 0> //EDITED
 class ModelView : public IModelView
 {
     using VecField                  = typename Model::vecfield_type;
@@ -56,6 +56,7 @@ public:
     }
 
     NO_DISCARD auto& getIons() const { return model_.state.ions; }
+    NO_DISCARD auto& getElectrons() const { return model_.state.pic_electrons; }
 
     template<typename Action>
     void visitHierarchy(Action&& action, int minLevel = 0, int maxLevel = 0)

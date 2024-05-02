@@ -21,10 +21,11 @@ public:
 
     using PHARESolverTypes = solver::PHARE_Types<dimension, interp_order, nbRefinedPart>;
     using HybridModel      = typename PHARESolverTypes::HybridModel_t;
+    using PICModel         = typename PHARESolverTypes::PICModel_t;
 
     using GridLayout = typename HybridModel::gridlayout_type;
 
-    PatchLevel(amr::Hierarchy& hierarchy, HybridModel& model, std::size_t lvl)
+    PatchLevel(amr::Hierarchy& hierarchy, PICModel& model, std::size_t lvl) //EDITED
         : lvl_(lvl)
         , hierarchy_{hierarchy}
         , model_{model}
@@ -42,6 +43,21 @@ public:
 
         PHARE::amr::visitLevel<GridLayout>(*hierarchy_.getPatchLevel(lvl_),
                                            *model_.resourcesManager, visit, ions);
+
+        return patchDatas;
+    }
+
+    auto getElectronDensity()
+    {
+        std::vector<PatchData<std::vector<double>, dimension>> patchDatas;
+        auto& electrons = model_.state.pic_electrons;
+
+        auto visit = [&](GridLayout& grid, std::string patchID, std::size_t /*iLevel*/) {
+            setPatchDataFromField(patchDatas.emplace_back(), electrons.density(), grid, patchID);
+        };
+
+        PHARE::amr::visitLevel<GridLayout>(*hierarchy_.getPatchLevel(lvl_),
+                                           *model_.resourcesManager, visit, electrons);
 
         return patchDatas;
     }
@@ -66,6 +82,30 @@ public:
 
         PHARE::amr::visitLevel<GridLayout>(*hierarchy_.getPatchLevel(lvl_),
                                            *model_.resourcesManager, visit, ions);
+
+        return pop_data;
+    }
+    
+    auto getPopDensitiesE()
+    {
+        using Inner = decltype(getElectronDensity());
+
+        std::unordered_map<std::string, Inner> pop_data;
+        auto& electrons = model_.state.pic_electrons;
+
+        auto visit = [&](GridLayout& grid, std::string patchID, std::size_t /*iLevel*/) {
+            for (auto const& pop : electrons)
+            {
+                if (!pop_data.count(pop.name()))
+                    pop_data.emplace(pop.name(), Inner());
+
+                setPatchDataFromField(pop_data.at(pop.name()).emplace_back(), pop.density(), grid,
+                                      patchID);
+            }
+        };
+
+        PHARE::amr::visitLevel<GridLayout>(*hierarchy_.getPatchLevel(lvl_),
+                                           *model_.resourcesManager, visit, electrons);
 
         return pop_data;
     }
@@ -208,6 +248,22 @@ public:
 
         return patchDatas;
     }
+       auto getVe(std::string componentName)
+    {
+        std::vector<PatchData<std::vector<double>, dimension>> patchDatas;
+
+        auto& V = model_.state.pic_electrons.velocity();
+
+        auto visit = [&](GridLayout& grid, std::string patchID, std::size_t /*iLevel*/) {
+            auto compo = PHARE::core::Components::componentMap().at(componentName);
+            setPatchDataFromField(patchDatas.emplace_back(), V.getComponent(compo), grid, patchID);
+        };
+
+        PHARE::amr::visitLevel<GridLayout>(*hierarchy_.getPatchLevel(lvl_),
+                                           *model_.resourcesManager, visit, V);
+
+        return patchDatas;
+    }
 
 
 
@@ -245,6 +301,10 @@ public:
     auto getVix() { return getVi("x"); }
     auto getViy() { return getVi("y"); }
     auto getViz() { return getVi("z"); }
+
+    auto getVex() { return getVe("x"); }
+    auto getVey() { return getVe("y"); }
+    auto getVez() { return getVe("z"); }
 
     auto getFx(std::string pop) { return getPopFluxCompo("x", pop); }
     auto getFy(std::string pop) { return getPopFluxCompo("y", pop); }
@@ -301,7 +361,7 @@ public:
 private:
     std::size_t lvl_;
     amr::Hierarchy& hierarchy_;
-    HybridModel& model_;
+    PICModel& model_;
 };
 
 

@@ -148,10 +148,18 @@ void FluidDiagnosticWriter<H5Writer>::createFiles(DiagnosticProperties& diagnost
         std::string tree{"/ions/pop/" + pop.name() + "/"};
         checkCreateFileFor_(diagnostic, fileData_, tree, "density", "flux", "momentum_tensor");
     }
+    for (auto const& pop : this->h5Writer_.modelView().getElectrons())
+    {
+        std::string tree{"/pic_electrons/pop/" + pop.name() + "/"};
+        checkCreateFileFor_(diagnostic, fileData_, tree, "density", "flux");
+    }
 
     std::string tree{"/ions/"};
     checkCreateFileFor_(diagnostic, fileData_, tree, "density", "mass_density", "bulkVelocity",
                         "momentum_tensor");
+
+    tree = "/pic_electrons/";
+    checkCreateFileFor_(diagnostic, fileData_, tree, "density", "bulkVelocity");
 }
 
 
@@ -164,6 +172,7 @@ void FluidDiagnosticWriter<H5Writer>::getDataSetInfo(DiagnosticProperties& diagn
 {
     auto& h5Writer = this->h5Writer_;
     auto& ions     = h5Writer.modelView().getIons();
+    auto& electrons = h5Writer.modelView().getElectrons();
     std::string lvlPatchID{std::to_string(iLevel) + "_" + patchID};
 
 
@@ -204,7 +213,15 @@ void FluidDiagnosticWriter<H5Writer>::getDataSetInfo(DiagnosticProperties& diagn
         if (isActiveDiag(diagnostic, tree, "momentum_tensor"))
             infoTF(pop.momentumTensor(), "momentum_tensor", popAttr);
     }
-
+    for (auto& pop : electrons)
+    {
+        std::string tree{"/pic_electrons/pop/" + pop.name() + "/"};
+        auto& popAttr = patchAttributes[lvlPatchID]["fluid_" + pop.name()];
+        if (isActiveDiag(diagnostic, tree, "density"))
+            infoDS(pop.density(), "density", popAttr);
+        if (isActiveDiag(diagnostic, tree, "flux"))
+            infoVF(pop.flux(), "flux", popAttr);
+    }
     std::string tree{"/ions/"};
     if (isActiveDiag(diagnostic, tree, "density"))
         infoDS(ions.density(), "density", patchAttributes[lvlPatchID]["ion"]);
@@ -214,6 +231,12 @@ void FluidDiagnosticWriter<H5Writer>::getDataSetInfo(DiagnosticProperties& diagn
         infoVF(ions.velocity(), "bulkVelocity", patchAttributes[lvlPatchID]["ion"]);
     if (isActiveDiag(diagnostic, tree, "momentum_tensor"))
         infoTF(ions.momentumTensor(), "momentum_tensor", patchAttributes[lvlPatchID]["ion"]);
+
+    tree = "/pic_electrons/";
+    if (isActiveDiag(diagnostic, tree, "density"))
+        infoDS(electrons.density(), "density", patchAttributes[lvlPatchID]["electron"]);
+    if (isActiveDiag(diagnostic, tree, "bulkVelocity"))
+        infoVF(electrons.velocity(), "bulkVelocity", patchAttributes[lvlPatchID]["electron"]);
 }
 
 
@@ -225,9 +248,10 @@ void FluidDiagnosticWriter<H5Writer>::initDataSets(
     std::unordered_map<std::size_t, std::vector<std::string>> const& patchIDs,
     Attributes& patchAttributes, std::size_t maxLevel)
 {
-    auto& h5Writer = this->h5Writer_;
-    auto& ions     = h5Writer.modelView().getIons();
-    auto& h5file   = *fileData_.at(diagnostic.quantity);
+    auto& h5Writer  = this->h5Writer_;
+    auto& ions      = h5Writer.modelView().getIons();
+    auto& electrons = h5Writer.modelView().getElectrons();
+    auto& h5file    = *fileData_.at(diagnostic.quantity);
 
     auto writeGhosts = [&](auto& path, auto& attr, std::string key, auto null) {
         this->writeGhostsAttr_(h5file, path,
@@ -273,6 +297,16 @@ void FluidDiagnosticWriter<H5Writer>::initDataSets(
             if (isActiveDiag(diagnostic, tree, "momentum_tensor"))
                 initTF(path, attr[popId], "momentum_tensor", null);
         }
+        for (auto& pop : electrons)
+        {
+            std::string popId{"fluid_" + pop.name()};
+            std::string tree{"/pic_electrons/pop/" + pop.name() + "/"};
+            std::string popPath(path + "pop/" + pop.name() + "/");
+            if (isActiveDiag(diagnostic, tree, "density"))
+                initDS(path, attr[popId], "density", null);
+            if (isActiveDiag(diagnostic, tree, "flux"))
+                initVF(path, attr[popId], "flux", null);
+        }
 
         std::string tree{"/ions/"};
         if (isActiveDiag(diagnostic, tree, "density"))
@@ -283,6 +317,12 @@ void FluidDiagnosticWriter<H5Writer>::initDataSets(
             initVF(path, attr["ion"], "bulkVelocity", null);
         if (isActiveDiag(diagnostic, tree, "momentum_tensor"))
             initTF(path, attr["ion"], "momentum_tensor", null);
+
+        tree = "/pic_electrons/";
+        if (isActiveDiag(diagnostic, tree, "density"))
+            initDS(path, attr["electron"], "density", null);
+        if (isActiveDiag(diagnostic, tree, "bulkVelocity"))
+            initVF(path, attr["electron"], "bulkVelocity", null);
     };
 
     initDataSets_(patchIDs, patchAttributes, maxLevel, initPatch);
@@ -292,9 +332,10 @@ void FluidDiagnosticWriter<H5Writer>::initDataSets(
 template<typename H5Writer>
 void FluidDiagnosticWriter<H5Writer>::write(DiagnosticProperties& diagnostic)
 {
-    auto& h5Writer = this->h5Writer_;
-    auto& ions     = h5Writer.modelView().getIons();
-    auto& h5file   = *fileData_.at(diagnostic.quantity);
+    auto& h5Writer  = this->h5Writer_;
+    auto& ions      = h5Writer.modelView().getIons();
+    auto& electrons = h5Writer.modelView().getElectrons();
+    auto& h5file    = *fileData_.at(diagnostic.quantity);
 
     auto writeDS = [&](auto path, auto& field) {
         h5file.template write_data_set_flat<GridLayout::dimension>(path, &(*field.begin()));
@@ -313,6 +354,14 @@ void FluidDiagnosticWriter<H5Writer>::write(DiagnosticProperties& diagnostic)
         if (isActiveDiag(diagnostic, tree, "momentum_tensor"))
             writeTF(path + "momentum_tensor", pop.momentumTensor());
     }
+    for (auto& pop : electrons)
+    {
+        std::string tree{"/pic_electrons/pop/" + pop.name() + "/"};
+        if (isActiveDiag(diagnostic, tree, "density"))
+            writeDS(path + "density", pop.density());
+        if (isActiveDiag(diagnostic, tree, "flux"))
+            writeTF(path + "flux", pop.flux());
+    }
 
     std::string tree{"/ions/"};
     if (isActiveDiag(diagnostic, tree, "density"))
@@ -323,6 +372,12 @@ void FluidDiagnosticWriter<H5Writer>::write(DiagnosticProperties& diagnostic)
         writeTF(path + "bulkVelocity", ions.velocity());
     if (isActiveDiag(diagnostic, tree, "momentum_tensor"))
         writeTF(path + "momentum_tensor", ions.momentumTensor());
+
+    tree = "/pic_electrons/";
+    if (isActiveDiag(diagnostic, tree, "density"))
+        writeDS(path + "density", electrons.density());
+    if (isActiveDiag(diagnostic, tree, "bulkVelocity"))
+        writeTF(path + "bulkVelocity", electrons.velocity());
 }
 
 
@@ -347,6 +402,12 @@ void FluidDiagnosticWriter<H5Writer>::writeAttributes(
         checkWrite(tree, "density", pop);
         checkWrite(tree, "flux", pop);
         checkWrite(tree, "momentum_tensor", pop);
+    }
+    for (auto& pop : h5Writer.modelView().getElectrons())
+    {
+        std::string tree = "/pic_electrons/pop/" + pop.name() + "/";
+        checkWrite(tree, "density", pop);
+        checkWrite(tree, "flux", pop);
     }
 
     writeAttributes_(diagnostic, h5file, fileAttributes, patchAttributes, maxLevel);

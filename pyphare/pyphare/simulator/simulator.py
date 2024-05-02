@@ -64,9 +64,7 @@ class Simulator:
             if self.log_to_file:
                 self._log_to_file()
             ph.populateDict()
-            phare_utilities.debug_print("Populated dictionary")
             self.cpp_hier = cpp_lib().make_hierarchy()
-            phare_utilities.debug_print("Made hierarchy")
             phare_utilities.debug_print(self.simulation.ndim)
             phare_utilities.debug_print(self.simulation.interp_order)
             phare_utilities.debug_print(self.simulation.refined_particle_nbr)
@@ -77,7 +75,6 @@ class Simulator:
                 self.simulation.refined_particle_nbr,
                 self.cpp_hier,
             )
-            phare_utilities.debug_print("Made simulator")
             return self
         except:
             import sys

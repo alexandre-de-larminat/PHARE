@@ -313,6 +313,7 @@ void Simulator<dim, _interp, nbRefinedPart>::pic_init(initializer::PHAREDict con
 
     if (dict["simulation"].contains("diagnostics"))
     {
+        printf("diagnostics\n");
         diagnostics_init(dict["simulation"]["diagnostics"]);
     }
 }

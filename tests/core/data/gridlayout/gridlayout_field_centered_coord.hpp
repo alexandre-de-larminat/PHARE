@@ -89,8 +89,10 @@ auto createFieldCenteringParam()
         {"Ey", HybridQuantity::Scalar::Ey}, {"Ez", HybridQuantity::Scalar::Ez},
         {"Jx", HybridQuantity::Scalar::Jx}, {"Jy", HybridQuantity::Scalar::Jy},
         {"Jz", HybridQuantity::Scalar::Jz}, {"rho", HybridQuantity::Scalar::rho},
-        {"Vx", HybridQuantity::Scalar::Vx}, {"Vy", HybridQuantity::Scalar::Vy},
-        {"Vz", HybridQuantity::Scalar::Vz}, {"P", HybridQuantity::Scalar::P}};
+        {"rhoE", HybridQuantity::Scalar::rhoE}, {"Vx", HybridQuantity::Scalar::Vx}, 
+        {"Vy", HybridQuantity::Scalar::Vy}, {"Vz", HybridQuantity::Scalar::Vz}, 
+        {"Vex", HybridQuantity::Scalar::Vex}, {"Vey", HybridQuantity::Scalar::Vey}, 
+        {"Vez", HybridQuantity::Scalar::Vz}, {"P", HybridQuantity::Scalar::P}};
 
 
     // constexpr std::uint32_t numberOfQuantities{14};

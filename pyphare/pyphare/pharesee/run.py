@@ -339,12 +339,20 @@ class Run:
         hier = self._get_hierarchy(time, "ions_density.h5")
         return self._get(hier, time, merged, interp)
 
+    def GetNe(self, time, merged=False, interp="nearest"):
+        hier = self._get_hierarchy(time, "pic_electrons_density.h5")
+        return self._get(hier, time, merged, interp)
+
     def GetN(self, time, pop_name, merged=False, interp="nearest"):
         hier = self._get_hierarchy(time, f"ions_pop_{pop_name}_density.h5")
         return self._get(hier, time, merged, interp)
 
     def GetVi(self, time, merged=False, interp="nearest"):
         hier = self._get_hierarchy(time, "ions_bulkVelocity.h5")
+        return self._get(hier, time, merged, interp)
+        
+    def GetVe(self, time, merged=False, interp="nearest"):
+        hier = self._get_hierarchy(time, "pic_electrons_bulkVelocity.h5")
         return self._get(hier, time, merged, interp)
 
     def GetFlux(self, time, pop_name, merged=False, interp="nearest"):
@@ -394,6 +402,16 @@ class Run:
     def GetParticles(self, time, pop_name, hier=None):
         def filename(name):
             return f"ions_pop_{name}_domain.h5"
+
+        if isinstance(pop_name, (list, tuple)):
+            for pop in pop_name:
+                hier = self._get_hierarchy(time, filename(pop), hier=hier)
+            return hier
+        return self._get_hierarchy(time, filename(pop_name), hier=hier)
+
+    def GetElectronParticles(self, time, pop_name, hier=None):
+        def filename(name):
+            return f"pic_electrons_pop_{name}_domain.h5"
 
         if isinstance(pop_name, (list, tuple)):
             for pop in pop_name:
