@@ -32,7 +32,7 @@ namespace PHARE::solver
         inline bool isRootLevel(int levelNumber) const { return levelNumber == 0; }
 
     public:
-        explicit PICLevelInitializer(PHARE::initializer::PHAREDict const& dict)
+        explicit PICLevelInitializer()
         {
         }
         virtual void initialize(std::shared_ptr<hierarchy_t> const& hierarchy, int levelNumber,
@@ -86,7 +86,7 @@ namespace PHARE::solver
 
                 core::resetMoments(ions, electrons);
                 core::depositParticles(ions, electrons, layout, interpolate_, core::DomainDeposit{});
-                 core::depositParticles(ions, electrons, layout, interpolate_, core::PatchGhostDeposit{});
+                core::depositParticles(ions, electrons, layout, interpolate_, core::PatchGhostDeposit{});
 
                 if (!isRootLevel(levelNumber))
                 {

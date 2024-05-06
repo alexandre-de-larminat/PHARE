@@ -85,7 +85,7 @@ TEST(APythonDataProvider, providesAValidTree)
     auto pop0Charge         = pop0ParticleInitializer["charge"].to<double>();
     auto pop0Basis          = pop0ParticleInitializer["basis"].to<std::string>();
 
-    auto nbrPopulations1           = input["simulation"]["pic_electrons"]["nbrPopulations"].to<std::size_t>();
+    auto nbrPopulations1          = input["simulation"]["pic_electrons"]["nbrPopulations"].to<std::size_t>();
     auto& pop1                    = input["simulation"]["pic_electrons"]["pop0"];
     auto pop1Name                 = pop1["name"].to<std::string>();
     auto pop1Mass                 = pop1["mass"].to<double>();

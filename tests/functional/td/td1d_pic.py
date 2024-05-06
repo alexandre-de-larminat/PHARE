@@ -131,7 +131,7 @@ def config(**options):
     sim = ph.Simulation(**options)
     ph.MaxwellianFluidModel(
         bx=bx, by=by, bz=bz, 
-        protons={"charge": 2., "mass":2, "density": ion_density, **vvv}, 
+        protons={"charge": 2., "mass": 2., "density": ion_density, **vvv}, 
         electrons={"charge": -1., "mass":mass_electron, "density": density, **vvv_electrons}
     )
 
@@ -144,7 +144,7 @@ def config(**options):
             write_timestamps=timestamps,
             compute_timestamps=timestamps,
         )
-    for quantity in ["density", "bulkVelocity"]:
+    for quantity in ["density", "mass_density", "bulkVelocity"]:
         ph.FluidDiagnostics(
             quantity=quantity,
             write_timestamps=timestamps,

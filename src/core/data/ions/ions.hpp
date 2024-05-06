@@ -76,7 +76,7 @@ namespace core
         NO_DISCARD field_type const& massDensity() const
         {
             if (isUsable())
-                return sameMasses_ ? *rho_ : *massDensity_;
+                return sameMasses_ ? *rho_ : *massDensity_; 
             throw std::runtime_error("Error - cannot access density data");
         }
 

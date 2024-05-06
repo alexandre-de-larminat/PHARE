@@ -20,6 +20,7 @@
 
 #include "core/data/grid/gridlayout_utils.hpp"
 #include "core/data/vecfield/vecfield_component.hpp"
+#include "core/hybrid/hybrid_quantities.hpp"
 
 
 #include "core/numerics/fermion_updater/fermion_updater.hpp"
@@ -198,6 +199,27 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
     // Set Bnew to B and Enew to E
     average_(*level, PICmodel, fromCoarser);
 
+    auto& ions = PICmodel.state.ions;
+    auto& electrons = PICmodel.state.pic_electrons;
+    printf("electron velocity = %f\n", electrons.velocity()(Component::X)(10));
+    printf("ion velocity = %f\n", ions.velocity()(Component::X)(10));
+    printf("Ve(x) = %f\n", PHARE::core::HybridQuantity::Vector::Ve(Component::X)(10));
+    printf("V(x) = %f\n", PHARE::core::HybridQuantity::Vector::V(Component::X)(10));
+
+/*
+    for (auto& pop : ions)
+    {
+        auto const& flux    = pop.flux();
+        auto&& [fx, fy, fz] = flux();
+        printf("flux = %f\n", fx());
+    }
+    for (auto& pop : electrons)
+    {
+        auto const& flux    = pop.flux();
+        auto&& [fx, fy, fz] = flux();
+        printf("flux = %f\n", fx());
+    }
+*/
 }
 
 
@@ -456,7 +478,7 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& mod
 
     for (auto& patch : level)
     {
-        auto _      = rm.setOnPatch(*patch, ions, electrons);
+        auto _      = rm.setOnPatch(*patch, electromag, ions, electrons);
         auto layout = PHARE::amr::layoutFromPatch<GridLayout>(*patch);
         fermionUpdater_.updateFermions(ions, electrons, layout);
 

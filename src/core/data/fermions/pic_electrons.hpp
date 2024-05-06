@@ -137,8 +137,8 @@ namespace PHARE::core
 
         NO_DISCARD auto begin() { return std::begin(populations_); }
         NO_DISCARD auto end() { return std::end(populations_); }
-        NO_DISCARD auto begin() const { return std::begin(populations_); }
-        NO_DISCARD auto end() const { return std::end(populations_); }
+        //NO_DISCARD auto begin() const { return std::begin(populations_); }
+        //NO_DISCARD auto end() const { return std::end(populations_); }
 
 
         NO_DISCARD bool isUsable() const
