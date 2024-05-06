@@ -159,7 +159,7 @@ void FluidDiagnosticWriter<H5Writer>::createFiles(DiagnosticProperties& diagnost
                         "momentum_tensor");
 
     tree = "/pic_electrons/";
-    checkCreateFileFor_(diagnostic, fileData_, tree, "density", "bulkVelocity");
+    checkCreateFileFor_(diagnostic, fileData_, tree, "density", "electron_bulkVelocity");
 }
 
 
@@ -235,8 +235,8 @@ void FluidDiagnosticWriter<H5Writer>::getDataSetInfo(DiagnosticProperties& diagn
     tree = "/pic_electrons/";
     if (isActiveDiag(diagnostic, tree, "density"))
         infoDS(electrons.density(), "density", patchAttributes[lvlPatchID]["electron"]);
-    if (isActiveDiag(diagnostic, tree, "bulkVelocity"))
-        infoVF(electrons.velocity(), "bulkVelocity", patchAttributes[lvlPatchID]["electron"]);
+    if (isActiveDiag(diagnostic, tree, "electron_bulkVelocity"))
+        infoVF(electrons.velocity(), "electron_bulkVelocity", patchAttributes[lvlPatchID]["electron"]);
 }
 
 
@@ -321,8 +321,8 @@ void FluidDiagnosticWriter<H5Writer>::initDataSets(
         tree = "/pic_electrons/";
         if (isActiveDiag(diagnostic, tree, "density"))
             initDS(path, attr["electron"], "density", null);
-        if (isActiveDiag(diagnostic, tree, "bulkVelocity"))
-            initVF(path, attr["electron"], "bulkVelocity", null);
+        if (isActiveDiag(diagnostic, tree, "electron_bulkVelocity"))
+            initVF(path, attr["electron"], "electron_bulkVelocity", null);
     };
 
     initDataSets_(patchIDs, patchAttributes, maxLevel, initPatch);
@@ -376,8 +376,8 @@ void FluidDiagnosticWriter<H5Writer>::write(DiagnosticProperties& diagnostic)
     tree = "/pic_electrons/";
     if (isActiveDiag(diagnostic, tree, "density"))
         writeDS(path + "density", electrons.density());
-    if (isActiveDiag(diagnostic, tree, "bulkVelocity"))
-        writeTF(path + "bulkVelocity", electrons.velocity());
+    if (isActiveDiag(diagnostic, tree, "electron_bulkVelocity"))
+        writeTF(path + "electron_bulkVelocity", electrons.velocity());
 }
 
 

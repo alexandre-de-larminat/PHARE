@@ -352,7 +352,7 @@ class Run:
         return self._get(hier, time, merged, interp)
         
     def GetVe(self, time, merged=False, interp="nearest"):
-        hier = self._get_hierarchy(time, "pic_electrons_bulkVelocity.h5")
+        hier = self._get_hierarchy(time, "pic_electrons_electron_bulkVelocity.h5")
         return self._get(hier, time, merged, interp)
 
     def GetFlux(self, time, pop_name, merged=False, interp="nearest"):

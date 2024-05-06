@@ -100,7 +100,7 @@ namespace PHARE::core
             // the bulk velocity is sum(pop_mass * pop_flux) / sum(pop_mass * pop_density)
             // Since all populations have the same mass, this is equivalent to sum(pop_flux) /
             // sum(pop_density) sum(pop_density) which is rho_ and already known by the time we get here.
- 
+
             auto const& density = rho_ ;
 
             bulkVelocity_.zero();

@@ -1,6 +1,7 @@
 from pyphare.pharesee.run import Run
 from pyphare.pharesee.hierarchy import get_times_from_h5
 from pyphare.pharesee.hierarchy import flat_finest_field
+from pyphare.pharesee.hierarchy import hierarchy_from
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -14,7 +15,7 @@ run = Run(run_path)
 
 time = get_times_from_h5(os.path.join(run_path, "EM_B.h5"))
 
-plot_time = time[int(len(time) / 2)]
+plot_time = time[int(len(time)-1)]
 
 
 B = run.GetB(plot_time)
@@ -31,13 +32,18 @@ ion_mass_density = run.GetMassDensity(plot_time)
 electron_density = run.GetNe(plot_time)
 
 Vix, xVix = flat_finest_field(velocity_ions, "Vx")
-Vex, xVex = flat_finest_field(velocity_electrons, "Vx")
+Vex, xVex = flat_finest_field(velocity_electrons, "Vex")
 Ni, xNi = flat_finest_field(ion_density, "rho")
 Nmi, xNmi = flat_finest_field(ion_mass_density, "rho")
 Ne, xNe = flat_finest_field(electron_density, "rho")
 Fix, xFix = flat_finest_field(flux_ions, "protons_Fx")
 Fex, xFex = flat_finest_field(flux_electrons, "pop_Fx")
 
+hier = hierarchy_from(h5_filename="./noRefinement/EM_B.h5")
+patches = hier.level(0).patches
+for patch in patches:
+    print(patch.patch_datas.items())
+    print(patch.patch_datas.keys())
 
 
 fig, axarr = plt.subplots(nrows=5, figsize=(8, 10))
@@ -64,7 +70,6 @@ ax1.plot(xNe, Ne, color="r", ls="-")
 ax2.plot(xVix, Vix, color="k", ls="-")
 ax2.plot(xVex, Vex, color="r", ls="--")
 
-ax3.plot(xNmi, Nmi, color="k", ls="-")
 
 ax4.plot(xFix, Fix, color="k", ls="-")
 ax4.plot(xFex, Fex, color="r", ls="--")
