@@ -17,7 +17,10 @@ from tests.diagnostic import all_timestamps
 
 
 def density(x):
-    return 1.0
+    return 2.0
+
+def ion_density(x):
+    return 1.
 
 
 def S(x, x0, l):
@@ -128,7 +131,7 @@ def config(**options):
     sim = ph.Simulation(**options)
     ph.MaxwellianFluidModel(
         bx=bx, by=by, bz=bz, 
-        protons={"charge": 1., "density": density, **vvv}, 
+        protons={"charge": 2., "mass":2, "density": ion_density, **vvv}, 
         electrons={"charge": -1., "mass":mass_electron, "density": density, **vvv_electrons}
     )
 
@@ -152,8 +155,18 @@ def config(**options):
             quantity=quantity,
             write_timestamps=timestamps,
             compute_timestamps=timestamps,
-            population_name="electrons",
+            population_name="all_electrons",
         )
+
+
+    for pop in sim.model.populations:
+        for quantity in ["density", "flux"]:
+            ph.FluidDiagnostics(
+                quantity=quantity,
+                write_timestamps=timestamps,
+                compute_timestamps=timestamps,
+                population_name=pop,
+            )
     
     for pop in sim.model.populations:
         for quantity in ["domain"]:

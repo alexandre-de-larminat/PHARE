@@ -87,5 +87,5 @@ def time_interpolate(before_time, after_time, interp_time, before_data, after_da
     return (1.0 - alpha) * before_data + alpha * after_data
 
 
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+    #main() 

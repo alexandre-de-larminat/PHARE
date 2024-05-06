@@ -358,6 +358,10 @@ class Run:
     def GetFlux(self, time, pop_name, merged=False, interp="nearest"):
         hier = self._get_hierarchy(time, f"ions_pop_{pop_name}_flux.h5")
         return self._get(hier, time, merged, interp)
+    
+    def GetElectronFlux(self, time, pop_name, merged=False, interp="nearest"):
+        hier = self._get_hierarchy(time, f"pic_electrons_pop_{pop_name}_flux.h5")
+        return self._get(hier, time, merged, interp)
 
     def GetPressure(self, time, pop_name, merged=False, interp="nearest"):
         M = self._get_hierarchy(time, f"ions_pop_{pop_name}_momentum_tensor.h5")

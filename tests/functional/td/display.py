@@ -22,21 +22,23 @@ by, xby = flat_finest_field(B, "By")
 
 velocity_ions = run.GetVi(plot_time)
 velocity_electrons = run.GetVe(plot_time)
-print(velocity_ions)
-print(velocity_electrons)
+
+flux_ions = run.GetFlux(plot_time, "protons")
+flux_electrons = run.GetElectronFlux(plot_time, "electrons")
+print(flux_ions)
+print(flux_electrons)
 
 ion_density = run.GetNi(plot_time)
 electron_density = run.GetNe(plot_time)
-print(ion_density)
-print(electron_density)
 
 Vix, xVix = flat_finest_field(velocity_ions, "Vx")
 Vex, xVex = flat_finest_field(velocity_electrons, "Vx")
 Ni, xNi = flat_finest_field(ion_density, "rho")
 Ne, xNe = flat_finest_field(electron_density, "rho")
+Fix, xFix = flat_finest_field(flux_ions, "protons_Fx")
+Fex, xFex = flat_finest_field(flux_electrons, "pop_Fx")
 
 
-print(velocity_electrons)
 
 fig, axarr = plt.subplots(nrows=4, figsize=(8, 10))
 
@@ -50,7 +52,7 @@ def BY(x):
     return v1 + (v2 - v1) * (S(x, L * 0.25, 1) - S(x, L * 0.75, 1))
 
 
-ax0, ax1, ax2, ax3 = axarr
+ax0, ax1, ax2, ax4 = axarr
 
 ax0.plot(xby, by, color="k", ls="-")
 ax0.plot(xby, BY(xby), color="darkorange", ls="--")
@@ -62,8 +64,8 @@ ax1.plot(xNe, Ne, color="r", ls="-")
 ax2.plot(xVix, Vix, color="k", ls="-")
 ax2.plot(xVex, Vex, color="r", ls="--")
 
-ax3.plot(xVex, Vex, color="k", ls="-")
 
-
+ax4.plot(xFix, Fix, color="k", ls="-")
+ax4.plot(xFex, Fex, color="r", ls="--")
 
 fig.savefig("td1d_pic_info.png")

@@ -239,8 +239,10 @@ class FluidDiagnostics_(Diagnostics):
 
         if self.population_name is None:
             self.quantity = "/ions/" + self.quantity
-        elif self.population_name == "electrons":
+        elif self.population_name == "all_electrons":
             self.quantity = "/pic_electrons/" + self.quantity
+        elif self.population_name== "electrons":
+            self.quantity = "/pic_electrons/pop/" + self.population_name + "/" + self.quantity
         else:
             if not population_in_model(self.population_name):
                 raise ValueError(

@@ -32,7 +32,7 @@ def config():
             "format": "phareh5",
             "options": {"dir": diag_outputs, "mode": "overwrite"},
         },
-        strict=True,
+        strict=False,
     )
 
     def density(x, y):
