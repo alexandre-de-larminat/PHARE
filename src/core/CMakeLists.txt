@@ -16,8 +16,8 @@ set( SOURCES_INC
      data/ions/ion_population/particle_pack.hpp
      data/ions/ion_population/ion_population.hpp
      data/ions/ions.hpp
-     data/fermions/electron_population.hpp
-     data/fermions/pic_electrons.hpp
+     data/pic_electrons/electron_population.hpp
+     data/pic_electrons/pic_electrons.hpp
      data/electrons/electrons.hpp
      data/ions/particle_initializers/particle_initializer.hpp
      data/ions/particle_initializers/maxwellian_particle_initializer.hpp

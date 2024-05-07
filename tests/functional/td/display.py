@@ -31,6 +31,9 @@ ion_density = run.GetNi(plot_time)
 ion_mass_density = run.GetMassDensity(plot_time)
 electron_density = run.GetNe(plot_time)
 
+ion_particles= run.GetParticles(plot_time, "protons")
+electron_particles = run.GetElectronParticles(plot_time, "electrons")
+
 Vix, xVix = flat_finest_field(velocity_ions, "Vx")
 Vex, xVex = flat_finest_field(velocity_electrons, "Vex")
 Ni, xNi = flat_finest_field(ion_density, "rho")
@@ -70,6 +73,10 @@ ax1.plot(xNe, Ne, color="r", ls="-")
 ax2.plot(xVix, Vix, color="k", ls="-")
 ax2.plot(xVex, Vex, color="r", ls="--")
 
+ion_particles.dist_plot(
+                axis=("x", "Vx"),
+                ax=ax3,
+            )
 
 ax4.plot(xFix, Fix, color="k", ls="-")
 ax4.plot(xFex, Fex, color="r", ls="--")

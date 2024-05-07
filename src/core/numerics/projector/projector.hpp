@@ -98,15 +98,13 @@ public:
             iCorr -= 1;
         }
 
-        double dl = 1.; //TODO adapt to user input
+        double dl = layout.meshSize()[0]; 
         double charge_density = partIn.charge * partIn.weight; // CHECK weight factors in the cell volume
 
-        double vy_halfn = (partIn.v[1] + partOut.v[2])/2;
-        double vz_halfn = (partIn.v[2] + partOut.v[2])/2;
             
         double crx_p = charge_density / dt * dl;   // current density in (x) for 1 particle
-        double cry_p = charge_density * vy_halfn;  // current density in the y-direction in 1D
-        double crz_p = charge_density * vz_halfn; // current density in the z-direction in 1D
+        double cry_p = charge_density * partOut.v[1];  // current density in the y-direction in 1D
+        double crz_p = charge_density * partOut.v[2]; // current density in the z-direction in 1D
 
         std::vector<double> Jx_p(order_size, 0.);
 
@@ -187,15 +185,12 @@ public:
             jCorr -= 1;
         }
 
-        std::array<double, 2> dl;
-
-        dl[0] = 1.;
-        dl[1] = 1.;
+        auto dl = layout.meshSize();
         double charge_density = partIn.charge * partIn.weight; // CHECK weight factors in the cell volume
      
         double crx_p = charge_density/dt * dl[0];  // current density in the evaluated dimension
         double cry_p = charge_density/dt * dl[1];  // current density in the evaluated dimension
-        double crz_p = charge_density*partIn.v[2]; // current density in the z-direction in 1D or 2D
+        double crz_p = charge_density*partOut.v[2]; // current density in the z-direction in 1D or 2D
 
         std::vector<std::vector<double>> Jx_p(order_size, std::vector<double>(order_size, 0.));
         std::vector<std::vector<double>> Jy_p(order_size, std::vector<double>(order_size, 0.));

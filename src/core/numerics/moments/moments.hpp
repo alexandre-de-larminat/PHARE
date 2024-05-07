@@ -5,7 +5,7 @@
 
 #include "core/numerics/interpolator/interpolator.hpp"
 #include "core/data/ions/ions.hpp"
-#include "core/data/fermions/pic_electrons.hpp"
+#include "core/data/pic_electrons/pic_electrons.hpp"
 
 
 namespace PHARE

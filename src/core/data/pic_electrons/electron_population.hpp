@@ -97,7 +97,7 @@ namespace PHARE::core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers - electron patchGhost");
+                throw std::runtime_error("Error - cannot provide access to particle buffers");
             }
         }
 
@@ -116,7 +116,7 @@ namespace PHARE::core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers - electron levelGhost");
+                throw std::runtime_error("Error - cannot provide access to particle buffers");
             }
         }
 
@@ -137,7 +137,7 @@ namespace PHARE::core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers - electron levelGhostOld");
+                throw std::runtime_error("Error - cannot provide access to particle buffers");
             }
         }
 
@@ -151,7 +151,7 @@ namespace PHARE::core
             }
             else
             {
-                throw std::runtime_error("Error - cannot provide access to particle buffers - electron levelGhostNew");
+                throw std::runtime_error("Error - cannot provide access to particle buffers");
             }
         }
 

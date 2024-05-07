@@ -2,8 +2,8 @@
 
 
 
-#include "core/data/fermions/pic_electrons.hpp"
-#include "core/data/fermions/electron_population.hpp"
+#include "core/data/pic_electrons/pic_electrons.hpp"
+#include "core/data/pic_electrons/electron_population.hpp"
 #include "core/data/ndarray/ndarray_vector.hpp"
 #include "core/data/particles/particle_array.hpp"
 #include "core/data/vecfield/vecfield.hpp"

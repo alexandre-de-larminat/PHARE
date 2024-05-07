@@ -16,7 +16,7 @@
 #include "core/data/vecfield/vecfield_component.hpp"
 #include "initializer/data_provider.hpp"
 #include "core/utilities/algorithm.hpp"
-#include "core/data/fermions/electron_population.hpp"
+#include "core/data/pic_electrons/electron_population.hpp"
 
 namespace PHARE::core
 {
@@ -28,8 +28,6 @@ namespace PHARE::core
         using vecfield_type       = typename ElectronPopulation::vecfield_type;
         using Float               = typename field_type::type;
         using particle_array_type = typename ElectronPopulation::particle_array_type;
-        using ParticleInitializerFactoryT
-            = ParticleInitializerFactory<particle_array_type, GridLayout>;
         using gridlayout_type           = GridLayout;
         static constexpr auto dimension = GridLayout::dimension;
 

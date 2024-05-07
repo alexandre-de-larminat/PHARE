@@ -78,13 +78,7 @@ def vthz(x):
 
 mass_electron = 1./15
 
-def vthxe(x):
-    return T(x)/mass_electron
-
-def vthye(x):
-    return T(x)/mass_electron
-
-def vthze(x):
+def vthe(x):
     return T(x)/mass_electron
 
 
@@ -98,16 +92,16 @@ vvv = {
 }
 
 vvv_electrons = {
-    "vbulkx": vx,
+    "vbulkx": vy,
     "vbulky": vy,
     "vbulkz": vz,
-    "vthx": vthxe,
-    "vthy": vthye,
-    "vthz": vthze,
+    "vthx": vthe,
+    "vthy": vthe,
+    "vthz": vthe,
 }
 
 # used to only test on the early particle diagnostic files
-particle_diagnostics = {"count": 10, "idx": 0}
+particle_diagnostics = {"count": 250, "idx": 0}
 
 
 def simulation_params(diagdir, **extra):
@@ -186,44 +180,10 @@ def noRefinement(diagdir):
     return config(**simulation_params(diagdir))
 
 
-def make_figure():
-
-    rNoRef = Run("./noRefinement")
-
-    plot_time = 8
-    v = 2
-
-    BNoRef = rNoRef.GetB(plot_time, merged=True, interp="linear")
-
-    xbyNoRef = BNoRef["By"][1][0]
-    byNoRef = BNoRef["By"][0](xbyNoRef)
-
-    fig, axarr = plt.subplots(nrows=1, figsize=(8, 4))
-
-    def S(x, x0, l):
-        return 0.5 * (1 + np.tanh((x - x0) / l))
-
-    def by(x):
-        L = 100
-        v1 = -1
-        v2 = 1
-        return v1 + (v2 - v1) * (S(x, L * 0.25, 1) - S(x, L * 0.75, 1))
-
-
-    ax0 = axarr
-
-    ax0.plot(xbyNoRef, byNoRef, color="k", ls="-")
-    ax0.plot(xbyNoRef, by(xbyNoRef), color="darkorange", ls="--")
-
-
-    fig.savefig("td1d_pic.png")
-
 
 def main():
     Simulator(noRefinement(diagdir="noRefinement")).run()
     ph.global_vars.sim = None
-    
-    make_figure()
 
 
 if __name__ == "__main__":
