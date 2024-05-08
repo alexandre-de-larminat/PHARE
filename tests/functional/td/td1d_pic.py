@@ -17,7 +17,7 @@ from tests.diagnostic import all_timestamps
 
 
 def density(x):
-    return 2.0
+    return 1.0
 
 def ion_density(x):
     return 1.
@@ -54,7 +54,7 @@ def T(x):
 
 
 def vx(x):
-    return 2.0
+    return 5.0
 
 
 def vy(x):
@@ -76,7 +76,7 @@ def vthy(x):
 def vthz(x):
     return T(x)
 
-mass_electron = 1./15
+mass_electron = 1./10
 
 def vthe(x):
     return T(x)/mass_electron
@@ -92,7 +92,7 @@ vvv = {
 }
 
 vvv_electrons = {
-    "vbulkx": vy,
+    "vbulkx": vx,
     "vbulky": vy,
     "vbulkz": vz,
     "vthx": vthe,
@@ -100,14 +100,15 @@ vvv_electrons = {
     "vthz": vthe,
 }
 
+steps = 250
 # used to only test on the early particle diagnostic files
-particle_diagnostics = {"count": 250, "idx": 0}
+particle_diagnostics = {"count": steps, "idx": 0}
 
 
 def simulation_params(diagdir, **extra):
     params = {
         "interp_order": 1,
-        "time_step_nbr": 250,
+        "time_step_nbr": steps,
         "time_step": 0.04,
         "boundary_types": "periodic",
         "cells": 100,
@@ -125,7 +126,7 @@ def config(**options):
     sim = ph.Simulation(**options)
     ph.MaxwellianFluidModel(
         bx=bx, by=by, bz=bz, 
-        protons={"charge": 2., "mass": 2., "density": ion_density, **vvv}, 
+        protons={"charge": 1., "mass": 1., "density": ion_density, **vvv}, 
         electrons={"charge": -1., "mass":mass_electron, "density": density, **vvv_electrons}
     )
 
@@ -138,12 +139,14 @@ def config(**options):
             write_timestamps=timestamps,
             compute_timestamps=timestamps,
         )
+        
     for quantity in ["density", "mass_density", "bulkVelocity"]:
         ph.FluidDiagnostics(
             quantity=quantity,
             write_timestamps=timestamps,
             compute_timestamps=timestamps,
         )
+        
     for quantity in ["density", "electron_bulkVelocity"]:
         ph.FluidDiagnostics(
             quantity=quantity,

@@ -49,7 +49,7 @@ for patch in patches:
     print(patch.patch_datas.keys())
 
 
-fig, axarr = plt.subplots(nrows=5, figsize=(8, 10))
+fig, axarr = plt.subplots(nrows=6, figsize=(8, 10))
 
 def S(x, x0, l):
     return 0.5 * (1 + np.tanh((x - x0) / l))
@@ -61,7 +61,7 @@ def BY(x):
     return v1 + (v2 - v1) * (S(x, L * 0.25, 1) - S(x, L * 0.75, 1))
 
 
-ax0, ax1, ax2, ax3, ax4 = axarr
+ax0, ax1, ax2, ax3, ax4, ax5 = axarr
 
 ax0.plot(xby, by, color="k", ls="-")
 ax0.plot(xby, BY(xby), color="darkorange", ls="--")
@@ -78,7 +78,12 @@ ion_particles.dist_plot(
                 ax=ax3,
             )
 
-ax4.plot(xFix, Fix, color="k", ls="-")
-ax4.plot(xFex, Fex, color="r", ls="--")
+electron_particles.dist_plot(
+                axis=("x", "Vx"),
+                ax=ax4,
+            )
+
+ax5.plot(xFix, Fix, color="k", ls="-")
+ax5.plot(xFex, Fex, color="r", ls="--")
 
 fig.savefig("td1d_pic_info.png")
