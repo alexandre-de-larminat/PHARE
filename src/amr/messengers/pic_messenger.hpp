@@ -1,137 +1,394 @@
-
 #ifndef PHARE_PIC_MESSENGER_HPP
 #define PHARE_PIC_MESSENGER_HPP
 
-#include <memory>
-#include <string>
-#include "core/def/phare_mpi.hpp"
 
 
-#include <SAMRAI/hier/CoarsenOperator.h>
-#include <SAMRAI/hier/PatchLevel.h>
-#include <SAMRAI/hier/RefineOperator.h>
 
 #include "core/hybrid/hybrid_quantities.hpp"
+#include "amr/messengers/hybrid_messenger_strategy.hpp"
 #include "amr/messengers/messenger.hpp"
 #include "amr/messengers/messenger_info.hpp"
-#include "amr/messengers/pic_messenger_info.hpp"
+#include "amr/messengers/mhd_messenger.hpp"
+#include "core/def.hpp"
+
+
+
 
 namespace PHARE
 {
 namespace amr
 {
-    template<typename PICModel>
-    class PICMessenger : public IMessenger<typename PICModel::Interface>
+    enum class HybridMessengerStrategyType { HybridHybrid, MHDHybrid };
+
+
+
+    /** @brief HybridMessenger is a concrete implementation of the IMessenger interface which
+     * represents all data messengers towards a Hybrid level.
+     *
+     * Most of the operations needed to communicate data cannot however be defined here since it is
+     * not known whether the origin level is Hybrid or not. The class therefore relies on a pointer
+     * to a strategy that performs the operations.
+     *
+     * Possible HybridMessengerStrategy are:
+     *
+     * - HybridHybridMessengerStrategy
+     * - MHDHybridMessengerStrategy
+     *
+     *
+     * In addition to implement the interface of a IMessenger to be used by the
+     * MultiPhysicsIntegrator, HybridMessenger also provides Hybrid ISolver objects with an
+     * interface specific to Hybrid systems. Those methods are:
+     *
+     *
+     * Ghost filling methods tuned for Hybrid quantities:
+     *
+     * - fillElectricGhosts()
+     * - fillIonGhostParticles()
+     * - fillIonMomentGhosts()
+     *
+     * Synchronization methods of Hybrid quantities:
+     *
+     * - syncMagnetic()
+     * - syncElectric()
+     * - syncIonMOments()
+     *
+     */
+    template<typename HybridModel>
+    class HybridMessenger : public IMessenger<typename HybridModel::Interface>
     {
+    private:
+        using IonsT          = decltype(std::declval<HybridModel>().state.ions);
+        using ElectronsT     = decltype(std::declval<PICModel>().state.pic_electrons);
+        using VecFieldT      = decltype(std::declval<HybridModel>().state.electromag.E);
+        using IPhysicalModel = typename HybridModel::Interface;
+
+
+        using stratT = HybridMessengerStrategy<HybridModel>;
+
     public:
-        using IPhysicalModel = typename PICModel::Interface;
-        PICMessenger(std::shared_ptr<typename PICModel::resources_manager_type> resourcesManager,
-                     int const firstLevel)
-            : resourcesManager_{std::move(resourcesManager)}
-            , firstLevel_{firstLevel}
-        {
-        }
-
-        void
-        registerQuantities(std::unique_ptr<IMessengerInfo> fromCoarserInfo,
-                           [[maybe_unused]] std::unique_ptr<IMessengerInfo> fromFinerInfo) override
-        {
-            printf("PICMessenger::registerQuantities\n");
-            std::unique_ptr<HybridMessengerInfo> xInfo{
-                dynamic_cast<HybridMessengerInfo*>(fromCoarserInfo.release())};
-        }
-
-
-
-        void registerLevel(std::shared_ptr<SAMRAI::hier::PatchHierarchy> const& /*hierarchy*/,
-                           int const /*levelNumber*/) override
+        explicit HybridMessenger(std::unique_ptr<stratT> strat)
+            : strat_{std::move(strat)}
         {
         }
 
 
-        static const std::string stratName;
+        /* -------------------------------------------------------------------------
+                                Start IMessenger interface
+           -------------------------------------------------------------------------*/
 
-        std::string fineModelName() const override { return PICModel::model_name; }
 
-        std::string coarseModelName() const override { return PICModel::model_name; }
 
-        void allocate(SAMRAI::hier::Patch& /*patch*/, double const /*allocateTime*/) const override
+        /**
+         * @brief see IMessenger::allocate. Allocate calls the abstract HybridMessengerStrategy to
+         * perform the allocation of its internal resources
+         */
+        void allocate(SAMRAI::hier::Patch& patch, double const allocateTime) const override
         {
+            strat_->allocate(patch, allocateTime);
         }
 
-        void initLevel(IPhysicalModel& /*model*/, SAMRAI::hier::PatchLevel& /*level*/,
-                       double const /*initDataTime*/) override
-        {
-        }
 
-        std::unique_ptr<IMessengerInfo> emptyInfoFromCoarser() override
-        {
-            return std::make_unique<HybridMessengerInfo>();
-        }
 
-        std::unique_ptr<IMessengerInfo> emptyInfoFromFiner() override
+        /**
+         * @brief see IMessenger::registerQuantities. Prepares a HybridMessenger to communicates
+         * variables given in the two information structures. Since the HybridMessenger does not
+         * know which concrete strategy it is using, it cannot directly use these informations. It
+         * thus passes them to its strategy.
+         *
+         * @param fromCoarserInfo see IMessenger
+         * @param fromFinerInfo see IMessenger
+         */
+        void registerQuantities(std::unique_ptr<IMessengerInfo> fromCoarserInfo,
+                                std::unique_ptr<IMessengerInfo> fromFinerInfo) override
         {
-            return std::make_unique<HybridMessengerInfo>();
+            strat_->registerQuantities(std::move(fromCoarserInfo), std::move(fromFinerInfo));
         }
 
 
 
 
-        void regrid(std::shared_ptr<SAMRAI::hier::PatchHierarchy> const& /*hierarchy*/,
-                    const int /*levelNumber*/,
-                    std::shared_ptr<SAMRAI::hier::PatchLevel> const& /*oldLevel*/,
-                    IPhysicalModel& /*model*/, double const /*initDataTime*/) override
+        /**
+         * @brief see IMessenger::registerLevel
+         */
+        void registerLevel(std::shared_ptr<SAMRAI::hier::PatchHierarchy> const& hierarchy,
+                           int const levelNumber) override
         {
-        }
-
-
-        void firstStep(IPhysicalModel& /*model*/, SAMRAI::hier::PatchLevel& /*level*/,
-                       const std::shared_ptr<SAMRAI::hier::PatchHierarchy>& /*hierarchy*/,
-                       double const /*currentTime*/, double const /*prevCoarserTIme*/,
-                       double const /*newCoarserTime*/) final
-        {
-        }
-
-
-        void lastStep(IPhysicalModel& /*model*/, SAMRAI::hier::PatchLevel& /*level*/) final {}
-
-
-        void prepareStep(IPhysicalModel& /*model*/, SAMRAI::hier::PatchLevel& /*level*/,
-                         double /*currentTime*/) final
-        {
-        }
-
-        void fillRootGhosts(IPhysicalModel& /*model*/, SAMRAI::hier::PatchLevel& /*level*/,
-                            double const /*initDataTime*/) final
-        {
+            strat_->registerLevel(hierarchy, levelNumber);
         }
 
 
 
-        void synchronize(SAMRAI::hier::PatchLevel& /*level*/) final
+        /**
+         * @brief see IMessenger::registerLevel
+         */
+        void regrid(std::shared_ptr<SAMRAI::hier::PatchHierarchy> const& hierarchy,
+                    int const levelNumber,
+                    std::shared_ptr<SAMRAI::hier::PatchLevel> const& oldLevel,
+                    IPhysicalModel& model, double const initDataTime) final
         {
-            // call coarsning schedules...
+            strat_->regrid(hierarchy, levelNumber, oldLevel, model, initDataTime);
         }
 
-        void postSynchronize(IPhysicalModel& /*model*/, SAMRAI::hier::PatchLevel& /*level*/,
-                             double const /*time*/) override
+
+
+
+        /**
+         * @brief see IMessenger::initLevel
+         * @param levelNumber
+         * @param initDataTime
+         */
+        void initLevel(IPhysicalModel& model, SAMRAI::hier::PatchLevel& level,
+                       double const initDataTime) override
         {
+            strat_->initLevel(model, level, initDataTime);
         }
 
 
-        std::string name() override { return stratName; }
+        /**
+         * @brief see IMessenger::firstStep
+         * @param model
+         */
+        void firstStep(IPhysicalModel& model, SAMRAI::hier::PatchLevel& level,
+                       std::shared_ptr<SAMRAI::hier::PatchHierarchy> const& hierarchy,
+                       double const currentTime, double const prevCoarserTime,
+                       double const newCoarserTime) final
+        {
+            strat_->firstStep(model, level, hierarchy, currentTime, prevCoarserTime,
+                              newCoarserTime);
+        }
 
-        virtual ~PICMessenger() = default;
 
+
+        /**
+         * @brief see IMessenger::lastStep
+         * @param model
+         */
+        void lastStep(IPhysicalModel& model, SAMRAI::hier::PatchLevel& level) override
+        {
+            strat_->lastStep(model, level);
+        }
+
+
+
+        /**
+         * @brief prepareStep see IMessenger::prepareStep
+         */
+        void prepareStep(IPhysicalModel& model, SAMRAI::hier::PatchLevel& level,
+                         double currentTime) override
+        {
+            strat_->prepareStep(model, level, currentTime);
+        }
+
+
+
+        void fillRootGhosts(IPhysicalModel& model, SAMRAI::hier::PatchLevel& level,
+                            double const initDataTime) override
+        {
+            strat_->fillRootGhosts(model, level, initDataTime);
+        }
+
+
+
+        void synchronize(SAMRAI::hier::PatchLevel& level) override { strat_->synchronize(level); }
+
+        void postSynchronize(IPhysicalModel& model, SAMRAI::hier::PatchLevel& level,
+                             double const time) override
+        {
+            strat_->postSynchronize(model, level, time);
+        }
+
+
+
+        /**
+         * @brief IMessenger::fineModelName
+         * @return
+         */
+        NO_DISCARD std::string fineModelName() const override { return strat_->fineModelName(); }
+
+
+
+
+        /**
+         * @brief see IMessenger::coarseModelName
+         * @return
+         */
+        NO_DISCARD std::string coarseModelName() const override
+        {
+            return strat_->coarseModelName();
+        }
+
+
+
+
+        /**
+         * @brief see IMessenger::emptyInfoFromCoarser
+         */
+        NO_DISCARD std::unique_ptr<IMessengerInfo> emptyInfoFromCoarser() override
+        {
+            return strat_->emptyInfoFromCoarser();
+        }
+
+
+
+        /**
+         * @brief see IMessenger::emptyInfoFromFiner
+         */
+        NO_DISCARD std::unique_ptr<IMessengerInfo> emptyInfoFromFiner() override
+        {
+            return strat_->emptyInfoFromFiner();
+        }
+
+
+
+        /**
+         * @brief returns the name of the concrete IMessenger, which in the case of a
+         * HybridMessenger is just the name of its strategy.
+         */
+        NO_DISCARD std::string name() override
+        {
+            if (strat_ != nullptr)
+            {
+                return strat_->name();
+            }
+            else
+            {
+                throw std::runtime_error("invalid strat");
+            }
+        }
+
+        /* -------------------------------------------------------------------------
+                                End IMessenger interface
+
+                            Start HybridMessenger Interface
+           -------------------------------------------------------------------------*/
+
+
+
+        /**
+         * @brief fillElectricGhosts is called by a ISolver solving a hybrid equations to fill
+         * the ghost nodes of the electric field
+         * @param E is the electric field for which ghost nodes will be filled
+         * @param levelNumber
+         * @param fillTime
+         */
+        void fillElectricGhosts(VecFieldT& E, int const levelNumber, double const fillTime)
+        {
+            strat_->fillElectricGhosts(E, levelNumber, fillTime);
+        }
+
+
+
+        /**
+         * @brief fillCurrentGhosts is called by a ISolver solving a hybrid equations to fill
+         * the ghost nodes of the electric current density field
+         * @param J is the electric current density for which ghost nodes will be filled
+         * @param levelNumber
+         * @param fillTime
+         */
+        void fillCurrentGhosts(VecFieldT& J, int const levelNumber, double const fillTime)
+        {
+            strat_->fillCurrentGhosts(J, levelNumber, fillTime);
+        }
+
+
+
+
+        /**
+         * @brief fillIonGhostParticles is called by a ISolver solving hybrid equations to fill the
+         * ghosts particles
+         * @param ions for which ghost particles will be filled
+         * @param levelNumber
+         * @param fillTime
+         */
+        void fillIonGhostParticles(IonsT& ions, SAMRAI::hier::PatchLevel& level,
+                                   double const fillTime)
+        {
+            strat_->fillIonGhostParticles(ions, level, fillTime);
+        }
+
+
+
+        /**
+         * @brief fillIonPopMomentGhosts is called by a ISolver solving hybrid equations to fill the
+         * ion moments
+         * @param ions
+         * @param levelNumber
+         * @param fillTime
+         */
+        void fillIonPopMomentGhosts(IonsT& ions, SAMRAI::hier::PatchLevel& level,
+                                    double const fillTime)
+        {
+            strat_->fillIonPopMomentGhosts(ions, level, fillTime);
+        }
+
+
+        void fillIonMomentGhosts(IonsT& ions, SAMRAI::hier::PatchLevel& level,
+                                 double const fillTime)
+        {
+            strat_->fillIonMomentGhosts(ions, level, fillTime);
+        }
+
+
+
+        /**
+         * @brief fillElectronGhostParticles is called by a ISolver solving hybrid equations to fill the
+         * ghosts particles
+         * @param electrons for which ghost particles will be filled
+         * @param levelNumber
+         * @param fillTime
+         */
+        void fillElectronGhostParticles(ElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
+                                   double const fillTime)
+        {
+            strat_->fillElectronGhostParticles(electrons, level, fillTime);
+        }
+
+
+
+        /**
+         * @brief fillElectronPopMomentGhosts is called by a ISolver solving hybrid equations to fill the
+         * ion moments
+         * @param electrons
+         * @param levelNumber
+         * @param fillTime
+         */
+        void fillElectronPopMomentGhosts(ElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
+                                    double const fillTime)
+        {
+            strat_->fillElectronPopMomentGhosts(electrons, level, fillTime);
+        }
+
+
+        void fillElectronMomentGhosts(ElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
+                                 double const fillTime)
+        {
+            strat_->fillElectronMomentGhosts(electrons, level, fillTime);
+        }
+
+        // synchronization/coarsening methods
+
+        void syncMagnetic(VecFieldT& B) { strat_->syncMagnetic(B); }
+        void syncElectric(VecFieldT& E) { strat_->syncElectric(E); }
+        void syncIonMoments(IonsT& ions) { strat_->syncIonMoments(ions); }
+        void syncElectronMoments(ElectronsT& electrons) { strat_->syncIonMoments(electrons); }
+
+
+
+        /* -------------------------------------------------------------------------
+                            End HybridMessenger Interface
+           -------------------------------------------------------------------------*/
+
+
+
+
+        virtual ~HybridMessenger() = default;
 
     private:
-        std::shared_ptr<typename PICModel::resources_manager_type> resourcesManager_;
-        int const firstLevel_;
+        const std::unique_ptr<stratT> strat_;
     };
 
 
-    template<typename PICModel>
-    const std::string PICMessenger<PICModel>::stratName = "PICModel-PICModel";
 } // namespace amr
+
 } // namespace PHARE
 #endif
