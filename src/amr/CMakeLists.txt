@@ -36,14 +36,19 @@ set( SOURCES_INC
      messengers/synchronizer_pool.hpp
      messengers/synchronizer.hpp
      messengers/messenger.hpp
+     messengers/kinetic_messenger_strategy.hpp
      messengers/hybrid_messenger.hpp
      messengers/hybrid_messenger_strategy.hpp
      messengers/hybrid_hybrid_messenger_strategy.hpp
+     messengers/pic_messenger.hpp
+     messengers/pic_messenger_strategy.hpp
+     messengers/pic_pic_messenger_strategy.hpp
      messengers/mhd_hybrid_messenger_strategy.hpp
      messengers/mhd_messenger.hpp
      messengers/messenger_factory.hpp
      messengers/messenger_info.hpp
      messengers/hybrid_messenger_info.hpp
+     messengers/pic_messenger_info.hpp
      messengers/mhd_messenger_info.hpp
      types/amr_types.hpp
      wrappers/hierarchy.hpp
@@ -65,6 +70,7 @@ set( SOURCES_INC
      messenger_registration.hpp
      level_initializer/level_initializer.hpp
      level_initializer/hybrid_level_initializer.hpp
+     level_initializer/pic_level_initializer.hpp
      level_initializer/level_initializer_factory.hpp
      data/field/field_variable_fill_pattern.hpp
    )

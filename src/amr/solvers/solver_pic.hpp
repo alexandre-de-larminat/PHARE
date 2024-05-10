@@ -102,7 +102,7 @@ private:
                        ResourcesManager& rm, Messenger& fromCoarser, double const currentTime,
                        double const newTime);
 
-    void average_(level_t& level, PICModel& model, Messenger& fromCoarser);
+    void averageAndSet_(level_t& level, PICModel& model, Messenger& fromCoarser);
 
 
 }; // end SolverPIC
@@ -157,6 +157,7 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
     // Solve Faraday
     MF_(*level, PICmodel, fromCoarser, currentTime, newTime);
 
+
     // Push particles, project current onto the grid
     moveFermions_(*level, PICmodel, electromagAvg_, resourcesManager, fromCoarser, currentTime,
                   newTime);
@@ -167,7 +168,7 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
 
 
     // Set Bnew to B and Enew to E
-    average_(*level, PICmodel, fromCoarser);
+    averageAndSet_(*level, PICmodel, fromCoarser);
 
 }
 
@@ -188,8 +189,6 @@ void SolverPIC<PICModel, AMR_Types>::restartJ_(level_t& level, PICModel& model,
         auto _ = resourcesManager->setOnPatch(*patch, J);
         J.zero();
     }
-    // TODO: check whether this is necessary
-    // fromCoarser.fillCurrentGhosts(J, level.getLevelNumber(), currentTime);
 }
   
 
@@ -203,6 +202,7 @@ void SolverPIC<PICModel, AMR_Types>::MA_(level_t& level, PICModel& model, Messen
     auto& resourcesManager = model.resourcesManager;
     auto dt                = newTime - currentTime;
     auto& electromag       = PICState.electromag;
+    auto levelNumber       = level.getLevelNumber();
 
     {
         PHARE_LOG_SCOPE("SolverPIC::MA_");
@@ -220,7 +220,7 @@ void SolverPIC<PICModel, AMR_Types>::MA_(level_t& level, PICModel& model, Messen
 
             resourcesManager->setTime(E, *patch, newTime);
         }
-        //fromCoarser.fillCurrentGhosts(E, level.getLevelNumber(), newTime);
+        fromCoarser.fillElectricGhosts(E, levelNumber, newTime);
 
     }
 }
@@ -260,7 +260,6 @@ void SolverPIC<PICModel, AMR_Types>::MF_(level_t& level, PICModel& model, Messen
             PHARE::core::average(Bnew, Bnew, B);
             PHARE::core::average(E, E, Eavg); // Unrelated to Faraday, we are just using the loop for convenience, to deal with E and B as a unit.
         }
-        //fromCoarser.fillCurrentGhosts(B, level.getLevelNumber(), newTime);
     }
 }
 
@@ -338,8 +337,8 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& mod
     }
 
     // Only ion ghosts are filled since electrons don't exist on the coarser level
-    //fromCoarser.fillIonGhostParticles(ions, level, newTime);
-    //fromCoarser.fillIonPopMomentGhosts(ions, level, newTime);
+    fromCoarser.fillGhostParticles(ions, electrons, level, newTime);
+    fromCoarser.fillPopMomentGhosts(ions, electrons, level, newTime);
 
     for (auto& patch : level)
     {
@@ -352,20 +351,19 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& mod
 
     // now Ni and Vi are calculated we can fill pure ghost nodes
     // these were not completed by the deposition of patch and levelghost particles
-    //fromCoarser.fillIonMomentGhosts(ions, level, newTime);
+    fromCoarser.fillParticleMomentGhosts(ions, electrons, level, newTime);
 }
 
 template<typename PICModel, typename AMR_Types>
-void SolverPIC<PICModel, AMR_Types>::average_(level_t& level, PICModel& model,
+void SolverPIC<PICModel, AMR_Types>::averageAndSet_(level_t& level, PICModel& model,
                                                  Messenger& fromCoarser)
 {
-    PHARE_LOG_SCOPE("SolverPIC::average_");
+    PHARE_LOG_SCOPE("SolverPIC::averageAndSet_");
 
-    auto& electromag      = model.state.electromag;
     auto& resourcesManager = model.resourcesManager;
 
     auto& Bnew  = electromagNew_.B;
-    auto& B     = electromag.B;
+    auto& B     = model.state.electromag.B;
     auto& Bavg  = electromagAvg_.B;
 
     for (auto& patch : level)

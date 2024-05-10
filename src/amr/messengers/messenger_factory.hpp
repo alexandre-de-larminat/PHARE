@@ -9,6 +9,7 @@
 #include "amr/messengers/mhd_hybrid_messenger_strategy.hpp"
 #include "amr/messengers/mhd_messenger.hpp"
 #include "amr/messengers/pic_messenger.hpp"
+#include "amr/messengers/pic_pic_messenger_strategy.hpp"
 #include "core/def.hpp"
 
 #include <algorithm>
@@ -118,14 +119,19 @@ public:
             return std::make_unique<MHDMessenger<MHDModel>>(std::move(mhdResourcesManager),
                                                             firstLevel);
         }
-        
-        else if (messengerName == PICMessenger<PICModel>::stratName)
-        {
-            auto picResourcesManager = dynamic_cast<PICModel const&>(coarseModel).resourcesManager;
 
-            return std::make_unique<PICMessenger<PICModel>>(std::move(picResourcesManager),
-                                                            firstLevel);
+
+
+        else if (messengerName == PICPICMessengerStrategy<PICModel, RefinementParams>::stratName)
+        {
+            auto resourcesManager = dynamic_cast<PICModel const&>(coarseModel).resourcesManager;
+
+            auto messengerStrategy = std::make_unique<PICPICMessengerStrategy<PICModel, RefinementParams>>(
+                std::move(resourcesManager), firstLevel);
+
+            return std::make_unique<PICMessenger<PICModel>>(std::move(messengerStrategy));
         }
+        
         else
             return {};
     }

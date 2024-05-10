@@ -5,10 +5,10 @@
 
 
 #include "core/hybrid/hybrid_quantities.hpp"
-#include "amr/messengers/hybrid_messenger_strategy.hpp"
+#include "amr/messengers/pic_messenger_strategy.hpp"
 #include "amr/messengers/messenger.hpp"
 #include "amr/messengers/messenger_info.hpp"
-#include "amr/messengers/mhd_messenger.hpp"
+#include "amr/messengers/pic_messenger.hpp"
 #include "core/def.hpp"
 
 
@@ -18,55 +18,55 @@ namespace PHARE
 {
 namespace amr
 {
-    enum class HybridMessengerStrategyType { HybridHybrid, MHDHybrid };
+    enum class PICMessengerStrategyType { PICPIC};
 
 
 
-    /** @brief HybridMessenger is a concrete implementation of the IMessenger interface which
-     * represents all data messengers towards a Hybrid level.
+    /** @brief PICMessenger is a concrete implementation of the IMessenger interface which
+     * represents all data messengers towards a PIC level.
      *
      * Most of the operations needed to communicate data cannot however be defined here since it is
-     * not known whether the origin level is Hybrid or not. The class therefore relies on a pointer
+     * not known whether the origin level is PIC or not. The class therefore relies on a pointer
      * to a strategy that performs the operations.
      *
-     * Possible HybridMessengerStrategy are:
+     * Possible PICMessengerStrategy are:
      *
-     * - HybridHybridMessengerStrategy
-     * - MHDHybridMessengerStrategy
+     * - HybridPICMessengerStrategy (not implemented yet)
+     * - PICPICMessengerStrategy
      *
      *
      * In addition to implement the interface of a IMessenger to be used by the
-     * MultiPhysicsIntegrator, HybridMessenger also provides Hybrid ISolver objects with an
-     * interface specific to Hybrid systems. Those methods are:
+     * MultiPhysicsIntegrator, PICMessenger also provides PIC ISolver objects with an
+     * interface specific to PIC systems. Those methods are:
      *
      *
-     * Ghost filling methods tuned for Hybrid quantities:
+     * Ghost filling methods tuned for PIC quantities:
      *
      * - fillElectricGhosts()
-     * - fillIonGhostParticles()
-     * - fillIonMomentGhosts()
+     * - fillParticleGhostParticles()
+     * - fillParticleMomentGhosts()
      *
-     * Synchronization methods of Hybrid quantities:
+     * Synchronization methods of PIC quantities:
      *
      * - syncMagnetic()
      * - syncElectric()
-     * - syncIonMOments()
+     * - syncParticleMoments()
      *
      */
-    template<typename HybridModel>
-    class HybridMessenger : public IMessenger<typename HybridModel::Interface>
+    template<typename PICModel>
+    class PICMessenger : public IMessenger<typename PICModel::Interface>
     {
     private:
-        using IonsT          = decltype(std::declval<HybridModel>().state.ions);
-        using ElectronsT     = decltype(std::declval<PICModel>().state.pic_electrons);
-        using VecFieldT      = decltype(std::declval<HybridModel>().state.electromag.E);
-        using IPhysicalModel = typename HybridModel::Interface;
+        using IonsT          = decltype(std::declval<PICModel>().state.ions);
+        using PICElectronsT  = decltype(std::declval<PICModel>().state.pic_electrons);
+        using VecFieldT      = decltype(std::declval<PICModel>().state.electromag.E);
+        using IPhysicalModel = typename PICModel::Interface;
 
 
-        using stratT = HybridMessengerStrategy<HybridModel>;
+        using stratT = PICMessengerStrategy<PICModel>;
 
     public:
-        explicit HybridMessenger(std::unique_ptr<stratT> strat)
+        explicit PICMessenger(std::unique_ptr<stratT> strat)
             : strat_{std::move(strat)}
         {
         }
@@ -79,7 +79,7 @@ namespace amr
 
 
         /**
-         * @brief see IMessenger::allocate. Allocate calls the abstract HybridMessengerStrategy to
+         * @brief see IMessenger::allocate. Allocate calls the abstract PICMessengerStrategy to
          * perform the allocation of its internal resources
          */
         void allocate(SAMRAI::hier::Patch& patch, double const allocateTime) const override
@@ -90,8 +90,8 @@ namespace amr
 
 
         /**
-         * @brief see IMessenger::registerQuantities. Prepares a HybridMessenger to communicates
-         * variables given in the two information structures. Since the HybridMessenger does not
+         * @brief see IMessenger::registerQuantities. Prepares a PICMessenger to communicates
+         * variables given in the two information structures. Since the PICMessenger does not
          * know which concrete strategy it is using, it cannot directly use these informations. It
          * thus passes them to its strategy.
          *
@@ -242,7 +242,7 @@ namespace amr
 
         /**
          * @brief returns the name of the concrete IMessenger, which in the case of a
-         * HybridMessenger is just the name of its strategy.
+         * PICMessenger is just the name of its strategy.
          */
         NO_DISCARD std::string name() override
         {
@@ -259,7 +259,7 @@ namespace amr
         /* -------------------------------------------------------------------------
                                 End IMessenger interface
 
-                            Start HybridMessenger Interface
+                            Start PICMessenger Interface
            -------------------------------------------------------------------------*/
 
 
@@ -277,111 +277,59 @@ namespace amr
         }
 
 
-
         /**
-         * @brief fillCurrentGhosts is called by a ISolver solving a hybrid equations to fill
-         * the ghost nodes of the electric current density field
-         * @param J is the electric current density for which ghost nodes will be filled
-         * @param levelNumber
-         * @param fillTime
-         */
-        void fillCurrentGhosts(VecFieldT& J, int const levelNumber, double const fillTime)
-        {
-            strat_->fillCurrentGhosts(J, levelNumber, fillTime);
-        }
-
-
-
-
-        /**
-         * @brief fillIonGhostParticles is called by a ISolver solving hybrid equations to fill the
+         * @brief fillGhostParticles is called by a ISolver solving hybrid equations to fill the
          * ghosts particles
          * @param ions for which ghost particles will be filled
-         * @param levelNumber
-         * @param fillTime
-         */
-        void fillIonGhostParticles(IonsT& ions, SAMRAI::hier::PatchLevel& level,
-                                   double const fillTime)
-        {
-            strat_->fillIonGhostParticles(ions, level, fillTime);
-        }
-
-
-
-        /**
-         * @brief fillIonPopMomentGhosts is called by a ISolver solving hybrid equations to fill the
-         * ion moments
-         * @param ions
-         * @param levelNumber
-         * @param fillTime
-         */
-        void fillIonPopMomentGhosts(IonsT& ions, SAMRAI::hier::PatchLevel& level,
-                                    double const fillTime)
-        {
-            strat_->fillIonPopMomentGhosts(ions, level, fillTime);
-        }
-
-
-        void fillIonMomentGhosts(IonsT& ions, SAMRAI::hier::PatchLevel& level,
-                                 double const fillTime)
-        {
-            strat_->fillIonMomentGhosts(ions, level, fillTime);
-        }
-
-
-
-        /**
-         * @brief fillElectronGhostParticles is called by a ISolver solving hybrid equations to fill the
-         * ghosts particles
-         * @param electrons for which ghost particles will be filled
-         * @param levelNumber
-         * @param fillTime
-         */
-        void fillElectronGhostParticles(ElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
-                                   double const fillTime)
-        {
-            strat_->fillElectronGhostParticles(electrons, level, fillTime);
-        }
-
-
-
-        /**
-         * @brief fillElectronPopMomentGhosts is called by a ISolver solving hybrid equations to fill the
-         * ion moments
          * @param electrons
          * @param levelNumber
          * @param fillTime
          */
-        void fillElectronPopMomentGhosts(ElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
+        void fillGhostParticles(IonsT& ions, PICElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
+                                   double const fillTime)
+        {
+            strat_->fillGhostParticles(ions, electrons, level, fillTime);
+        }
+
+
+
+        /**
+         * @brief fillPopMomentGhosts is called by a ISolver solving hybrid equations to fill the
+         * ion moments
+         * @param ions
+         * @param electrons
+         * @param levelNumber
+         * @param fillTime
+         */
+        void fillPopMomentGhosts(IonsT& ions, PICElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
                                     double const fillTime)
         {
-            strat_->fillElectronPopMomentGhosts(electrons, level, fillTime);
+            strat_->fillPopMomentGhosts(ions, electrons, level, fillTime);
         }
 
 
-        void fillElectronMomentGhosts(ElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
+        void fillParticleMomentGhosts(IonsT& ions, PICElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
                                  double const fillTime)
         {
-            strat_->fillElectronMomentGhosts(electrons, level, fillTime);
+            strat_->fillParticleMomentGhosts(ions, electrons, level, fillTime);
         }
+
 
         // synchronization/coarsening methods
 
         void syncMagnetic(VecFieldT& B) { strat_->syncMagnetic(B); }
         void syncElectric(VecFieldT& E) { strat_->syncElectric(E); }
-        void syncIonMoments(IonsT& ions) { strat_->syncIonMoments(ions); }
-        void syncElectronMoments(ElectronsT& electrons) { strat_->syncIonMoments(electrons); }
-
+        void syncParticleMoments(IonsT& ions, PICElectronsT& electrons) { strat_->syncParticleMoments(ions, electrons); }
 
 
         /* -------------------------------------------------------------------------
-                            End HybridMessenger Interface
+                            End PICMessenger Interface
            -------------------------------------------------------------------------*/
 
 
 
 
-        virtual ~HybridMessenger() = default;
+        virtual ~PICMessenger() = default;
 
     private:
         const std::unique_ptr<stratT> strat_;

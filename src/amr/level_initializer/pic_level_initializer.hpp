@@ -107,7 +107,7 @@ namespace PHARE::solver
             // is not needed. But is still seems to use the messenger tempoeraries like
             // NiOld etc. so prepareStep() must be called, see end of the function.
             
-            //picMessenger.fillIonMomentGhosts(ions, level, initDataTime);
+            picMessenger.fillParticleMomentGhosts(picModel.state.ions, picModel.state.pic_electrons, level, initDataTime);
 
 
             // now moments are known everywhere, compute J and E
@@ -135,7 +135,7 @@ namespace PHARE::solver
             // space and TIME interpolation. We thus need to save current values
             // in "old" messenger temporaries.
             // NOTE :  this may probably be skipped for finest level since, TBC at some point
-            //picMessenger.prepareStep(picModel, level, initDataTime);
+            picMessenger.prepareStep(picModel, level, initDataTime);
         }
     };
 } // namespace PHARE::solver

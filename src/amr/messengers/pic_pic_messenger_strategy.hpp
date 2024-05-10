@@ -46,36 +46,6 @@ namespace PHARE
 namespace amr
 {
 
-    // this structure is a wrapper of a field*
-    // so to serve as a ResourcesUser for the ResourcesManager
-    template<typename FieldT>
-    struct FieldUser
-    {
-        struct Property
-        {
-            std::string name;
-            typename PHARE::core::HybridQuantity::Scalar qty;
-        };
-        FieldUser(std::string fieldName, FieldT* ptr,
-                  typename PHARE::core::HybridQuantity::Scalar qty)
-            : name{fieldName}
-            , f{ptr}
-            , quantity{qty}
-        {
-        }
-        std::string name;
-        FieldT* f;
-        typename PHARE::core::HybridQuantity::Scalar quantity;
-        using field_type = FieldT;
-
-        std::vector<Property> getFieldNamesAndQuantities() const { return {{name, quantity}}; }
-
-        void setBuffer(std::string const& /*bufferName*/, FieldT* field) { f = field; }
-        void copyData(FieldT const& source) { f->copyData(source); }
-    };
-
-
-
     /** \brief An PICMessenger is the specialization of a PICMessengerStrategy for PIC to
      * PIC data communications.
      */
@@ -83,6 +53,7 @@ namespace amr
     class PICPICMessengerStrategy : public PICMessengerStrategy<PICModel>
     {
         using IonsT                              = typename PICModel::ions_type;
+        using PICElectronsT                      = typename PICModel::pic_electrons_type;
         using ElectromagT                        = typename PICModel::electromag_type;
         using VecFieldT                          = typename PICModel::vecfield_type;
         using GridLayoutT                        = typename PICModel::gridlayout_type;
@@ -119,9 +90,10 @@ namespace amr
             , resourcesManager_{std::move(manager)}
             , firstLevel_{firstLevel}
         {
-            resourcesManager_->registerResources(Jold_);
             resourcesManager_->registerResources(NiOldUser_);
             resourcesManager_->registerResources(ViOld_);
+            resourcesManager_->registerResources(NeOldUser_);
+            resourcesManager_->registerResources(VeOld_);
         }
 
         virtual ~PICPICMessengerStrategy() = default;
@@ -139,9 +111,10 @@ namespace amr
          */
         void allocate(SAMRAI::hier::Patch& patch, double const allocateTime) const override
         {
-            resourcesManager_->allocate(Jold_, patch, allocateTime);
             resourcesManager_->allocate(NiOldUser_, patch, allocateTime);
             resourcesManager_->allocate(ViOld_, patch, allocateTime);
+            resourcesManager_->allocate(NeOldUser_, patch, allocateTime);
+            resourcesManager_->allocate(VeOld_, patch, allocateTime);
         }
 
 
@@ -178,15 +151,15 @@ namespace amr
 
             magSharedNodesRefiners_.registerLevel(hierarchy, level);
             elecSharedNodesRefiners_.registerLevel(hierarchy, level);
-            currentSharedNodesRefiners_.registerLevel(hierarchy, level);
 
             magPatchGhostsRefiners_.registerLevel(hierarchy, level);
             magGhostsRefiners_.registerLevel(hierarchy, level);
             elecGhostsRefiners_.registerLevel(hierarchy, level);
-            currentGhostsRefiners_.registerLevel(hierarchy, level);
 
             rhoGhostsRefiners_.registerLevel(hierarchy, level);
             velGhostsRefiners_.registerLevel(hierarchy, level);
+            rhoEGhostsRefiners_.registerLevel(hierarchy, level);
+            velEGhostsRefiners_.registerLevel(hierarchy, level);
 
             patchGhostPartRefiners_.registerLevel(hierarchy, level);
 
@@ -207,6 +180,8 @@ namespace amr
                 electroSynchronizers_.registerLevel(hierarchy, level);
                 densitySynchronizers_.registerLevel(hierarchy, level);
                 ionBulkVelSynchronizers_.registerLevel(hierarchy, level);
+                electronDensitySynchronizers_.registerLevel(hierarchy, level);
+                electronBulkVelSynchronizers_.registerLevel(hierarchy, level);
             }
         }
 
@@ -294,14 +269,14 @@ namespace amr
             // already fill the patch ghost box from the neighbor interior box.
             // so ghost nodes are already filled .
 
-            PHARE_LOG_START("hybhybmessengerStrat::initLevel : interior part fill schedule");
+            PHARE_LOG_START("picpicmessengerStrat::initLevel : interior part fill schedule");
             domainParticlesRefiners_.fill(levelNumber, initDataTime);
-            PHARE_LOG_STOP("hybhybmessengerStrat::initLevel : interior part fill schedule");
+            PHARE_LOG_STOP("picpicmessengerStrat::initLevel : interior part fill schedule");
             // however we need to call the ghost communicator for patch ghost particles
             // since the interior schedules have a restriction to the interior of the patch.
-            PHARE_LOG_START("hybhybmessengerStrat::initLevel : patch ghost part fill schedule");
+            PHARE_LOG_START("picpicmessengerStrat::initLevel : patch ghost part fill schedule");
             patchGhostPartRefiners_.fill(levelNumber, initDataTime);
-            PHARE_LOG_STOP("hybhybmessengerStrat::initLevel : patch ghost part fill schedule");
+            PHARE_LOG_STOP("picpicmessengerStrat::initLevel : patch ghost part fill schedule");
 
 
             lvlGhostPartOldRefiners_.fill(levelNumber, initDataTime);
@@ -332,30 +307,24 @@ namespace amr
 
 
 
-        void fillCurrentGhosts(VecFieldT& J, int const levelNumber, double const fillTime) override
-        {
-            PHARE_LOG_SCOPE("PICPICMessengerStrategy::fillCurrentGhosts");
-            currentSharedNodesRefiners_.fill(J, levelNumber, fillTime);
-            currentGhostsRefiners_.fill(J, levelNumber, fillTime);
-        }
-
-
-
-
         /**
-         * @brief fillIonGhostParticles will fill the interior ghost particle array from
+         * @brief fillParticleGhostParticles will fill the interior ghost particle array from
          * neighbor patches of the same level. Before doing that, it empties the array for
          * all populations
          */
-        void fillIonGhostParticles(IonsT& ions, SAMRAI::hier::PatchLevel& level,
+        void fillGhostParticles(IonsT& ions, PICElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
                                    double const fillTime) override
         {
-            PHARE_LOG_SCOPE("PICPICMessengerStrategy::fillIonGhostParticles");
+            PHARE_LOG_SCOPE("PICPICMessengerStrategy::fillGhostParticles");
 
             for (auto patch : level)
             {
                 auto dataOnPatch = resourcesManager_->setOnPatch(*patch, ions);
                 for (auto& pop : ions)
+                {
+                    empty(pop.patchGhostParticles());
+                }
+                for (auto& pop : electrons)
                 {
                     empty(pop.patchGhostParticles());
                 }
@@ -367,17 +336,17 @@ namespace amr
 
 
         /**
-         * @brief fillIonMomentGhosts works on moment ghost nodes
+         * @brief fillPopMomentGhosts works on moment ghost nodes
          *
          * patch border node moments are completed by the deposition of patch ghost
          * particles for all populations level border nodes are completed by the deposition
          * of level ghost [old,new] particles for all populations, linear time interpolation
          * is used to get the contribution of old/new particles
          */
-        void fillIonPopMomentGhosts(IonsT& ions, SAMRAI::hier::PatchLevel& level,
+        void fillPopMomentGhosts(IonsT& ions, PICElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
                                     double const afterPushTime) override
         {
-            PHARE_LOG_SCOPE("PICPICMessengerStrategy::fillIonMomentGhosts");
+            PHARE_LOG_SCOPE("PICPICMessengerStrategy::fillPopMomentGhosts");
 
             auto alpha = timeInterpCoef_(afterPushTime, level.getLevelNumber());
             if (level.getLevelNumber() > 0 and (alpha < 0 or alpha > 1))
@@ -395,7 +364,26 @@ namespace amr
 
                 for (auto& pop : ions)
                 {
-                    // first thing to do is to project patchGhostParitcles moments
+                    // first thing to do is to project patchGhostParticles moments
+                    auto& patchGhosts = pop.patchGhostParticles();
+                    auto& density     = pop.density();
+                    auto& flux        = pop.flux();
+
+                    interpolate_(makeRange(patchGhosts), density, flux, layout);
+
+                    if (level.getLevelNumber() > 0) // no levelGhost on root level
+                    {
+                        // then grab levelGhostParticlesOld and levelGhostParticlesNew
+                        // and project them with alpha and (1-alpha) coefs, respectively
+                        auto& levelGhostOld = pop.levelGhostParticlesOld();
+                        interpolate_(makeRange(levelGhostOld), density, flux, layout, 1. - alpha);
+
+                        auto& levelGhostNew = pop.levelGhostParticlesNew();
+                        interpolate_(makeRange(levelGhostNew), density, flux, layout, alpha);
+                    }
+                }
+                for (auto& pop : electrons)
+                {
                     auto& patchGhosts = pop.patchGhostParticles();
                     auto& density     = pop.density();
                     auto& flux        = pop.flux();
@@ -422,11 +410,13 @@ namespace amr
          * calculated from particles Note : the ghost schedule only fills the total density
          * and bulk velocity and NOT population densities and fluxes. These partial
          * densities and fluxes are thus not available on ANY ghost node.*/
-        virtual void fillIonMomentGhosts(IonsT& ions, SAMRAI::hier::PatchLevel& level,
+        virtual void fillParticleMomentGhosts(IonsT& ions, PICElectronsT& electrons, SAMRAI::hier::PatchLevel& level,
                                          double const afterPushTime) override
         {
             rhoGhostsRefiners_.fill(level.getLevelNumber(), afterPushTime);
             velGhostsRefiners_.fill(level.getLevelNumber(), afterPushTime);
+            rhoEGhostsRefiners_.fill(level.getLevelNumber(), afterPushTime);
+            velEGhostsRefiners_.fill(level.getLevelNumber(), afterPushTime);
         }
 
         /**
@@ -485,8 +475,38 @@ namespace amr
                 for (auto& patch : level)
                 {
                     auto& ions       = picModel.state.ions;
+                    auto& electrons  = picModel.state.pic_electrons;
                     auto dataOnPatch = resourcesManager_->setOnPatch(*patch, ions);
                     for (auto& pop : ions)
+                    {
+                        auto& levelGhostParticlesOld = pop.levelGhostParticlesOld();
+                        auto& levelGhostParticlesNew = pop.levelGhostParticlesNew();
+                        auto& levelGhostParticles    = pop.levelGhostParticles();
+
+                        core::swap(levelGhostParticlesNew, levelGhostParticlesOld);
+                        core::empty(levelGhostParticlesNew);
+                        core::empty(levelGhostParticles);
+                        std::copy(std::begin(levelGhostParticlesOld),
+                                  std::end(levelGhostParticlesOld),
+                                  std::back_inserter(levelGhostParticles));
+
+                        if (level.getLevelNumber() == 0)
+                        {
+                            if (levelGhostParticlesNew.size() != 0)
+                                throw std::runtime_error(
+                                    "levelGhostParticlesNew detected in root level : "
+                                    + std::to_string(levelGhostParticlesNew.size()));
+                            if (levelGhostParticles.size() != 0)
+                                throw std::runtime_error(
+                                    "levelGhostParticles detected in root level : "
+                                    + std::to_string(levelGhostParticles.size()));
+                            if (levelGhostParticlesOld.size() != 0)
+                                throw std::runtime_error(
+                                    "levelGhostParticlesOld detected in root level : "
+                                    + std::to_string(levelGhostParticlesOld.size()));
+                        }
+                    }
+                    for (auto& pop : electrons)
                     {
                         auto& levelGhostParticlesOld = pop.levelGhostParticlesOld();
                         auto& levelGhostParticlesNew = pop.levelGhostParticlesNew();
@@ -524,12 +544,12 @@ namespace amr
         /**
          * @brief prepareStep is the concrete implementation of the
          * PICMessengerStrategy::prepareStep method For PIC-PIC communications.
-         * This method copies the  density J, and the density and bulk velocity, defined at t=n.
+         * This method copies the density and bulk velocity, defined at t=n.
          * Since prepareStep() is called just before advancing the level, this operation
-         * actually saves the t=n versions of J, Ni, Vi into the messenger. When the time comes
-         * that the next finer level needs to time interpolate the electromagnetic field and
-         * current at its ghost nodes, this level will be able to interpolate at required time
-         * because the t=n Vi,Ni,J fields of previous next coarser step will be in the
+         * actually saves the t=n versions of Ni, Vi into the messenger. When the time comes
+         * that the next finer level needs to time interpolate the electromagnetic field
+         * at its ghost nodes, this level will be able to interpolate at required time
+         * because the t=n Vi,Ni fields of previous next coarser step will be in the
          * messenger.
          */
         void prepareStep(IPhysicalModel& model, SAMRAI::hier::PatchLevel& level,
@@ -538,23 +558,31 @@ namespace amr
             PHARE_LOG_SCOPE("PICPICMessengerStrategy::prepareStep");
 
             auto& picModel = static_cast<PICModel&>(model);
+            auto& picState = picModel.state;
             for (auto& patch : level)
             {
                 auto dataOnPatch = resourcesManager_->setOnPatch(
-                    *patch, picModel.state.electromag, picModel.state.J,
-                    picModel.state.ions, Jold_, NiOldUser_, ViOld_);
+                    *patch, picState.electromag, picState.ions, 
+                     picState.pic_electrons, NiOldUser_, ViOld_);
 
-                resourcesManager_->setTime(Jold_, *patch, currentTime);
                 resourcesManager_->setTime(NiOldUser_, *patch, currentTime);
                 resourcesManager_->setTime(ViOld_, *patch, currentTime);
+                resourcesManager_->setTime(NeOldUser_, *patch, currentTime);
+                resourcesManager_->setTime(VeOld_, *patch, currentTime);
 
-                auto& J  = picModel.state.J;
-                auto& Vi = picModel.state.ions.velocity();
-                auto& Ni = picModel.state.ions.density();
+                auto& Vi = picState.ions.velocity();
+                auto& Ni = picState.ions.density();
+                auto& Ve = picState.pic_electrons.velocity();
+                auto& Ne = picState.pic_electrons.density();
 
-                Jold_.copyData(J);
+                printf("prepareStep : copying ViOld\n");
                 ViOld_.copyData(Vi);
+                printf("prepareStep : copying NiOld\n");
                 NiOldUser_.copyData(Ni);
+                printf("prepareStep : copying VeOld\n");
+                VeOld_.copyData(Ve);
+                printf("prepareStep : copying NeOld\n");
+                NeOldUser_.copyData(Ne);
             }
         }
 
@@ -578,13 +606,6 @@ namespace amr
             // at some point in the future levelGhostParticles could be filled with injected
             // particles depending on the domain boundary condition.
             //
-            // Do we need J ghosts filled here?
-            // This method is only called when root level is initialized
-            // but J ghosts are needed a priori for the laplacian when the first Ohm is
-            // calculated so I think we do, not having them here is just having the
-            // laplacian wrong on L0 borders for the initial E, which is not the end of the
-            // world...
-            //
             // do we need moment ghosts filled here?
             // a priori no because those are at this time only needed for coarsening, which
             // will not happen before the first advance
@@ -599,11 +620,13 @@ namespace amr
             auto levelNumber = level.getLevelNumber();
             std::cout << "synchronizing level " << levelNumber << "\n";
 
-            // call coarsning schedules...
+            // call coarsening schedules...
             magnetoSynchronizers_.sync(levelNumber);
             electroSynchronizers_.sync(levelNumber);
             densitySynchronizers_.sync(levelNumber);
             ionBulkVelSynchronizers_.sync(levelNumber);
+            electronDensitySynchronizers_.sync(levelNumber);
+            electronBulkVelSynchronizers_.sync(levelNumber);
         }
 
         // after coarsening, domain nodes have been updated and therefore patch ghost nodes
@@ -635,6 +658,8 @@ namespace amr
             elecGhostsRefiners_.fill(picModel.state.electromag.E, levelNumber, time);
             rhoGhostsRefiners_.fill(levelNumber, time);
             velGhostsRefiners_.fill(picModel.state.ions.velocity(), levelNumber, time);
+            rhoEGhostsRefiners_.fill(levelNumber, time);
+            velEGhostsRefiners_.fill(picModel.state.pic_electrons.velocity(), levelNumber, time);
         }
 
     private:
@@ -661,22 +686,21 @@ namespace amr
             elecGhostsRefiners_.addStaticRefiners(info->ghostElectric, EfieldRefineOp_,
                                                   makeKeys(info->ghostElectric));
 
-            currentSharedNodesRefiners_.addTimeRefiners(info->ghostCurrent, info->modelCurrent,
-                                                        core::VecFieldNames{Jold_},
-                                                        EfieldNodeRefineOp_, fieldTimeOp_);
-
-            currentGhostsRefiners_.addTimeRefiners(info->ghostCurrent, info->modelCurrent,
-                                                   core::VecFieldNames{Jold_}, EfieldRefineOp_,
-                                                   fieldTimeOp_);
-
             rhoGhostsRefiners_.addTimeRefiner(info->modelIonDensity, info->modelIonDensity,
                                               NiOldUser_.name, fieldRefineOp_, fieldTimeOp_,
                                               info->modelIonDensity);
 
+            rhoEGhostsRefiners_.addTimeRefiner(info->modelElectronDensity, info->modelElectronDensity,
+                                               NeOldUser_.name, fieldRefineOp_, fieldTimeOp_,
+                                               info->modelElectronDensity);
 
             velGhostsRefiners_.addTimeRefiners(info->ghostBulkVelocity, info->modelIonBulkVelocity,
                                                core::VecFieldNames{ViOld_}, fieldRefineOp_,
                                                fieldTimeOp_);
+
+            velEGhostsRefiners_.addTimeRefiners(info->ghostBulkVelocity, info->modelElectronBulkVelocity,
+                                                core::VecFieldNames{VeOld_}, fieldRefineOp_,
+                                                fieldTimeOp_);
         }
 
 
@@ -730,8 +754,14 @@ namespace amr
             ionBulkVelSynchronizers_.add(info->modelIonBulkVelocity, fieldCoarseningOp_,
                                          info->modelIonBulkVelocity.vecName);
 
+            electronBulkVelSynchronizers_.add(info->modelElectronBulkVelocity, fieldCoarseningOp_,
+                                              info->modelElectronBulkVelocity.vecName);
+
             densitySynchronizers_.add(info->modelIonDensity, fieldCoarseningOp_,
                                       info->modelIonDensity);
+            
+            electronDensitySynchronizers_.add(info->modelElectronDensity, fieldCoarseningOp_,
+                                        info->modelElectronDensity);
         }
 
 
@@ -743,8 +773,18 @@ namespace amr
             for (auto& patch : level)
             {
                 auto& ions       = picModel.state.ions;
-                auto dataOnPatch = resourcesManager_->setOnPatch(*patch, ions);
+                auto& electrons  = picModel.state.pic_electrons;
+                auto dataOnPatch = resourcesManager_->setOnPatch(*patch, ions, electrons);
                 for (auto& pop : ions)
+                {
+                    auto& levelGhostParticlesOld = pop.levelGhostParticlesOld();
+                    auto& levelGhostParticles    = pop.levelGhostParticles();
+
+                    core::empty(levelGhostParticles);
+                    std::copy(std::begin(levelGhostParticlesOld), std::end(levelGhostParticlesOld),
+                              std::back_inserter(levelGhostParticles));
+                }
+                for (auto& pop : electrons)
                 {
                     auto& levelGhostParticlesOld = pop.levelGhostParticlesOld();
                     auto& levelGhostParticles    = pop.levelGhostParticles();
@@ -988,11 +1028,14 @@ namespace amr
         }
 
 
-        VecFieldT Jold_{stratName + "_Jold", core::HybridQuantity::Vector::J};
         VecFieldT ViOld_{stratName + "_VBulkOld", core::HybridQuantity::Vector::V};
         FieldT* NiOld_{nullptr};
         FieldUser<FieldT> NiOldUser_{stratName + "_NiOld", NiOld_,
                                      core::HybridQuantity::Scalar::rho};
+        VecFieldT VeOld_{stratName + "_VeOld", core::HybridQuantity::Vector::Ve};
+        FieldT* NeOld_{nullptr};
+        FieldUser<FieldT> NeOldUser_{stratName + "_NeOld", NeOld_,
+                                     core::HybridQuantity::Scalar::rhoE};
 
 
         //! ResourceManager shared with other objects (like the PICModel)
@@ -1031,8 +1074,6 @@ namespace amr
         SharedNodeRefinerPool elecSharedNodesRefiners_{resourcesManager_};
         GhostRefinerPool elecGhostsRefiners_{resourcesManager_};
 
-        GhostRefinerPool currentSharedNodesRefiners_{resourcesManager_};
-        GhostRefinerPool currentGhostsRefiners_{resourcesManager_};
 
         // moment ghosts
         // these do not need sharedNode refiners. The reason is that
@@ -1042,6 +1083,8 @@ namespace amr
         // be overwritten only on level borders, which does not seem to be an issue.
         GhostRefinerPool rhoGhostsRefiners_{resourcesManager_};
         GhostRefinerPool velGhostsRefiners_{resourcesManager_};
+        GhostRefinerPool rhoEGhostsRefiners_{resourcesManager_};
+        GhostRefinerPool velEGhostsRefiners_{resourcesManager_};
 
         // pool of refiners for interior particles of each population
         // and the associated refinement operator
@@ -1066,6 +1109,8 @@ namespace amr
 
         SynchronizerPool<rm_t> densitySynchronizers_{resourcesManager_};
         SynchronizerPool<rm_t> ionBulkVelSynchronizers_{resourcesManager_};
+        SynchronizerPool<rm_t> electronDensitySynchronizers_{resourcesManager_};
+        SynchronizerPool<rm_t> electronBulkVelSynchronizers_{resourcesManager_};     
         SynchronizerPool<rm_t> electroSynchronizers_{resourcesManager_};
         SynchronizerPool<rm_t> magnetoSynchronizers_{resourcesManager_};
 

@@ -7,9 +7,14 @@
 
 namespace PHARE::amr
 {
-    class PICMessengerInfo : public IMessengerInfo
+    class PICMessengerInfo : public HybridMessengerInfo
     {
+
     public:
+
+        core::VecFieldNames modelElectronBulkVelocity;
+        std::string modelElectronDensity;
+
         virtual ~PICMessengerInfo() = default;
     };
 

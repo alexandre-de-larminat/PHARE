@@ -150,20 +150,23 @@ void PICModel<GridLayoutT, Electromag, Ions, PICElectrons, AMR_Types>::initializ
     resourcesManager->registerForRestarts(*this);
 }
 
-// TODO adapt to PIC messenger
+
 template<typename GridLayoutT, typename Electromag, typename Ions, typename PICElectrons, typename AMR_Types>
 void PICModel<GridLayoutT, Electromag, Ions, PICElectrons, AMR_Types>::fillMessengerInfo(
     std::unique_ptr<amr::IMessengerInfo> const& info) const
 {
     printf("PICModel::fillMessengerInfo\n");
-    auto& picInfo = dynamic_cast<amr::HybridMessengerInfo&>(*info);
+    auto& picInfo = dynamic_cast<amr::PICMessengerInfo&>(*info);
     auto& ions = state.ions;
+    auto& electrons = state.pic_electrons;
 
-    picInfo.modelMagnetic        = core::VecFieldNames{state.electromag.B};
-    picInfo.modelElectric        = core::VecFieldNames{state.electromag.E};
-    picInfo.modelIonDensity      = ions.densityName();
-    picInfo.modelIonBulkVelocity = core::VecFieldNames{ions.velocity()};
-    picInfo.modelCurrent         = core::VecFieldNames{state.J};
+    picInfo.modelMagnetic             = core::VecFieldNames{state.electromag.B};
+    picInfo.modelElectric             = core::VecFieldNames{state.electromag.E};
+    picInfo.modelIonDensity           = ions.densityName();
+    picInfo.modelIonBulkVelocity      = core::VecFieldNames{ions.velocity()};
+    picInfo.modelElectronDensity      = electrons.densityName();
+    picInfo.modelElectronBulkVelocity = core::VecFieldNames{electrons.velocity()};
+    picInfo.modelCurrent              = core::VecFieldNames{state.J};
 
     picInfo.initElectric.emplace_back(core::VecFieldNames{state.electromag.E});
     picInfo.initMagnetic.emplace_back(core::VecFieldNames{state.electromag.B});
@@ -174,14 +177,16 @@ void PICModel<GridLayoutT, Electromag, Ions, PICElectrons, AMR_Types>::fillMesse
     picInfo.ghostBulkVelocity.push_back(picInfo.modelIonBulkVelocity);
 
 
-    auto transform_ = [](auto& ions, auto& inserter) {
+    auto transform_ = [](auto& ions, auto& electrons, auto& inserter) {
         std::transform(std::begin(ions), std::end(ions), std::back_inserter(inserter),
                        [](auto const& pop) { return pop.name(); });
+        std::transform(std::begin(electrons), std::end(electrons), std::back_inserter(inserter),
+                       [](auto const& pop) { return pop.name(); });
     };
-    transform_(ions, picInfo.interiorParticles);
-    transform_(ions, picInfo.levelGhostParticlesOld);
-    transform_(ions, picInfo.levelGhostParticlesNew);
-    transform_(ions, picInfo.patchGhostParticles);
+    transform_(ions, electrons, picInfo.interiorParticles);
+    transform_(ions, electrons, picInfo.levelGhostParticlesOld);
+    transform_(ions, electrons, picInfo.levelGhostParticlesNew);
+    transform_(ions, electrons, picInfo.patchGhostParticles);
 }
 
 
