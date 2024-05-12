@@ -21,6 +21,11 @@ plot_time = time[int(len(time)-1)]
 B = run.GetB(plot_time)
 by, xby = flat_finest_field(B, "By")
 
+E = run.GetE(plot_time)
+Ex, xEx = flat_finest_field(E, "Ex")
+Ey, xEy = flat_finest_field(E, "Ey")
+Ez, xEz = flat_finest_field(E, "Ez")
+
 velocity_ions = run.GetVi(plot_time)
 velocity_electrons = run.GetVe(plot_time)
 
@@ -87,3 +92,12 @@ ax5.plot(xFix, Fix, color="k", ls="-")
 ax5.plot(xFex, Fex, color="r", ls="--")
 
 fig.savefig("td1d_pic_info.png")
+
+fig, axarr = plt.subplots(nrows=3, figsize=(8, 10))
+ax0, ax1, ax2 = axarr
+
+ax0.plot(xEx, Ex, color="k", ls="-")
+ax1.plot(xEy, Ey, color="k", ls="-")
+ax2.plot(xEz, Ez, color="k", ls="-")
+
+fig.savefig("td1d_pic_E.png")

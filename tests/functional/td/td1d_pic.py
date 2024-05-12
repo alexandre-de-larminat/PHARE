@@ -54,7 +54,7 @@ def T(x):
 
 
 def vx(x):
-    return 5.0
+    return 2.0
 
 
 def vy(x):
