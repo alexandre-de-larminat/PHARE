@@ -36,7 +36,7 @@ set( SOURCES_INC
      messengers/synchronizer_pool.hpp
      messengers/synchronizer.hpp
      messengers/messenger.hpp
-     messengers/kinetic_messenger_strategy.hpp
+     messengers/messenger_strategy.hpp
      messengers/hybrid_messenger.hpp
      messengers/hybrid_messenger_strategy.hpp
      messengers/hybrid_hybrid_messenger_strategy.hpp

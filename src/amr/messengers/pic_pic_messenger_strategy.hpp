@@ -319,7 +319,7 @@ namespace amr
 
             for (auto patch : level)
             {
-                auto dataOnPatch = resourcesManager_->setOnPatch(*patch, ions);
+                auto dataOnPatch = resourcesManager_->setOnPatch(*patch, ions, electrons);
                 for (auto& pop : ions)
                 {
                     empty(pop.patchGhostParticles());
@@ -359,7 +359,7 @@ namespace amr
             }
             for (auto patch : level)
             {
-                auto dataOnPatch = resourcesManager_->setOnPatch(*patch, ions);
+                auto dataOnPatch = resourcesManager_->setOnPatch(*patch, ions, electrons);
                 auto layout      = layoutFromPatch<GridLayoutT>(*patch);
 
                 for (auto& pop : ions)
@@ -563,7 +563,7 @@ namespace amr
             {
                 auto dataOnPatch = resourcesManager_->setOnPatch(
                     *patch, picState.electromag, picState.ions, 
-                     picState.pic_electrons, NiOldUser_, ViOld_);
+                     picState.pic_electrons, NiOldUser_, ViOld_, NeOldUser_, VeOld_);
 
                 resourcesManager_->setTime(NiOldUser_, *patch, currentTime);
                 resourcesManager_->setTime(ViOld_, *patch, currentTime);
@@ -584,6 +584,7 @@ namespace amr
                 printf("prepareStep : copying NeOld\n");
                 NeOldUser_.copyData(Ne);
             }
+            printf("End prepareStep\n");
         }
 
 

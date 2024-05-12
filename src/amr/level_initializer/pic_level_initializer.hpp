@@ -104,7 +104,7 @@ namespace PHARE::solver
             // it seems SAMRAI does not call timeInterpolate() at this point although
             // both moments and J need time interpolation. It probably knows that
             // we are at a sync time across levels and that the time interpolation
-            // is not needed. But is still seems to use the messenger tempoeraries like
+            // is not needed. But is still seems to use the messenger temporaries like
             // NiOld etc. so prepareStep() must be called, see end of the function.
             
             picMessenger.fillParticleMomentGhosts(picModel.state.ions, picModel.state.pic_electrons, level, initDataTime);
@@ -127,7 +127,7 @@ namespace PHARE::solver
                     picModel.resourcesManager->setTime(E, *patch, 0.);
                 }
 
-                //picMessenger.fillElectricGhosts(E, levelNumber, 0.);
+                picMessenger.fillElectricGhosts(E, levelNumber, 0.);
             }
 
             // quantities have been computed on the level, like the moments and J
@@ -135,6 +135,7 @@ namespace PHARE::solver
             // space and TIME interpolation. We thus need to save current values
             // in "old" messenger temporaries.
             // NOTE :  this may probably be skipped for finest level since, TBC at some point
+            printf("PIC level initializer: prepareStep\n");
             picMessenger.prepareStep(picModel, level, initDataTime);
         }
     };

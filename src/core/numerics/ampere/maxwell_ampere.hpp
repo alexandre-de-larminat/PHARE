@@ -55,16 +55,8 @@ public:
 
 private:
     double dt_;
-    double c_ = 299792458.0; // m/s
-    double m_p = 1.6726219e-27; // kg
-    double mu_0 = 1.25663706e-6; // N/A^2
-    double B_0 = 1.; // placeholder reference magnetic field, SI units
-    double n_0 = 100.; // placeholder reference density, SI units
-    double Va = B_0 / std::sqrt(mu_0 * m_p * n_0); // normalized Alfven speed, non-relativistic (CHECK)
-    double c_norm = c_ / Va; // normalized velocity
+    double c_norm = 1.;
     double c2 = c_norm * c_norm;
-    //double inv_c2 = 1.0 / c2;
-    double inv_c2 = 0.01;
 
     template<typename VecField, typename Field, typename... Indexes>
     void ExEq_(Field const& Ex, VecField const& B, Field const& Jx, Field& Exnew, Indexes const&... ijk) const
@@ -73,16 +65,16 @@ private:
 
         if constexpr (dimension == 1)
         {
-            Exnew(ijk...) = Ex(ijk...) - dt_ * inv_c2 * Jx(ijk...) ; 
+            Exnew(ijk...) = Ex(ijk...) - dt_ * c2 * Jx(ijk...) ; 
         }
         if constexpr (dimension == 2)
         {
-            Exnew(ijk...) = Ex(ijk...) + dt_ * inv_c2 * (layout_->template deriv<Direction::Y>(Bz, {ijk...}) 
+            Exnew(ijk...) = Ex(ijk...) + dt_ * c2 * (layout_->template deriv<Direction::Y>(Bz, {ijk...}) 
                             - Jx(ijk...) );
         }
         if constexpr (dimension == 3)
         {
-            Exnew(ijk...) = Ex(ijk...) + dt_ * inv_c2 * (layout_->template deriv<Direction::Y>(Bz, {ijk...})
+            Exnew(ijk...) = Ex(ijk...) + dt_ * c2 * (layout_->template deriv<Direction::Y>(Bz, {ijk...})
                             - layout_->template deriv<Direction::Z>(By, {ijk...}) - Jx(ijk...));
         }   
     }
@@ -94,13 +86,13 @@ private:
 
         if constexpr (dimension == 1 || dimension == 2)
         {
-            Eynew(ijk...) = Ey(ijk...) - dt_ * inv_c2 *( layout_->template deriv<Direction::X>(Bz, {ijk...}) 
+            Eynew(ijk...) = Ey(ijk...) - dt_ * c2 *( layout_->template deriv<Direction::X>(Bz, {ijk...}) 
                             + Jy(ijk...));
         }
         if constexpr (dimension == 3)
         {
-            Eynew(ijk...) = Ey(ijk...) + dt_ * inv_c2 * (layout_->template deriv<Direction::Z>(Bx, {ijk...})
-                            - layout_->template deriv<Direction::X>(Bz, {ijk...}) -  Jy(ijk...));
+            Eynew(ijk...) = Ey(ijk...) + dt_ * c2 * (layout_->template deriv<Direction::Z>(Bx, {ijk...})
+                            - layout_->template deriv<Direction::X>(Bz, {ijk...}) - Jy(ijk...));
         }
     }
 
@@ -111,14 +103,14 @@ private:
 
         if constexpr (dimension == 1)
         {
-            Eznew(ijk...) = Ez(ijk...) + dt_ * inv_c2 * (layout_->template deriv<Direction::X>(By, {ijk...}) 
+            Eznew(ijk...) = Ez(ijk...) + dt_ * c2 * (layout_->template deriv<Direction::X>(By, {ijk...}) 
                             - Jz(ijk...));
         }
 
         if constexpr (dimension == 2 || dimension == 3)
         {
-            Eznew(ijk...) = Ez(ijk...) - dt_ * inv_c2 * (layout_->template deriv<Direction::X>(By, {ijk...})
-                            - layout_->template deriv<Direction::Y>(Bx, {ijk...})- Jz(ijk...));
+            Eznew(ijk...) = Ez(ijk...) + dt_ * c2 * (layout_->template deriv<Direction::X>(By, {ijk...})
+                            - layout_->template deriv<Direction::Y>(Bx, {ijk...}) - Jz(ijk...));
         }
     }
 };

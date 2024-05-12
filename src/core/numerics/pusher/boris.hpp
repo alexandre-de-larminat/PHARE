@@ -98,7 +98,7 @@ public:
 
             //  get electromagnetic fields interpolated on the particles of rangeOut stop at newEnd.
             //  get the particle velocity from t=n to t=n+1
-            //accelerate_(currPart, interpolator(currPart, emFields, layout), dto2m);
+            accelerate_(currPart, interpolator(currPart, emFields, layout), dto2m);
 
             // now advance the particles from t=n+1/2 to t=n+1 using v_{n+1} just calculated
             // and get a pointer to the first leaving particle

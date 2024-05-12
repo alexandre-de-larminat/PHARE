@@ -465,6 +465,7 @@ namespace solver
                             bool const lastStep, bool const regridAdvance = false) override
         {
             PHARE_LOG_SCOPE("Multiphys::advanceLevel");
+            printf("Multiphysics_integrator::advanceLevel\n");
 
             if (regridAdvance)
                 throw std::runtime_error("Error - regridAdvance must be False and is True");
@@ -488,9 +489,9 @@ namespace solver
                                       subcycleStartTimes_[iLevel - 1],
                                       subcycleEndTimes_[iLevel - 1]);
             }
-
+            printf("prepare step\n");
             fromCoarser.prepareStep(model, *level, currentTime);
-
+            printf("solver.advanceLevel\n");
             solver.advanceLevel(hierarchy, iLevel, model, fromCoarser, currentTime, newTime);
 
             if (lastStep)

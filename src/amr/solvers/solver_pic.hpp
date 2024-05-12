@@ -143,7 +143,7 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
                                                   IMessenger& fromCoarserMessenger,
                                                   double const currentTime, double const newTime)
 {
-    //printf("advanceLevel\n");
+    printf("advanceLevel\n");
     PHARE_LOG_SCOPE("SolverPIC::advanceLevel");
 
     auto& PICmodel         = dynamic_cast<PICModel&>(model);
@@ -151,25 +151,26 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
     auto& resourcesManager = *PICmodel.resourcesManager;
     auto level             = hierarchy->getPatchLevel(levelNumber);
 
-
+    printf("restartJ_\n");
     restartJ_(*level, PICmodel, fromCoarser, currentTime);
 
     // Solve Faraday
+    printf("MF_\n");
     MF_(*level, PICmodel, fromCoarser, currentTime, newTime);
 
-
+    printf("moveFermions_\n");
     // Push particles, project current onto the grid
     moveFermions_(*level, PICmodel, electromagAvg_, resourcesManager, fromCoarser, currentTime,
                   newTime);
 
-
+    printf("MA_\n");
    // Solve MaxwellAmpere
     MA_(*level, PICmodel, fromCoarser, currentTime, newTime);
 
-
+    printf("averageAndSet_\n");
     // Set Bnew to B and Enew to E
     averageAndSet_(*level, PICmodel, fromCoarser);
-
+    printf("done\n");
 }
 
 
@@ -220,6 +221,7 @@ void SolverPIC<PICModel, AMR_Types>::MA_(level_t& level, PICModel& model, Messen
 
             resourcesManager->setTime(E, *patch, newTime);
         }
+        printf("fillElectricGhosts\n");
         fromCoarser.fillElectricGhosts(E, levelNumber, newTime);
 
     }
@@ -274,41 +276,58 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& mod
                                                   double const newTime)
 {
     PHARE_LOG_SCOPE("SolverPIC::moveFermions_");
+    printf("moveFermions_\n");
     auto& ions = model.state.ions;
     auto& electrons = model.state.pic_electrons;
 
-    PHARE_DEBUG_DO(std::size_t nbrDomainParticles = 0; std::size_t nbrPatchGhostParticles = 0;
-                   std::size_t nbrLevelGhostNewParticles                                  = 0;
-                   std::size_t nbrLevelGhostOldParticles                                  = 0;
-                   std::size_t nbrLevelGhostParticles = 0; for (auto& patch
-                                                                : level) {
+    printf("DEBUG_DO\n");
+    PHARE_DEBUG_DO(std::size_t nbrDomainParticles        = 0;
+                   std::size_t nbrPatchGhostParticles    = 0;
+                   std::size_t nbrLevelGhostNewParticles = 0;
+                   std::size_t nbrLevelGhostOldParticles = 0;
+                   std::size_t nbrLevelGhostParticles    = 0;
+                    printf("loop\n");
+                    for (auto& patch : level) {
                        auto _ = rm.setOnPatch(*patch, ions, electrons);
-
-                       for (auto& pop : ions)
+                        printf("ions loop\n");
+                        for (auto& pop : ions)
                         {
-                           nbrDomainParticles += pop.domainParticles().size();
-                           nbrPatchGhostParticles += pop.patchGhostParticles().size();
-                           nbrLevelGhostNewParticles += pop.levelGhostParticlesNew().size();
-                           nbrLevelGhostOldParticles += pop.levelGhostParticlesOld().size();
-                           nbrLevelGhostParticles += pop.levelGhostParticles().size();
-                           nbrPatchGhostParticles += pop.patchGhostParticles().size();
-
-                           if (nbrLevelGhostOldParticles < nbrLevelGhostParticles
+                            printf("nbrDomainParticles\n");
+                            nbrDomainParticles += pop.domainParticles().size();
+                            printf("nbrPatchGhostParticles\n");
+                            nbrPatchGhostParticles += pop.patchGhostParticles().size();
+                            printf("nbrLevelGhostNewParticles\n");
+                            nbrLevelGhostNewParticles += pop.levelGhostParticlesNew().size();
+                            printf("nbrLevelGhostOldParticles\n");
+                            nbrLevelGhostOldParticles += pop.levelGhostParticlesOld().size();
+                            printf("nbrLevelGhostParticles\n");
+                            nbrLevelGhostParticles += pop.levelGhostParticles().size();
+                            printf("nbrPatchGhostParticles\n");
+                            nbrPatchGhostParticles += pop.patchGhostParticles().size();
+                            printf("if\n");
+                            if (nbrLevelGhostOldParticles < nbrLevelGhostParticles
                                and nbrLevelGhostOldParticles > 0)
                                throw std::runtime_error(
                                    "Error - there are less old level ghost particles ("
                                    + std::to_string(nbrLevelGhostOldParticles) + ") than pushable ("
                                    + std::to_string(nbrLevelGhostParticles) + ")");
                        }
+                          printf("electrons loop\n");
                         for (auto& pop : electrons)
                         {
+                            printf("nbrDomainParticles\n");
                            nbrDomainParticles += pop.domainParticles().size();
+                           printf("nbrPatchGhostParticles\n");
                            nbrPatchGhostParticles += pop.patchGhostParticles().size();
+                           printf("nbrLevelGhostNewParticles\n");
                            nbrLevelGhostNewParticles += pop.levelGhostParticlesNew().size();
+                           printf("nbrLevelGhostOldParticles\n");
                            nbrLevelGhostOldParticles += pop.levelGhostParticlesOld().size();
+                           printf("nbrLevelGhostParticles\n");
                            nbrLevelGhostParticles += pop.levelGhostParticles().size();
+                            printf("nbrPatchGhostParticles\n");
                            nbrPatchGhostParticles += pop.patchGhostParticles().size();
-
+                            printf("if\n");
                            if (nbrLevelGhostOldParticles < nbrLevelGhostParticles
                                and nbrLevelGhostOldParticles > 0)
                                throw std::runtime_error(
@@ -316,28 +335,36 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& mod
                                    + std::to_string(nbrLevelGhostOldParticles) + ") than pushable ("
                                    + std::to_string(nbrLevelGhostParticles) + ")");
                        }
-                       
+                       printf("done\n");
                    })
 
 
     auto dt        = newTime - currentTime;
     auto& PICState = model.state;
     auto& J        = PICState.J;
-
+    printf("State and J declared\n");
     for (auto& patch : level)
     {
+        printf("setOnPatch\n");
         auto _ = rm.setOnPatch(*patch, electromag, ions, electrons, J);
+        printf("layout\n");
         auto layout = PHARE::amr::layoutFromPatch<GridLayout>(*patch);
+        printf("fermionUpdater_.updatePopulations\n");
         fermionUpdater_.updatePopulations(ions, electrons, electromag, J, layout, dt);
 
         // this needs to be done before calling the messenger
+        printf("setTime - ions\n");
         rm.setTime(ions, *patch, newTime);
+        printf("setTime - electrons\n");
         rm.setTime(electrons, *patch, newTime);
+        printf("setTime - J\n");
         rm.setTime(J, *patch, newTime);
     }
 
     // Only ion ghosts are filled since electrons don't exist on the coarser level
+    printf("fillGhostParticles\n");
     fromCoarser.fillGhostParticles(ions, electrons, level, newTime);
+    printf("fillPopMomentGhosts\n");
     fromCoarser.fillPopMomentGhosts(ions, electrons, level, newTime);
 
     for (auto& patch : level)
@@ -351,7 +378,9 @@ void SolverPIC<PICModel, AMR_Types>::moveFermions_(level_t& level, PICModel& mod
 
     // now Ni and Vi are calculated we can fill pure ghost nodes
     // these were not completed by the deposition of patch and levelghost particles
+    printf("fillParticleMomentGhosts\n");
     fromCoarser.fillParticleMomentGhosts(ions, electrons, level, newTime);
+    printf("done\n");
 }
 
 template<typename PICModel, typename AMR_Types>
