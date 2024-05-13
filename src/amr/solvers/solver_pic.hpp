@@ -134,6 +134,13 @@ template<typename PICModel, typename AMR_Types>
 void SolverPIC<PICModel, AMR_Types>::fillMessengerInfo(
     std::unique_ptr<amr::IMessengerInfo> const& info) const
 {
+    auto& PICInfo = dynamic_cast<amr::PICMessengerInfo&>(*info);
+
+    auto const& Eavg  = electromagAvg_.E;
+    auto const& Bnew = electromagNew_.B;
+
+    PICInfo.ghostElectric.emplace_back(core::VecFieldNames{Eavg});
+    PICInfo.initMagnetic.emplace_back(core::VecFieldNames{Bnew});
 }
 
 
@@ -154,9 +161,14 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
     printf("restartJ_\n");
     restartJ_(*level, PICmodel, fromCoarser, currentTime);
 
-    // Solve Faraday
+    // Solve Faraday 
     printf("MF_\n");
     MF_(*level, PICmodel, fromCoarser, currentTime, newTime);
+
+    printf("averageAndSet_\n");
+    // Set Eavg to E, Bnew to B and calculate Bavg
+    averageAndSet_(*level, PICmodel, fromCoarser);
+    printf("done\n");
 
     printf("moveFermions_\n");
     // Push particles, project current onto the grid
@@ -167,10 +179,7 @@ void SolverPIC<PICModel, AMR_Types>::advanceLevel(std::shared_ptr<hierarchy_t> c
    // Solve MaxwellAmpere
     MA_(*level, PICmodel, fromCoarser, currentTime, newTime);
 
-    printf("averageAndSet_\n");
-    // Set Bnew to B and Enew to E
-    averageAndSet_(*level, PICmodel, fromCoarser);
-    printf("done\n");
+
 }
 
 
@@ -241,9 +250,7 @@ void SolverPIC<PICModel, AMR_Types>::MF_(level_t& level, PICModel& model, Messen
 
         auto& B    = electromag.B;
         auto& E    = electromag.E;
-        auto& Eavg = electromagAvg_.E;
         auto& Bnew = electromagNew_.B;
-        auto& Bavg = electromagAvg_.B;
 
         for (auto& patch : level)
         {
@@ -253,14 +260,6 @@ void SolverPIC<PICModel, AMR_Types>::MF_(level_t& level, PICModel& model, Messen
             faraday_(B, E, Bnew, dt);
 
             resourcesManager->setTime(Bnew, *patch, newTime);
-        }
-
-        for (auto& patch : level)
-        {
-            auto _ = resourcesManager->setOnPatch(*patch, Bnew, B, Bavg, E, Eavg);
-            PHARE::core::average(B, Bnew, Bavg);
-            PHARE::core::average(Bnew, Bnew, B);
-            PHARE::core::average(E, E, Eavg); // Unrelated to Faraday, we are just using the loop for convenience, to deal with E and B as a unit.
         }
     }
 }
@@ -394,12 +393,15 @@ void SolverPIC<PICModel, AMR_Types>::averageAndSet_(level_t& level, PICModel& mo
     auto& Bnew  = electromagNew_.B;
     auto& B     = model.state.electromag.B;
     auto& Bavg  = electromagAvg_.B;
+    auto& E     = model.state.electromag.E;
+    auto& Eavg  = electromagAvg_.E;
 
     for (auto& patch : level)
     {
-        auto _ = resourcesManager->setOnPatch(*patch, Bnew, B, Bavg);
+        auto _ = resourcesManager->setOnPatch(*patch, Bnew, B, Bavg, E, Eavg);
         PHARE::core::average(B, Bnew, Bavg);
         PHARE::core::average(Bnew, Bnew, B);
+        PHARE::core::average(E, E, Eavg); // Unrelated to Faraday, we are just using the loop for convenience, to deal with E and B as a unit.
     }
 }
 

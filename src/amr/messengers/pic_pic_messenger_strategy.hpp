@@ -575,16 +575,11 @@ namespace amr
                 auto& Ve = picState.pic_electrons.velocity();
                 auto& Ne = picState.pic_electrons.density();
 
-                printf("prepareStep : copying ViOld\n");
                 ViOld_.copyData(Vi);
-                printf("prepareStep : copying NiOld\n");
                 NiOldUser_.copyData(Ni);
-                printf("prepareStep : copying VeOld\n");
                 VeOld_.copyData(Ve);
-                printf("prepareStep : copying NeOld\n");
                 NeOldUser_.copyData(Ne);
             }
-            printf("End prepareStep\n");
         }
 
 
