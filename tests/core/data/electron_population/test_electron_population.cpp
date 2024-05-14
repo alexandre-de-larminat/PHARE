@@ -3,7 +3,7 @@
 
 
 
-#include "core/data/fermions/electron_population.hpp"
+#include "core/data/pic_electrons/electron_population.hpp"
 #include "core/data/particles/particle_array.hpp"
 #include "initializer/data_provider.hpp"
 #include "core/hybrid/hybrid_quantities.hpp"
@@ -57,7 +57,7 @@ PHAREDict getDict()
 
 struct AnElectronPopulation : public ::testing::Test
 {
-    ElectronPopulation<ParticleArray<1>, DummyVecField, DummyLayout> electrons{
+    ElectronPopulation<ParticleArray<1>, DummyVecField, DummyTensorField, DummyLayout> electrons{
         getDict()};
     virtual ~AnElectronPopulation();
 };
