@@ -16,13 +16,13 @@
 
 namespace PHARE::core
 {
-    template<typename ParticleArray, typename VecField, typename GridLayout, 
-    template<typename, typename, typename> class PopulationType>
+    template<typename ParticleArray, typename VecField, typename TensorField, typename GridLayout, 
+    template<typename, typename, typename, typename> class PopulationType>
     class ParticlePopulation
     {
     public:
         using field_type                       = typename VecField::field_type;
-        using pop_type                         = PopulationType<ParticleArray, VecField, GridLayout>;
+        using pop_type                         = PopulationType<ParticleArray, VecField, TensorField, GridLayout>;
         static constexpr std::size_t dimension = VecField::dimension;
 
 
@@ -33,17 +33,12 @@ namespace PHARE::core
 
         virtual VecField& flux() { return flux_; }
         virtual VecField const& flux() const { return flux_ ; }
-        virtual field_type const* rhoPtr() const { return rho_; }
+
         virtual field_type const& rho() const { return *rho_; }
 
-        virtual bool isUsable() const
-        {
-        }
+        virtual bool isUsable() const{ return false; }
 
-
-        virtual bool isSettable() const
-        {
-        }
+        virtual bool isSettable() const { return false; }
 
         NO_DISCARD field_type const& density() const
         {
@@ -171,6 +166,7 @@ namespace PHARE::core
 
        using MomentProperties = std::array<MomentsProperty, 1>;
 
+
         struct ParticleProperty
         {
             std::string name;
@@ -178,13 +174,9 @@ namespace PHARE::core
 
         using ParticleProperties = std::array<ParticleProperty, 1>;
 
-        void setBuffer(std::string const& bufferName, ParticlesPack<ParticleArray>* pack)
-        {
-            if (bufferName == name())
-                getParticlesPtr() = pack;
-            else
-                throw std::runtime_error("Error - invalid particle resource name");
-        }
+
+
+        NO_DISCARD ParticleProperties getParticleArrayNames() const { return {{{ name() }}}; }
 
 
         //-------------------------------------------------------------------------

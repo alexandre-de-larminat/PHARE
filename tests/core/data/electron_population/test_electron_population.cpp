@@ -57,7 +57,7 @@ PHAREDict getDict()
 
 struct AnElectronPopulation : public ::testing::Test
 {
-    ElectronPopulation<ParticleArray<1>, DummyVecField, DummyLayout> electrons{
+    ElectronPopulation<ParticleArray<1>, DummyVecField, DummyTensorField, DummyLayout> electrons{
         getDict()};
     virtual ~AnElectronPopulation();
 };

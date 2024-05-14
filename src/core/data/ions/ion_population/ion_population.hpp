@@ -13,17 +13,15 @@
 #include "core/hybrid/hybrid_quantities.hpp"
 #include "initializer/data_provider.hpp"
 #include "particle_pack.hpp"
+#include "core/data/pic_electrons/particle_population.hpp"
 
-namespace PHARE
-{
-namespace core
+namespace PHARE::core
 {
     template<typename ParticleArray, typename VecField, typename TensorField, typename GridLayout>
-    class IonPopulation: public ParticlePopulation<ParticleArray, VecField, GridLayout, IonPopulation>
+    class IonPopulation: public ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, IonPopulation>
     {
     public:
         using field_type                       = typename VecField::field_type;
-        static constexpr std::size_t dimension = VecField::dimension;
         using particle_array_type              = ParticleArray;
         using particle_resource_type           = ParticlesPack<ParticleArray>;
         using vecfield_type                    = VecField;
@@ -70,7 +68,6 @@ namespace core
         NO_DISCARD TensorField const& momentumTensor() const { return momentumTensor_; }
         NO_DISCARD TensorField& momentumTensor() { return momentumTensor_; }
 
-        NO_DISCARD field_type const* rhoPtr() const override { return rho_; }
         NO_DISCARD field_type const& rho() const override { return *rho_; }
 
         NO_DISCARD ParticlesPack<ParticleArray> const* getParticlesPtr() const override { 
@@ -82,14 +79,8 @@ namespace core
 
 
 
-        struct MomentsProperty
-        {
-            std::string name;
-            typename HybridQuantity::Scalar qty;
-        };
-
-        using MomentProperties = std::array<MomentsProperty, 1>;
-
+        using typename ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, 
+        IonPopulation>::MomentProperties;
 
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
@@ -99,17 +90,11 @@ namespace core
 
 
 
-        struct ParticleProperty
+
+        NO_DISCARD auto getCompileTimeResourcesUserList()
         {
-            std::string name;
-        };
-
-
-
-        using ParticleProperties = std::array<ParticleProperty, 1>;
-
-        NO_DISCARD ParticleProperties getParticleArrayNames() const { return {{{name_}}}; }
-
+            return std::forward_as_tuple(flux_, momentumTensor_);
+        }
 
 
 
@@ -120,9 +105,6 @@ namespace core
             else
                 throw std::runtime_error("Error - invalid particle resource name");
         }
-
-
-
 
         void setBuffer(std::string const& bufferName, field_type* field)
         {
@@ -136,28 +118,12 @@ namespace core
             }
         }
 
-
-
-        NO_DISCARD auto getCompileTimeResourcesUserList()
-        {
-            return std::forward_as_tuple(flux_, momentumTensor_);
-        }
-
-
         //-------------------------------------------------------------------------
         //                  ends the ResourcesUser interface
         //-------------------------------------------------------------------------
 
+        std::string getParticleName() const override { return "Ion"; }
 
-
-        NO_DISCARD std::string to_str()
-        {
-            std::stringstream ss;
-            ss << "Ions Population\n";
-            ss << "------------------------------------\n";
-            ss << "name                : " << name() << "\n";
-            return ss.str();
-        }
 
     private:
         std::string name_;
@@ -168,7 +134,6 @@ namespace core
         ParticlesPack<ParticleArray>* particles_{nullptr};
         initializer::PHAREDict const& particleInitializerInfo_;
     };
-} // namespace core
-} // namespace PHARE
+} // namespace PHARE::core
 
 #endif

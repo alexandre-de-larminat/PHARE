@@ -39,7 +39,7 @@ protected:
     using InitFunctionT    = PHARE::initializer::InitFunction<1>;
 
     using ElectronPopulation1D
-        = ElectronPopulation<ParticleArray<1>, VecField1D, GridYee1D>;
+        = ElectronPopulation<ParticleArray<1>, VecField1D, SymTensorField1D, GridYee1D>;
     PICElectrons<ElectronPopulation1D, GridYee1D> pic_electrons;
 
     PHARE::initializer::PHAREDict createPICElectronsDict()
@@ -47,7 +47,7 @@ protected:
         PHARE::initializer::PHAREDict dict;
         dict["pic_electrons"]["nbrPopulations"] = std::size_t{1};
         dict["pic_electrons"]["pop0"]["name"] = std::string{"electrons"};
-        dict["pic_electrons"]["pop0"]["mass"] = 1.;
+        dict["pic_electrons"]["pop0"]["mass"] = .1;
         dict["pic_electrons"]["pop0"]["particle_initializer"]["name"]
             = std::string{"MaxwellianParticleInitializer"};
         dict["pic_electrons"]["pop0"]["particle_initializer"]["density"]

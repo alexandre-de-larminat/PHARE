@@ -14,8 +14,8 @@
 
 namespace PHARE::core
 {
-    template<typename ParticleArray, typename VecField, typename GridLayout>
-    class ElectronPopulation : public ParticlePopulation<ParticleArray, VecField, GridLayout, ElectronPopulation>
+    template<typename ParticleArray, typename VecField, typename TensorField, typename GridLayout>
+    class ElectronPopulation : public ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, ElectronPopulation>
     {
     public:
         using field_type                       = typename VecField::field_type;
@@ -42,7 +42,6 @@ namespace PHARE::core
         NO_DISCARD VecField const& flux() const override { return flux_; }
         NO_DISCARD VecField& flux() { return flux_; }
 
-        NO_DISCARD field_type const* rhoPtr() const override { return rho_; }
         NO_DISCARD field_type const& rho() const override { return *rho_; }
 
         NO_DISCARD ParticlesPack<ParticleArray> const* getParticlesPtr() const override { 
@@ -67,7 +66,8 @@ namespace PHARE::core
         //-------------------------------------------------------------------------
 
 
-       using typename ParticlePopulation<ParticleArray, VecField, GridLayout, ElectronPopulation>::MomentProperties;
+        using typename ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, 
+        ElectronPopulation>::MomentProperties;
 
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
@@ -76,37 +76,34 @@ namespace PHARE::core
         }
 
 
-       using typename ParticlePopulation<ParticleArray, VecField, GridLayout, ElectronPopulation>::ParticleProperties;
-
-
-        NO_DISCARD ParticleProperties getParticleArrayNames() const { return {{{name_}}}; }
-
-
-
-
-
-        void setBuffer(std::string const& bufferName, field_type* field)
-        {
-            if (bufferName == name_ + "_rhoE")
-                rho_ = field;
-            else
-                throw std::runtime_error("Error - invalid density buffer name");
-        }
 
         void setBuffer(std::string const& bufferName, ParticlesPack<ParticleArray>* pack)
         {
-            if (bufferName == name())
+            if (bufferName == name_)
                 particles_ = pack;
             else
                 throw std::runtime_error("Error - invalid particle resource name");
         }
+
+        void setBuffer(std::string const& bufferName, field_type* field)
+        {
+            if (bufferName == name_ + "_rhoE")
+            {
+                rho_ = field;
+            }
+            else
+            {
+                throw std::runtime_error("Error - invalid density buffer name");
+            }
+        }
+
+
 
         NO_DISCARD auto getCompileTimeResourcesUserList()
         {
             return std::forward_as_tuple(flux_);
         }
         
-
 
         //-------------------------------------------------------------------------
         //                  ends the ResourcesUser interface
