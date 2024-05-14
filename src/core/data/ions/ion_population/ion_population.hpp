@@ -62,7 +62,7 @@ namespace PHARE::core
 
 
 
-        NO_DISCARD VecField const& flux() const override { return flux_; }
+        NO_DISCARD VecField const& flux() const { return flux_; }
         NO_DISCARD VecField& flux() { return flux_; }
 
         NO_DISCARD TensorField const& momentumTensor() const { return momentumTensor_; }
@@ -122,7 +122,7 @@ namespace PHARE::core
         //                  ends the ResourcesUser interface
         //-------------------------------------------------------------------------
 
-        std::string getParticleName() const override { return "Ion"; }
+        std::string getParticleTypeName() const override { return "Ion"; }
 
 
     private:

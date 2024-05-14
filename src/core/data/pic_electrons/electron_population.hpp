@@ -24,22 +24,15 @@ namespace PHARE::core
         using vecfield_type                    = VecField;
 
         ElectronPopulation(initializer::PHAREDict const& initializer)
-            : name_{initializer["name"].template to<std::string>()}
-            , mass_{initializer["mass"].template to<double>()}
+            : ParticlePopulation{initializer["name"].template to<std::string>()}
             , flux_{name_ + "_flux", HybridQuantity::Vector::Ve}
-            , particleInitializerInfo_{initializer["particle_initializer"]}
         {
         } 
-
-
-        NO_DISCARD double mass() const { return mass_; }
-
-        NO_DISCARD std::string const& name() const override { return name_; }
 
         NO_DISCARD auto const& particleInitializerInfo() const { return particleInitializerInfo_; }
 
 
-        NO_DISCARD VecField const& flux() const override { return flux_; }
+        NO_DISCARD VecField const& flux() const { return flux_; }
         NO_DISCARD VecField& flux() { return flux_; }
 
         NO_DISCARD field_type const& rho() const override { return *rho_; }
@@ -72,7 +65,7 @@ namespace PHARE::core
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
         {
-            return {{{name_ + "_rhoE", HybridQuantity::Scalar::rhoE}}};
+            return {{{name_ + "_rho", HybridQuantity::Scalar::rhoE}}};
         }
 
 
@@ -87,7 +80,7 @@ namespace PHARE::core
 
         void setBuffer(std::string const& bufferName, field_type* field)
         {
-            if (bufferName == name_ + "_rhoE")
+            if (bufferName == name_ + "_rho")
             {
                 rho_ = field;
             }
@@ -109,16 +102,13 @@ namespace PHARE::core
         //                  ends the ResourcesUser interface
         //-------------------------------------------------------------------------
 
-        std::string getParticleName() const override { return "Electron"; }
+        std::string getParticleTypeName() const override { return "Electron"; }
 
 
     private:
-        std::string name_;
-        double mass_;
         VecField flux_;
         field_type* rho_{nullptr};
         ParticlesPack<ParticleArray>* particles_{nullptr};
-        initializer::PHAREDict const& particleInitializerInfo_;
     };
 } // namespace PHARE::core
 

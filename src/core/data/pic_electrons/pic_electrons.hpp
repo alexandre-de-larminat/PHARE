@@ -214,7 +214,7 @@ namespace PHARE::core
         NO_DISCARD std::string to_str()
         {
             std::stringstream ss;
-            ss << "PICElectrons\n";
+            ss << "Particle electrons\n";
             ss << "------------------------------------\n";
             ss << "number of populations  : " << nbrPopulations() << "\n";
             for (auto& pop : populations_)

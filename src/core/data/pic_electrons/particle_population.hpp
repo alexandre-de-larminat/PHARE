@@ -25,14 +25,20 @@ namespace PHARE::core
         using pop_type                         = PopulationType<ParticleArray, VecField, TensorField, GridLayout>;
         static constexpr std::size_t dimension = VecField::dimension;
 
+        ParticlePopulation(initializer::PHAREDict const& initializer)
+            : name_{initializer["name"].template to<std::string>()}
+            , mass_{initializer["mass"].template to<double>()}
+            , particleInitializerInfo_{initializer["particle_initializer"]}
+        {
+        }
 
-        virtual std::string const& name() const { return name_; }
+        NO_DISCARD double mass() const { return mass_; }
+
+        NO_DISCARD std::string const& name() const { return name_; }
 
 
         virtual ParticlesPack<ParticleArray> const* getParticlesPtr() const { return particles_; }
 
-        virtual VecField& flux() { return flux_; }
-        virtual VecField const& flux() const { return flux_ ; }
 
         virtual field_type const& rho() const { return *rho_; }
 
@@ -90,6 +96,7 @@ namespace PHARE::core
                 static_cast<pop_type const*>(this)->domainParticles());
         }
 
+
         NO_DISCARD auto& patchGhostParticles() const
         {
             if (isUsable())
@@ -107,6 +114,7 @@ namespace PHARE::core
             return const_cast<ParticleArray&>(
                 static_cast<pop_type const*>(this)->patchGhostParticles());
         }
+
 
         NO_DISCARD auto& levelGhostParticles() const
         {
@@ -183,12 +191,12 @@ namespace PHARE::core
         //                  ends the ResourcesUser interface
         //-------------------------------------------------------------------------
 
-        virtual std::string getParticleName() const { return ""; }
+        virtual std::string getParticleTypeName() const { return ""; }
 
         NO_DISCARD std::string to_str()
         {
             std::stringstream ss;
-            ss << getParticleName() << "Population\n";
+            ss << getParticleTypeName() << "Population\n";
             ss << "------------------------------------\n";
             ss << "name                : " << name() << "\n";
             return ss.str();
@@ -196,9 +204,10 @@ namespace PHARE::core
 
     private:
         std::string name_;
-        VecField flux_{"Placeholder", HybridQuantity::Vector::V};
+        double mass_;
         field_type* rho_{nullptr};
         ParticlesPack<ParticleArray>* particles_{nullptr};
+        initializer::PHAREDict const& particleInitializerInfo_;
     };
 } // namespace PHARE::core
 
