@@ -147,7 +147,7 @@ def config(**options):
             compute_timestamps=timestamps,
         )
         
-    for quantity in ["density", "electron_bulkVelocity"]:
+    for quantity in ["density", "bulkVelocity"]:
         ph.FluidDiagnostics(
             quantity=quantity,
             write_timestamps=timestamps,

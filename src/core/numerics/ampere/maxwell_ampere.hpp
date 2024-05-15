@@ -55,7 +55,7 @@ public:
 
 private:
     double dt_;
-    double c_norm = 1.;
+    double c_norm = .1;
     double c2 = c_norm * c_norm;
 
     template<typename VecField, typename Field, typename... Indexes>

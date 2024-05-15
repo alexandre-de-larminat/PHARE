@@ -1028,10 +1028,10 @@ namespace amr
         FieldT* NiOld_{nullptr};
         FieldUser<FieldT> NiOldUser_{stratName + "_NiOld", NiOld_,
                                      core::HybridQuantity::Scalar::rho};
-        VecFieldT VeOld_{stratName + "_VeOld", core::HybridQuantity::Vector::Ve};
+        VecFieldT VeOld_{stratName + "_VeOld", core::HybridQuantity::Vector::V};
         FieldT* NeOld_{nullptr};
         FieldUser<FieldT> NeOldUser_{stratName + "_NeOld", NeOld_,
-                                     core::HybridQuantity::Scalar::rhoE};
+                                     core::HybridQuantity::Scalar::rho};
 
 
         //! ResourceManager shared with other objects (like the PICModel)

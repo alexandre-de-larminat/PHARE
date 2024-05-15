@@ -23,13 +23,14 @@ namespace PHARE::core
         using particle_resource_type           = ParticlesPack<ParticleArray>;
         using vecfield_type                    = VecField;
 
+        using Super = ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, ElectronPopulation>;
+        using Super::name_;
+
         ElectronPopulation(initializer::PHAREDict const& initializer)
-            : ParticlePopulation{initializer["name"].template to<std::string>()}
-            , flux_{name_ + "_flux", HybridQuantity::Vector::Ve}
+            : Super{initializer}
+            , flux_{name_ + "_flux", HybridQuantity::Vector::V}
         {
         } 
-
-        NO_DISCARD auto const& particleInitializerInfo() const { return particleInitializerInfo_; }
 
 
         NO_DISCARD VecField const& flux() const { return flux_; }
@@ -59,13 +60,12 @@ namespace PHARE::core
         //-------------------------------------------------------------------------
 
 
-        using typename ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, 
-        ElectronPopulation>::MomentProperties;
+        using typename Super::MomentProperties;
 
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
         {
-            return {{{name_ + "_rho", HybridQuantity::Scalar::rhoE}}};
+            return {{{name_ + "_rho", HybridQuantity::Scalar::rho}}};
         }
 
 

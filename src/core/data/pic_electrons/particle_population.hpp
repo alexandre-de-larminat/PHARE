@@ -36,6 +36,7 @@ namespace PHARE::core
 
         NO_DISCARD std::string const& name() const { return name_; }
 
+        NO_DISCARD initializer::PHAREDict const& particleInitializerInfo() const { return particleInitializerInfo_; }
 
         virtual ParticlesPack<ParticleArray> const* getParticlesPtr() const { return particles_; }
 
@@ -202,7 +203,7 @@ namespace PHARE::core
             return ss.str();
         }
 
-    private:
+    protected:
         std::string name_;
         double mass_;
         field_type* rho_{nullptr};

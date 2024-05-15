@@ -302,10 +302,6 @@ public:
     auto getViy() { return getVi("y"); }
     auto getViz() { return getVi("z"); }
 
-    auto getVex() { return getVe("x"); }
-    auto getVey() { return getVe("y"); }
-    auto getVez() { return getVe("z"); }
-
     auto getFx(std::string pop) { return getPopFluxCompo("x", pop); }
     auto getFy(std::string pop) { return getPopFluxCompo("y", pop); }
     auto getFz(std::string pop) { return getPopFluxCompo("z", pop); }

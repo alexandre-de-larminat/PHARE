@@ -27,24 +27,15 @@ namespace PHARE::core
         using vecfield_type                    = VecField;
         using tensorfield_type                 = TensorField;
 
+        using Super = ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, IonPopulation>;
+        using Super::name_;
 
         IonPopulation(initializer::PHAREDict const& initializer)
-            : name_{initializer["name"].template to<std::string>()}
-            , mass_{initializer["mass"].template to<double>()}
+            : Super{initializer}
             , flux_{name_ + "_flux", HybridQuantity::Vector::V}
             , momentumTensor_{name_ + "_momentumTensor", HybridQuantity::Tensor::M}
-            , particleInitializerInfo_{initializer["particle_initializer"]}
         {
         }
-
-
-        NO_DISCARD double mass() const { return mass_; }
-
-        NO_DISCARD std::string const& name() const override { return name_; }
-
-
-        NO_DISCARD auto const& particleInitializerInfo() const { return particleInitializerInfo_; }
-
 
 
         NO_DISCARD bool isUsable() const override
@@ -79,8 +70,7 @@ namespace PHARE::core
 
 
 
-        using typename ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, 
-        IonPopulation>::MomentProperties;
+        using typename Super::MomentProperties;
 
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
@@ -126,13 +116,10 @@ namespace PHARE::core
 
 
     private:
-        std::string name_;
-        double mass_;
         VecField flux_;
         TensorField momentumTensor_;
         field_type* rho_{nullptr};
         ParticlesPack<ParticleArray>* particles_{nullptr};
-        initializer::PHAREDict const& particleInitializerInfo_;
     };
 } // namespace PHARE::core
 

@@ -205,7 +205,6 @@ class FluidDiagnostics_(Diagnostics):
         "mass_density",
         "flux",
         "bulkVelocity",
-        "electron_bulkVelocity",
         "momentum_tensor",
     ]
     type = "fluid"

@@ -83,21 +83,12 @@ namespace core
 
             const std::array<QtyCentering, NBR_COMPO> Rho
                 = {{data.primal, data.primal, data.primal}};
-            const std::array<QtyCentering, NBR_COMPO> RhoE
-                = {{data.primal, data.primal, data.primal}};
 
             const std::array<QtyCentering, NBR_COMPO> Vx
                 = {{data.primal, data.primal, data.primal}};
             const std::array<QtyCentering, NBR_COMPO> Vy
                 = {{data.primal, data.primal, data.primal}};
             const std::array<QtyCentering, NBR_COMPO> Vz
-                = {{data.primal, data.primal, data.primal}};
-
-            const std::array<QtyCentering, NBR_COMPO> Vex
-                = {{data.primal, data.primal, data.primal}};
-            const std::array<QtyCentering, NBR_COMPO> Vey
-                = {{data.primal, data.primal, data.primal}};
-            const std::array<QtyCentering, NBR_COMPO> Vez
                 = {{data.primal, data.primal, data.primal}};
 
             const std::array<QtyCentering, NBR_COMPO> Mxx
@@ -117,8 +108,8 @@ namespace core
 
             const std::array<std::array<QtyCentering, NBR_COMPO>,
                              static_cast<std::size_t>(HybridQuantity::Scalar::count)>
-                hybridQtyCentering{Bx, By, Bz, Ex, Ey,  Ez,  Jx,  Jy,  Jz,  Rho, RhoE,
-                                   Vx, Vy, Vz, Vex, Vey, Vez, P,  Mxx, Mxy, Mxz, Myy, Myz, Mzz};
+                hybridQtyCentering{Bx, By, Bz, Ex, Ey,  Ez,  Jx,  Jy,  Jz,  Rho,
+                                   Vx, Vy, Vz,  P,  Mxx, Mxy, Mxz, Myy, Myz, Mzz};
 
 
             return hybridQtyCentering;
@@ -165,20 +156,12 @@ namespace core
                         return {{hybridQtyCentering_[gridData_.iJz][gridData_.idirX]}};
                     case HybridQuantity::Scalar::rho:
                         return {{hybridQtyCentering_[gridData_.irho][gridData_.idirX]}};
-                    case HybridQuantity::Scalar::rhoE:
-                        return {{hybridQtyCentering_[gridData_.irhoE][gridData_.idirX]}};
                     case HybridQuantity::Scalar::Vx:
                         return {{hybridQtyCentering_[gridData_.iVx][gridData_.idirX]}};
                     case HybridQuantity::Scalar::Vy:
                         return {{hybridQtyCentering_[gridData_.iVy][gridData_.idirX]}};
                     case HybridQuantity::Scalar::Vz:
                         return {{hybridQtyCentering_[gridData_.iVz][gridData_.idirX]}};
-                    case HybridQuantity::Scalar::Vex:
-                        return {{hybridQtyCentering_[gridData_.iVex][gridData_.idirX]}};
-                    case HybridQuantity::Scalar::Vey:
-                        return {{hybridQtyCentering_[gridData_.iVey][gridData_.idirX]}};
-                    case HybridQuantity::Scalar::Vez:
-                        return {{hybridQtyCentering_[gridData_.iVez][gridData_.idirX]}};
                     case HybridQuantity::Scalar::P:
                         return {{hybridQtyCentering_[gridData_.iP][gridData_.idirX]}};
                     case HybridQuantity::Scalar::Mxx:
@@ -231,9 +214,6 @@ namespace core
                     case HybridQuantity::Scalar::rho:
                         return {{hybridQtyCentering_[gridData_.irho][gridData_.idirX],
                                  hybridQtyCentering_[gridData_.irho][gridData_.idirY]}};
-                    case HybridQuantity::Scalar::rhoE:
-                        return {{hybridQtyCentering_[gridData_.irhoE][gridData_.idirX],
-                                 hybridQtyCentering_[gridData_.irhoE][gridData_.idirY]}};
                     case HybridQuantity::Scalar::Vx:
                         return {{hybridQtyCentering_[gridData_.iVx][gridData_.idirX],
                                  hybridQtyCentering_[gridData_.iVx][gridData_.idirY]}};
@@ -243,15 +223,6 @@ namespace core
                     case HybridQuantity::Scalar::Vz:
                         return {{hybridQtyCentering_[gridData_.iVz][gridData_.idirX],
                                  hybridQtyCentering_[gridData_.iVz][gridData_.idirY]}};
-                    case HybridQuantity::Scalar::Vex:
-                        return {{hybridQtyCentering_[gridData_.iVex][gridData_.idirX],
-                                 hybridQtyCentering_[gridData_.iVex][gridData_.idirY]}};
-                    case HybridQuantity::Scalar::Vey:
-                        return {{hybridQtyCentering_[gridData_.iVey][gridData_.idirX],
-                                 hybridQtyCentering_[gridData_.iVey][gridData_.idirY]}};
-                    case HybridQuantity::Scalar::Vez:
-                        return {{hybridQtyCentering_[gridData_.iVez][gridData_.idirX],
-                                 hybridQtyCentering_[gridData_.iVez][gridData_.idirY]}};
                     case HybridQuantity::Scalar::P:
                         return {{hybridQtyCentering_[gridData_.iP][gridData_.idirX],
                                  hybridQtyCentering_[gridData_.iP][gridData_.idirY]}};
@@ -321,10 +292,6 @@ namespace core
                         return {{hybridQtyCentering_[gridData_.irho][gridData_.idirX],
                                  hybridQtyCentering_[gridData_.irho][gridData_.idirY],
                                  hybridQtyCentering_[gridData_.irho][gridData_.idirZ]}};
-                    case HybridQuantity::Scalar::rhoE:
-                        return {{hybridQtyCentering_[gridData_.irhoE][gridData_.idirX],
-                                 hybridQtyCentering_[gridData_.irhoE][gridData_.idirY],
-                                 hybridQtyCentering_[gridData_.irhoE][gridData_.idirZ]}};
                     case HybridQuantity::Scalar::Vx:
                         return {{hybridQtyCentering_[gridData_.iVx][gridData_.idirX],
                                  hybridQtyCentering_[gridData_.iVx][gridData_.idirY],
@@ -337,18 +304,6 @@ namespace core
                         return {{hybridQtyCentering_[gridData_.iVz][gridData_.idirX],
                                  hybridQtyCentering_[gridData_.iVz][gridData_.idirY],
                                  hybridQtyCentering_[gridData_.iVz][gridData_.idirZ]}};
-                    case HybridQuantity::Scalar::Vex:
-                        return {{hybridQtyCentering_[gridData_.iVex][gridData_.idirX],
-                                 hybridQtyCentering_[gridData_.iVex][gridData_.idirY],
-                                 hybridQtyCentering_[gridData_.iVex][gridData_.idirZ]}};
-                    case HybridQuantity::Scalar::Vey:
-                        return {{hybridQtyCentering_[gridData_.iVey][gridData_.idirX],
-                                 hybridQtyCentering_[gridData_.iVey][gridData_.idirY],
-                                 hybridQtyCentering_[gridData_.iVey][gridData_.idirZ]}};
-                    case HybridQuantity::Scalar::Vez:
-                        return {{hybridQtyCentering_[gridData_.iVez][gridData_.idirX],
-                                 hybridQtyCentering_[gridData_.iVez][gridData_.idirY],
-                                 hybridQtyCentering_[gridData_.iVez][gridData_.idirZ]}};
                     case HybridQuantity::Scalar::P:
                         return {{hybridQtyCentering_[gridData_.iP][gridData_.idirX],
                                  hybridQtyCentering_[gridData_.iP][gridData_.idirY],
@@ -399,11 +354,6 @@ namespace core
                     return {{centering(HybridQuantity::Scalar::Vx),
                              centering(HybridQuantity::Scalar::Vy),
                              centering(HybridQuantity::Scalar::Vz)}};
-
-                case HybridQuantity::Vector::Ve:
-                    return {{centering(HybridQuantity::Scalar::Vex),
-                             centering(HybridQuantity::Scalar::Vey),
-                             centering(HybridQuantity::Scalar::Vez)}};
 
                 case HybridQuantity::Vector::J:
                     return {{centering(HybridQuantity::Scalar::Jx),

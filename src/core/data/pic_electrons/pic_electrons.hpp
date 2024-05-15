@@ -34,7 +34,7 @@ namespace PHARE::core
 
 
         explicit PICElectrons(PHARE::initializer::PHAREDict const& dict)
-            : bulkVelocity_{"bulkVel", HybridQuantity::Vector::Ve}
+            : bulkVelocity_{"bulkVelE", HybridQuantity::Vector::V}
             , populations_{generate(
                   [&dict](auto ipop) { //
                       return ElectronPopulation{dict["pop" + std::to_string(ipop)]};
@@ -180,7 +180,7 @@ namespace PHARE::core
 
         NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
         {
-            return {{{densityName(), HybridQuantity::Scalar::rhoE}}};
+            return {{{densityName(), HybridQuantity::Scalar::rho}}};
         }
 
 

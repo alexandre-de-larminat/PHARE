@@ -144,8 +144,7 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
             printf("Made domain and ranges\n");
 
             auto inDomain = pusher_->move(rangeIn, rangeOut, em, pop.mass(), interpolator_, 
-                                          layout, [](auto& particleRange) { return particleRange; }, 
-                                          inDomainBox);
+                                          layout, inDomainBox);
             printf("Pushed particles in domain\n");
             
             domain.erase(makeRange(domain, inDomain.iend(), domain.size())); //erase particles leaving domain  
@@ -157,7 +156,7 @@ void FermionUpdater<Ions, PICElectrons, Electromag, VecField, GridLayout>::updat
 
             auto pushAndCopyInDomain = [&](auto&& particleRange) {
                 auto inGhostLayerRange = pusher_->move(particleRange, particleRange, em, pop.mass(),
-                                                    interpolator_, layout, inGhostBox, inGhostLayer);
+                                                    interpolator_, layout, inGhostLayer);
 
                 projector_(J, inGhostLayerRange, particleRange, layout, dt);
 
