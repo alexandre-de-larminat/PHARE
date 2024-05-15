@@ -29,6 +29,7 @@ namespace PHARE::core
         using Super::name_;
 
         ElectronPopulation(initializer::PHAREDict const& initializer)
+            : Super{initializer}
             , flux_{name_ + "_flux", HybridQuantity::Vector::Ve}
         {
         } 
