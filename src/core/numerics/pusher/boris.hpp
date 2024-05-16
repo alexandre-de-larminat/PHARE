@@ -112,7 +112,7 @@ public:
                        Electromag const& emFields, double mass, Interpolator& interpolator,
                        GridLayout const& layout, ParticleSelector selector) override
     {
-        PHARE_LOG_SCOPE("Boris::moveNonPPC");
+        PHARE_LOG_SCOPE("Boris::move");
 
         // push the particles of one time step
         // rangeIn : t=n, rangeOut : t=n+1
