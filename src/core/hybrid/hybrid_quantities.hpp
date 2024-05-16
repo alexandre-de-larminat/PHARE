@@ -14,25 +14,21 @@ class HybridQuantity
 {
 public:
     enum class Scalar {
-        Bx,  // magnetic field components
+        Bx, // magnetic field components
         By,
         Bz,
-        Ex,  // electric field components
+        Ex, // electric field components
         Ey,
         Ez,
-        Jx,  // current density components
+        Jx, // current density components
         Jy,
         Jz,
-        rho,  // ion charge density
-        rhoE, // electron charge density
-        Vx,   // bulk velocity components
+        rho, // charge density
+        Vx,  // bulk velocity components
         Vy,
         Vz,
-        Vex,  // electron bulk velocity components for full PIC
-        Vey,
-        Vez,
-        P,    // pressure
-        Mxx,  // momentum tensor components
+        P,   // pressure
+        Mxx, // momentum tensor components
         Mxy,
         Mxz,
         Myy,
@@ -40,7 +36,7 @@ public:
         Mzz,
         count
     };
-    enum class Vector { B, E, J, V, Ve };
+    enum class Vector { B, E, J, V };
     enum class Tensor { M, count };
 
     template<std::size_t rank, typename = std::enable_if_t<rank == 1 or rank == 2, void>>
@@ -50,7 +46,6 @@ public:
     NO_DISCARD static constexpr auto E() { return componentsQuantities(Vector::E); }
     NO_DISCARD static constexpr auto J() { return componentsQuantities(Vector::J); }
     NO_DISCARD static constexpr auto V() { return componentsQuantities(Vector::V); }
-    NO_DISCARD static constexpr auto Ve() { return componentsQuantities(Vector::Ve); }
 
     NO_DISCARD static constexpr std::array<Scalar, 3> componentsQuantities(Vector qty)
     {
@@ -65,9 +60,6 @@ public:
 
         if (qty == Vector::V)
             return {{Scalar::Vx, Scalar::Vy, Scalar::Vz}};
-
-        if (qty == Vector::Ve)
-            return {{Scalar::Vex, Scalar::Vey, Scalar::Vez}};
 
         throw std::runtime_error("Error - invalid Vector");
     }

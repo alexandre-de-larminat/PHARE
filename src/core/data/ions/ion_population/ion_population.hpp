@@ -31,11 +31,11 @@ namespace PHARE::core
         using Super = ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, 
                                          IonPopulation>;
         using Super::name_;
+        using Super::flux_;
 
 
         IonPopulation(initializer::PHAREDict const& initializer)
             : Super{initializer}
-            , flux_{name_ + "_flux", HybridQuantity::Vector::V}
             , momentumTensor_{name_ + "_momentumTensor", HybridQuantity::Tensor::M}
         {
         }
@@ -56,8 +56,6 @@ namespace PHARE::core
 
 
 
-        NO_DISCARD VecField const& flux() const { return flux_; }
-        NO_DISCARD VecField& flux() { return flux_; }
 
         NO_DISCARD TensorField const& momentumTensor() const { return momentumTensor_; }
         NO_DISCARD TensorField& momentumTensor() { return momentumTensor_; }
@@ -70,17 +68,6 @@ namespace PHARE::core
         //-------------------------------------------------------------------------
         //                  start the ResourcesUser interface
         //-------------------------------------------------------------------------
-
-
-
-        using typename Super::MomentProperties;
-
-
-        NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
-        {
-            return {{{name_ + "_rho", HybridQuantity::Scalar::rho}}};
-        }
-
 
 
 
@@ -119,7 +106,6 @@ namespace PHARE::core
 
 
     private:
-        VecField flux_;
         TensorField momentumTensor_;
         field_type* rho_{nullptr};
         ParticlesPack<ParticleArray>* particles_{nullptr};

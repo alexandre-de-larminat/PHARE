@@ -30,6 +30,7 @@ namespace PHARE::core
         ParticlePopulation(initializer::PHAREDict const& initializer)
             : name_{initializer["name"].template to<std::string>()}
             , mass_{initializer["mass"].template to<double>()}
+            , flux_{name_ + "_flux", HybridQuantity::Vector::V}
             , particleInitializerInfo_{initializer["particle_initializer"]}
         {
         }
@@ -40,6 +41,9 @@ namespace PHARE::core
         NO_DISCARD auto const& particleInitializerInfo() const { return particleInitializerInfo_; }
 
         NO_DISCARD std::string const& name() const { return name_; }
+
+        NO_DISCARD VecField const& flux() const { return flux_; }
+        NO_DISCARD VecField& flux() { return flux_; }
 
 
         virtual ParticlesPack<ParticleArray> const* getParticlesPtr() const { return particles_; }
@@ -177,6 +181,12 @@ namespace PHARE::core
 
        using MomentProperties = std::array<MomentsProperty, 1>;
 
+        
+        NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
+        {
+            return {{{name_ + "_rho", HybridQuantity::Scalar::rho}}};
+        }
+
 
         struct ParticleProperty
         {
@@ -208,6 +218,7 @@ namespace PHARE::core
     protected:
         std::string name_;
         double mass_;
+        VecField flux_;
         initializer::PHAREDict const& particleInitializerInfo_;
         field_type* rho_{nullptr};
         ParticlesPack<ParticleArray>* particles_{nullptr};

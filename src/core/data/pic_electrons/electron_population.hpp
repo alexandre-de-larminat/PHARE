@@ -27,16 +27,13 @@ namespace PHARE::core
         using Super = ParticlePopulation<ParticleArray, VecField, TensorField, GridLayout, 
                                          ElectronPopulation>;
         using Super::name_;
+        using Super::flux_;
 
         ElectronPopulation(initializer::PHAREDict const& initializer)
             : Super{initializer}
-            , flux_{name_ + "_flux", HybridQuantity::Vector::Ve}
         {
         } 
 
-
-        NO_DISCARD VecField const& flux() const { return flux_; }
-        NO_DISCARD VecField& flux() { return flux_; }
 
         NO_DISCARD field_type const& rho() const override { return *rho_; }
 
@@ -60,15 +57,6 @@ namespace PHARE::core
         //-------------------------------------------------------------------------
         //                  start the ResourcesUser interface
         //-------------------------------------------------------------------------
-
-
-        using typename Super::MomentProperties;
-
-
-        NO_DISCARD MomentProperties getFieldNamesAndQuantities() const
-        {
-            return {{{name_ + "_rho", HybridQuantity::Scalar::rhoE}}};
-        }
 
 
 
@@ -104,7 +92,6 @@ namespace PHARE::core
 
 
     private:
-        VecField flux_;
         field_type* rho_{nullptr};
         ParticlesPack<ParticleArray>* particles_{nullptr};
     };
