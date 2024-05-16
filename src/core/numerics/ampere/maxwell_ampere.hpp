@@ -98,7 +98,7 @@ private:
                             - Jz(ijk...));
 
         if constexpr (dimension == 2 || dimension == 3)
-            Eznew(ijk...) = Ez(ijk...) - dt_ * c2 * (layout_->template deriv<Direction::X>(By, {ijk...})
+            Eznew(ijk...) = Ez(ijk...) + dt_ * c2 * (layout_->template deriv<Direction::X>(By, {ijk...})
                             - layout_->template deriv<Direction::Y>(Bx, {ijk...})- Jz(ijk...));
     }
 };
