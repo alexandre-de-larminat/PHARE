@@ -61,7 +61,7 @@ def config():
         return 1 / density(x) * (K - b2(x) * 0.5)
 
     def vx(x):
-        return 0.0
+        return 0.01
 
     def vy(x):
         return 0.0
