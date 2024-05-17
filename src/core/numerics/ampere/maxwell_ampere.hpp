@@ -53,9 +53,9 @@ public:
 
 
 private:
-    double dt_;
-    double c_norm = 1.;
-    double c2 = c_norm * c_norm;
+    double const dt_;
+    double const c_norm = 1.;
+    double const c2 = c_norm * c_norm;
 
     template<typename VecField, typename Field, typename... Indexes>
     void ExEq_(Field const& Ex, VecField const& E, VecField const& Jx, Field& Exnew, Indexes const&... ijk) const
