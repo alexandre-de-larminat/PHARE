@@ -66,6 +66,7 @@ public:
     SolverPIC(PHARE::initializer::PHAREDict const& dict)
         : ISolver<AMR_Types>{"PICSolver"}
         , fermionUpdater_{dict["ion_updater"]}
+        , maxwellampere_{dict["maxwell_ampere"]}
     {
     }
 

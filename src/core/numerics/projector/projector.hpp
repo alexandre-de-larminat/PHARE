@@ -29,37 +29,60 @@ namespace PHARE::core
 // Calculate weights for a single particle, for use in calculating Esirkepov coefficients
 
 template<typename Particle, typename GridLayout>
-auto E_weights_(Particle const& part, GridLayout const& layout)
+auto bufferedWeights_(Particle const& part, GridLayout const& layout)
 {   
-
     static constexpr auto interpOrder = GridLayout::interp_order;
     static constexpr auto supportpts  = interpOrder + 1;
     static constexpr auto dimension   = GridLayout::dimension;
 
     using Interpolator_t = PHARE::core::Interpolator<dimension, interpOrder>;
     using Weighter_t     = PHARE::core::Weighter<interpOrder>;
+
     Weighter_t weighter_;
     std::array<double, supportpts> weights;
-    std::vector<std::vector<double>> vec_weights(dimension, std::vector<double>(supportpts+2));
+    std::vector<std::vector<double>> primal_weights(dimension, std::vector<double>(supportpts+2));
+    std::vector<std::vector<double>> dual_weights(dimension, std::vector<double>(supportpts+2));
+
     
     for (uint i = 0; i < dimension; ++i)
     {
-        auto position = part.iCell[i] + part.delta[i] - 0.5;
-        auto startIndex = part.iCell[i] - Interpolator_t::template computeStartLeftShift<QtyCentering, QtyCentering::dual>(part.delta[i]);
-        weighter_.computeWeight(position, startIndex, weights);
+        auto primal_position = part.iCell[i] + part.delta[i];
+        auto dual_position   = primal_position - 0.5;
+
+        auto startIndexDual = part.iCell[i] - Interpolator_t::template 
+            computeStartLeftShift<QtyCentering, QtyCentering::dual>(part.delta[i]);
+            
+        auto startIndexPrimal = part.iCell[i] - Interpolator_t::template 
+            computeStartLeftShift<QtyCentering, QtyCentering::primal>(part.delta[i]);
+        
+
+        weighter_.computeWeight(primal_position, startIndexPrimal, weights);
+
+        for (uint n = 0; n < supportpts; ++n)
+        {
+            primal_weights[i].push_back(weights[n]);
+        }
+        primal_weights[i].insert(primal_weights[i].begin(), 0.0);
+        primal_weights[i].push_back(0.0);
+
+/*
+        weighter_.computeWeight(dual_position, startIndexDual, weights);
+
+        for (uint n = 0; n < supportpts; ++n)
+        {
+            dual_weights[i].push_back(weights[n]);
+        }
 
         // Add 0.0 to the beginning and end of the weights for calculation purposes
-        std::vector<double> vec_weights_i(std::begin(weights), std::end(weights));
-        vec_weights_i.insert(vec_weights_i.begin(), 0.0);
-        vec_weights_i.insert(vec_weights_i.end(), 0.0);
-
-        vec_weights[i] = vec_weights_i;
+        dual_weights[i].insert(dual_weights[i].begin(), 0.0);
+        dual_weights[i].push_back(0.0);
+*/
 
     }
 
-    return vec_weights; 
+    return primal_weights; 
    
-} // END E_weights_
+} // END bufferedWeights_
 
 
 
@@ -85,8 +108,8 @@ public:
         auto const& xOldStartIndex = partIn.iCell[0] ; // central dual node
         auto const& xNewStartIndex = partOut.iCell[0] ;
 
-        auto const& weightsOld  = E_weights_(partIn, layout);
-        auto const& weightsNew = E_weights_(partOut, layout);
+        auto const& weightsOld  = bufferedWeights_(partIn, layout); // dual weights
+        auto const& weightsNew  = bufferedWeights_(partOut, layout);
         auto const& S0          = weightsOld[0];
         auto const& order_size  = S0.size();
 
@@ -99,12 +122,13 @@ public:
         }
 
         double dl = layout.meshSize()[0]; 
-        double charge_density = partIn.charge * partIn.weight; // CHECK weight factors in the cell volume
+        double cell_volume = layout.cellVolume(); 
+        double charge_density = partIn.charge * partIn.weight * cell_volume;
 
             
-        double crx_p = charge_density / dt * dl;   // current density in (x) for 1 particle
-        double cry_p = charge_density * partOut.v[1];  // current density in the y-direction in 1D
-        double crz_p = charge_density * partOut.v[2]; // current density in the z-direction in 1D
+        double crx_p = charge_density / dt * dl;  // current density in (x) for 1 particle
+        double cry_p = charge_density * partIn.v[1]; // current density in y using v(n+1/2)
+        double crz_p = charge_density * partIn.v[2]; // current density in z
 
         std::vector<double> Jx_p(order_size, 0.);
 
@@ -136,7 +160,7 @@ public:
             }
         }
     }
-}; // END ProjectJ<1> specialization
+}; // END ProjectJ<1>
 
 
 template<>
@@ -156,8 +180,8 @@ public:
         auto const& yOldStartIndex = partIn.iCell[1];
         auto const& xNewStartIndex = partOut.iCell[0];
         auto const& yNewStartIndex = partOut.iCell[1];
-        auto const& oldWeights  = E_weights_(partIn, layout);
-        auto const& newWeights  = E_weights_(partOut, layout);
+        auto const& oldWeights = bufferedWeights_(partIn, layout);
+        auto const& newWeights = bufferedWeights_(partOut, layout);
 
         auto const& Sx0      = oldWeights[0];
         auto const& Sy0      = oldWeights[1];
@@ -186,7 +210,8 @@ public:
         }
 
         auto dl = layout.meshSize();
-        double charge_density = partIn.charge * partIn.weight; // CHECK weight factors in the cell volume
+        double cell_volume = layout.cellVolume();
+        double charge_density = partIn.charge * partIn.weight * cell_volume; // CHECK weight factors in the cell volume
      
         double crx_p = charge_density/dt * dl[0];  // current density in the evaluated dimension
         double cry_p = charge_density/dt * dl[1];  // current density in the evaluated dimension
@@ -267,8 +292,8 @@ public:
         auto const& yNewStartIndex = partOut.iCell[1];
         auto const& zNewStartIndex = partOut.iCell[2];
 
-        auto const& oldWeights  = E_weights_(partIn, layout);
-        auto const& newWeights  = E_weights_(partOut, layout);
+        auto const& oldWeights  = bufferedWeights_(partIn, layout);
+        auto const& newWeights  = bufferedWeights_(partOut, layout);
 
         auto const& Sx0 = oldWeights[0];
         auto const& Sy0 = oldWeights[1];
@@ -301,14 +326,10 @@ public:
         }
 
 
+        auto dl = layout.meshSize();
+        double cell_volume = layout.cellVolume();
 
-        std::array<double, 3> dl;
-
-        dl[0] = 1.;
-        dl[1] = 1.;
-        dl[2] = 1.;
-
-        double charge_weight = partIn.charge * partIn.weight; // CHECK: assumes weight factors in the cell volume
+        double charge_weight = partIn.charge * partIn.weight * cell_volume;
             
         double crx_p = charge_weight/dt * dl[0]; // current density in the evaluated dimension
         double cry_p = charge_weight/dt * dl[1]; // current density in the evaluated dimension

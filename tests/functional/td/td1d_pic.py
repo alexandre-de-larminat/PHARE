@@ -113,6 +113,7 @@ def simulation_params(diagdir, **extra):
         "boundary_types": "periodic",
         "cells": 100,
         "dl": 1.0,
+        "normalized_c": 1.0,
         "diag_options": {
             "format": "phareh5",
             "options": {"dir": diagdir, "mode": "overwrite"},

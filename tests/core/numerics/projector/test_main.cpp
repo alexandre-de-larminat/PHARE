@@ -93,7 +93,7 @@ auto E_weights_computer()
         auto icell = static_cast<int>(normalizedPositions[smol_i]);
         auto delta = normalizedPositions[smol_i] - icell;
         Particle particle{1., 1., ConstArray<int, dim>(icell), ConstArray<double, dim>(delta), {0., 10., 0.}};
-        weights_[smol_i] = E_weights_(particle, layout);
+        weights_[smol_i] = bufferedWeights_(particle, layout);
 
         weightsSums[i] = std::accumulate(std::begin(weights_[smol_i][0]), std::end(weights_[smol_i][0]), 0.);
         if (dim > 1)
@@ -182,11 +182,11 @@ TEST(Weights_for_Esirkepov1D, CenterAppropriately)
         auto delta = normalizedPositions[i] - icell;
         Particle particle{1., 1., ConstArray<int, dim>(icell), ConstArray<double, dim>(delta), 
         {0., 10., 0.}};
-        weights_[i] = E_weights_(particle, layout);
+        weights_[i] = bufferedWeights_(particle, layout);
 
         auto const& xStartIndex = particle.iCell[0] ; // central dual node
 
-        auto const& weightsIn  = E_weights_(particle, layout);
+        auto const& weightsIn  = bufferedWeights_(particle, layout);
         auto const& S0          = weightsIn[0];
         auto const& order_size  = S0.size();
 

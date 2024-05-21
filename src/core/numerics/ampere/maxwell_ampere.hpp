@@ -8,6 +8,8 @@
 #include "core/data/grid/gridlayout_utils.hpp"
 #include "core/data/vecfield/vecfield_component.hpp"
 
+#include "initializer/data_provider.hpp"
+
 
 namespace PHARE::core
 {
@@ -18,6 +20,12 @@ class MaxwellAmpere : public LayoutHolder<GridLayout>
     using LayoutHolder<GridLayout>::layout_;
 
 public:
+
+    explicit MaxwellAmpere(PHARE::initializer::PHAREDict const& dict)
+        : c_norm{dict["normalized_c"].template to<double>()}
+    {
+    }
+
     template<typename VecField>
     void operator()(VecField const& B, VecField const& E, VecField const& J, VecField& Enew, double dt)
     {
@@ -55,8 +63,9 @@ public:
 
 private:
     double dt_;
-    double c_norm = .1;
+    double c_norm;
     double c2 = c_norm * c_norm;
+    double mu0 = 1.2566370614e-6;
 
     template<typename VecField, typename Field, typename... Indexes>
     void ExEq_(Field const& Ex, VecField const& B, Field const& Jx, Field& Exnew, Indexes const&... ijk) const
@@ -65,7 +74,7 @@ private:
 
         if constexpr (dimension == 1)
         {
-            Exnew(ijk...) = Ex(ijk...) - dt_ * c2 * Jx(ijk...) ; 
+            Exnew(ijk...) = Ex(ijk...) - dt_ * c2 * mu0 * Jx(ijk...) ; 
         }
         if constexpr (dimension == 2)
         {
@@ -87,7 +96,7 @@ private:
         if constexpr (dimension == 1 || dimension == 2)
         {
             Eynew(ijk...) = Ey(ijk...) - dt_ * c2 *( layout_->template deriv<Direction::X>(Bz, {ijk...}) 
-                            + Jy(ijk...));
+                            + mu0 * Jy(ijk...));
         }
         if constexpr (dimension == 3)
         {
@@ -104,7 +113,7 @@ private:
         if constexpr (dimension == 1)
         {
             Eznew(ijk...) = Ez(ijk...) + dt_ * c2 * (layout_->template deriv<Direction::X>(By, {ijk...}) 
-                            - Jz(ijk...));
+                            - mu0 * Jz(ijk...));
         }
 
         if constexpr (dimension == 2 || dimension == 3)

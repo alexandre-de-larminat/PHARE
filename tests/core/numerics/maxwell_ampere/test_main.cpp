@@ -90,22 +90,31 @@ struct GridLayoutMock3D
 };
 
 
+PHARE::initializer::PHAREDict createDict()
+{
+    PHARE::initializer::PHAREDict dict;
+
+    dict["normalized_c"] = 1.0;
+
+    return dict;
+}
+
 
 TEST(MaxwellAmpere, canBe1D)
 {
-    MaxwellAmpere<GridLayoutMock1D> maxwellAmpere;
+    MaxwellAmpere<GridLayoutMock1D> maxwellAmpere{createDict()};
 }
 
 
 TEST(MaxwellAmpere, canBe2D)
 {
-    MaxwellAmpere<GridLayoutMock2D> maxwellAmpere;
+    MaxwellAmpere<GridLayoutMock2D> maxwellAmpere{createDict()};
 }
 
 
 TEST(MaxwellAmpere, canBe3D)
 {
-    MaxwellAmpere<GridLayoutMock3D> maxwellAmpere;
+    MaxwellAmpere<GridLayoutMock3D> maxwellAmpere{createDict()};
 }
 
 
@@ -114,7 +123,7 @@ TEST(MaxwellAmpere, shouldBeGivenAGridLayoutPointerToBeOperational)
     {
         using GridLayout = GridLayout<GridLayoutImplYee<1, 1>>;
         VecFieldMock<FieldMock<1>> B_1, E_1, J_1, Enew_1;
-        MaxwellAmpere<GridLayout> MaxwellAmpere1d;
+        MaxwellAmpere<GridLayout> MaxwellAmpere1d{createDict()};
         auto layout1d = std::make_unique<TestGridLayout<GridLayout>>();
         EXPECT_ANY_THROW(MaxwellAmpere1d(B_1, E_1, J_1, Enew_1, 1.));
         MaxwellAmpere1d.setLayout(layout1d.get());
@@ -198,6 +207,7 @@ public:
         , B{"B", HybridQuantity::Vector::B}
         , E{"E", HybridQuantity::Vector::E}
         , Enew{"Enew", HybridQuantity::Vector::E}
+        , maxwellAmpere{createDict()}
     {
         B.setBuffer("B_x", &Bx);
         B.setBuffer("B_y", &By);
