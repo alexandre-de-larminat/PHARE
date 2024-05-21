@@ -172,9 +172,42 @@ protected:
 };
 
 
+template<std::size_t dim>
+class AnotherPusher : public APusher<dim>
+{
+public:
+    using APusher<dim>::dt;
+    using APusher<dim>::layout;
+
+    AnotherPusher()
+        : APusher<dim>()
+        , particlesIn{layout.AMRBox()}
+        , particlesOut{layout.AMRBox()}
+    {   
+        // set speed to n-1/2
+        double vx = -(10. + 0.01) * dt/2;
+        double vy = 10 + 0.05 * dt/2;
+        double vz = (10. - 0.05) * dt/2;
+
+        particlesIn.emplace_back(
+            Particle{1., 1., ConstArray<int, dim>(5), ConstArray<double, dim>(0.), {vx, vy, vz}});
+        particlesOut.emplace_back(
+            Particle{1., 1., ConstArray<int, dim>(5), ConstArray<double, dim>(0.), {vx, vy, vz}});
+    }
+protected:
+    ParticleArray<dim> particlesIn;
+    ParticleArray<dim> particlesOut;
+};
+
+
 using APusher1D = APusher<1>;
 using APusher2D = APusher<2>;
 using APusher3D = APusher<3>;
+
+using AnotherPusher1D = AnotherPusher<1>;
+using AnotherPusher2D = AnotherPusher<2>;
+using AnotherPusher3D = AnotherPusher<3>;
+
 
 TEST_F(APusher3D, trajectoryIsOk)
 {
@@ -241,7 +274,9 @@ TEST_F(APusher1D, trajectoryIsOk)
     EXPECT_THAT(actual[0], ::testing::Pointwise(::testing::DoubleNear(1e-5), expectedTrajectory.x));
 }
 
-TEST_F(APusher3D, trajectoryIsOkForOneStep)
+
+
+TEST_F(AnotherPusher3D, trajectoryIsOkForOneStep)
 {
     auto rangeIn  = makeIndexRange(particlesIn);
     auto rangeOut = makeIndexRange(particlesOut);
@@ -263,7 +298,7 @@ TEST_F(APusher3D, trajectoryIsOkForOneStep)
     EXPECT_THAT(actual[2], ::testing::Pointwise(::testing::DoubleNear(1e-5), expectedTrajectory.z));
 }
 
-TEST_F(APusher2D, trajectoryIsOkForOneStep)
+TEST_F(AnotherPusher2D, trajectoryIsOkForOneStep)
 {
     auto rangeIn  = makeIndexRange(particlesIn);
     auto rangeOut = makeIndexRange(particlesOut);
@@ -285,7 +320,7 @@ TEST_F(APusher2D, trajectoryIsOkForOneStep)
 
 
 
-TEST_F(APusher1D, trajectoryIsOkForOneStep)
+TEST_F(AnotherPusher1D, trajectoryIsOkForOneStep)
 {
     auto rangeIn  = makeIndexRange(particlesIn);
     auto rangeOut = makeIndexRange(particlesOut);

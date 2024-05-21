@@ -102,7 +102,7 @@ public:
 
             // now advance the particles from t=n+1/2 to t=n+1 using v_{n+1} just calculated
             // and get a pointer to the first leaving particle
-            postPushStep_(rangeOut, idx);
+            postAccelerationPushStep_(rangeOut, idx);
         }
 
         return secondSelector(rangeOut);
@@ -114,11 +114,7 @@ public:
     {
         PHARE_LOG_SCOPE("Boris::move");
 
-        // push the particles of one time step
-        // rangeIn : t=n, rangeOut : t=n+1
-        prePushStep_(rangeIn, rangeOut, 2);
-
-        rangeOut = selector(rangeOut);
+        copyQuantities_(rangeIn, rangeOut);
 
         double const dto2m = 0.5 * dt_ / mass;
         for (auto idx = rangeOut.ibegin(); idx < rangeOut.iend(); ++idx)
@@ -128,9 +124,13 @@ public:
             //  get electromagnetic fields interpolated on the particles of rangeOut stop at newEnd.
             //  get the particle velocity from t=n-1/2 to t=n+1/2
             accelerate_(currPart, interpolator(currPart, emFields, layout), dto2m);
+
+            // push the particles of one time step
+            // rangeIn : t=n, rangeOut : t=n+1
+            postAccelerationPushStep_(rangeOut, idx, 1.0);
         }
 
-        return rangeOut;
+        return selector(rangeOut);
     }
 
 
@@ -138,8 +138,8 @@ public:
     /** see Pusher::move() documentation*/
     void setMeshAndTimeStep(std::array<double, dim> ms, double const ts) override
     {
-        std::transform(std::begin(ms), std::end(ms), std::begin(halfDtOverDl_),
-                       [ts](double& x) { return 0.5 * ts / x; });
+        std::transform(std::begin(ms), std::end(ms), std::begin(dtOverDl_),
+                       [ts](double& x) { return ts / x; });
         dt_ = ts;
     }
 
@@ -149,13 +149,13 @@ private:
     /** move the particle partIn of half a time step and store it in partOut
      */
     template<typename Particle>
-    auto advancePosition_(Particle const& partIn, Particle& partOut, int alpha = 1)
+    auto advancePosition_(Particle const& partIn, Particle& partOut, double stepSize = 0.5)
     {
         std::array<int, dim> newCell;
         for (std::size_t iDim = 0; iDim < dim; ++iDim)
         {
             double delta
-                = partIn.delta[iDim] + static_cast<double>(alpha * halfDtOverDl_[iDim] * partIn.v[iDim]);
+                = partIn.delta[iDim] + static_cast<double>(stepSize * dtOverDl_[iDim] * partIn.v[iDim]);
 
             double iCell = std::floor(delta);
             if (std::abs(delta) > 2)
@@ -175,13 +175,13 @@ private:
      * @return the function returns and iterator on the first leaving particle, as
      * detected by the ParticleSelector
      */
-    void prePushStep_(ParticleRange const& rangeIn, ParticleRange& rangeOut, int alpha = 1)
+    void prePushStep_(ParticleRange const& rangeIn, ParticleRange& rangeOut)
     {
         auto& inParticles  = rangeIn.array();
         auto& outParticles = rangeOut.array();
         for (auto inIdx = rangeIn.ibegin(), outIdx = rangeOut.ibegin(); inIdx < rangeIn.iend();
              ++inIdx, ++outIdx)
-        {
+        {          
             // in the first push, this is the first time
             // we push to rangeOut, which contains crap
             // the push will only touch the particle position
@@ -196,16 +196,32 @@ private:
             outParticles[outIdx].weight = inParticles[inIdx].weight;
             outParticles[outIdx].v      = inParticles[inIdx].v;
 
-            auto newCell = advancePosition_(inParticles[inIdx], outParticles[outIdx], alpha);
+            auto newCell = advancePosition_(inParticles[inIdx], outParticles[outIdx]);
             if (newCell != inParticles[inIdx].iCell)
                 outParticles.change_icell(newCell, outIdx);
         }
     }
 
-    void postPushStep_(ParticleRange& range, std::size_t idx)
+    void copyQuantities_(ParticleRange const& rangeIn, ParticleRange& rangeOut)
+    {
+        auto& inParticles  = rangeIn.array();
+        auto& outParticles = rangeOut.array();
+        for (auto inIdx = rangeIn.ibegin(), outIdx = rangeOut.ibegin(); inIdx < rangeIn.iend();
+             ++inIdx, ++outIdx)
+        {
+            // For now, rangeOut contains crap
+            // The next step being the acceleration of
+            // rangeOut, we need to copy rangeIn weights, charge
+            // velocity and position. 
+
+            outParticles[outIdx] = inParticles[inIdx];
+        }
+    }
+
+    void postAccelerationPushStep_(ParticleRange& range, std::size_t idx, double stepSize = 0.5)
     {
         auto& particles = range.array();
-        auto newCell    = advancePosition_(particles[idx], particles[idx]);
+        auto newCell    = advancePosition_(particles[idx], particles[idx], stepSize);
         if (newCell != particles[idx].iCell)
         {
             particles.change_icell(newCell, idx);
@@ -281,7 +297,7 @@ private:
 
 
 
-    std::array<double, dim> halfDtOverDl_;
+    std::array<double, dim> dtOverDl_;
     double dt_;
 };
 
