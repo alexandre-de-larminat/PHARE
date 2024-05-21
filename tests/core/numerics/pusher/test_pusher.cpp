@@ -171,6 +171,7 @@ protected:
     std::array<double, dim> dxyz;
 };
 
+
 template<std::size_t dim>
 class AnotherPusher : public APusher<dim>
 {
@@ -183,10 +184,10 @@ public:
         , particlesIn{layout.AMRBox()}
         , particlesOut{layout.AMRBox()}
     {   
-        // set speed to n+1/2
-        double vx = (10. + 0.01) * dt/2;
-        double vy = 10 -0.05 * dt/2;
-        double vz = (- 10. + 0.05) * dt/2;
+        // set speed to n-1/2
+        double vx = -(10. + 0.01) * dt/2;
+        double vy = 10 + 0.05 * dt/2;
+        double vz = (10. - 0.05) * dt/2;
 
         particlesIn.emplace_back(
             Particle{1., 1., ConstArray<int, dim>(5), ConstArray<double, dim>(0.), {vx, vy, vz}});
@@ -337,8 +338,6 @@ TEST_F(AnotherPusher1D, trajectoryIsOkForOneStep)
     EXPECT_THAT(actual[0], ::testing::Pointwise(::testing::DoubleNear(1e-5), expectedTrajectory.x));
 }
 
-
-
 // the idea of this test is to create a 1D domain [0,1[, push the particles
 // until the newEnd returned by the pusher is != the original end, which means
 // some particles are out. Then we test the properties of the particles that leave
@@ -430,6 +429,37 @@ TEST_F(APusherWithLeavingParticles, splitLeavingFromNonLeavingParticles)
     }));
 }
 
+TEST_F(APusherWithLeavingParticles, splitLeavingFromNonLeavingParticlesForOneStep)
+{
+    auto rangeIn  = makeIndexRange(particlesIn);
+    auto inDomain = rangeIn;
+
+    auto selector = [this](auto& particleRange) //
+    {
+        auto& box = this->cells;
+        return particleRange.array().partition(
+            [&](auto const& cell) { return PHARE::core::isIn(Point{cell}, box); });
+    };
+
+    for (decltype(nt) i = 0; i < nt; ++i)
+    {
+        auto layout = DummyLayout<1>{};
+        inDomain
+            = pusher->move(rangeIn, rangeIn, em, mass, interpolator, layout, selector);
+
+        if (inDomain.end() != std::end(particlesIn))
+        {
+            std::cout << inDomain.iend() << " and " << particlesIn.size() << "\n";
+            break;
+        }
+    }
+    EXPECT_TRUE(std::none_of(inDomain.end(), std::end(particlesIn), [this](auto const& particle) {
+        return PHARE::core::isIn(Point{particle.iCell}, cells);
+    }));
+    EXPECT_TRUE(std::all_of(std::begin(inDomain), std::end(inDomain), [this](auto const& particle) {
+        return PHARE::core::isIn(Point{particle.iCell}, cells);
+    }));
+}
 
 // removed boundary condition partitioner, fix that when BCs are implemented
 #if 0
