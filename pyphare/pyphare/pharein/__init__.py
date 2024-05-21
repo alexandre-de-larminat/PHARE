@@ -213,7 +213,7 @@ def populateDict():
     add_string("simulation/algo/ion_updater/pusher/name", simulation.particle_pusher)
     add_double("simulation/algo/ohm/resistivity", simulation.resistivity)
     add_double("simulation/algo/ohm/hyper_resistivity", simulation.hyper_resistivity)
-    add_double("simulation/algo/maxwell_ampere/noramlized_c", simulation.normalized_c)
+    add_double("simulation/algo/maxwell_ampere/normalized_c", simulation.normalized_c)
 
     init_model = simulation.model
     modelDict = init_model.model_dict
