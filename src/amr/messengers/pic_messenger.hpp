@@ -265,7 +265,7 @@ namespace amr
 
 
         /**
-         * @brief fillElectricGhosts is called by a ISolver solving a hybrid equations to fill
+         * @brief fillElectricGhosts is called by a ISolver to fill
          * the ghost nodes of the electric field
          * @param E is the electric field for which ghost nodes will be filled
          * @param levelNumber

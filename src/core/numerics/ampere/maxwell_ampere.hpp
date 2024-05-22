@@ -65,7 +65,7 @@ private:
     double dt_;
     double c_norm;
     double c2 = c_norm * c_norm;
-    double mu0 = 1.2566370614e-6;
+    double mu0 = 1.;
 
     template<typename VecField, typename Field, typename... Indexes>
     void ExEq_(Field const& Ex, VecField const& B, Field const& Jx, Field& Exnew, Indexes const&... ijk) const

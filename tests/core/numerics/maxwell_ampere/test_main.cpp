@@ -89,6 +89,31 @@ struct GridLayoutMock3D
     }
 };
 
+template<int dim, int interp>
+class NDlayout
+{
+    NDlayout() {}
+
+    using nDL = GridLayout<GridLayoutImplYee<dim, interp>>;
+
+public:
+    static nDL create()
+    {
+        if constexpr (dim == 1)
+        {
+            return {{{0.1}}, {{50}}, {0.}};
+        }
+        else if constexpr (dim == 2)
+        {
+            return {{{0.1, 0.2}}, {{50, 40}}, {0., 0.}};
+        }
+        else if constexpr (dim == 3)
+        {
+            return {{{0.1, 0.2, 0.3}}, {{50, 40, 30}}, {0., 0., 0.}};
+        }
+    }
+};
+
 
 PHARE::initializer::PHAREDict createDict()
 {
@@ -100,98 +125,36 @@ PHARE::initializer::PHAREDict createDict()
 }
 
 
-TEST(MaxwellAmpere, canBe1D)
+template<typename TypeInfo /*= std::pair<DimConst<1>, InterpConst<1>>*/>
+struct MaxwellAmpereTest : public ::testing::Test
 {
-    MaxwellAmpere<GridLayoutMock1D> maxwellAmpere{createDict()};
-}
+    static constexpr auto dim    = typename TypeInfo::first_type{}();
+    static constexpr auto interp = typename TypeInfo::second_type{}();
 
-
-TEST(MaxwellAmpere, canBe2D)
-{
-    MaxwellAmpere<GridLayoutMock2D> maxwellAmpere{createDict()};
-}
-
-
-TEST(MaxwellAmpere, canBe3D)
-{
-    MaxwellAmpere<GridLayoutMock3D> maxwellAmpere{createDict()};
-}
-
-
-TEST(MaxwellAmpere, shouldBeGivenAGridLayoutPointerToBeOperational)
-{
-    {
-        using GridLayout = GridLayout<GridLayoutImplYee<1, 1>>;
-        VecFieldMock<FieldMock<1>> B_1, E_1, J_1, Enew_1;
-        MaxwellAmpere<GridLayout> MaxwellAmpere1d{createDict()};
-        auto layout1d = std::make_unique<TestGridLayout<GridLayout>>();
-        EXPECT_ANY_THROW(MaxwellAmpere1d(B_1, E_1, J_1, Enew_1, 1.));
-        MaxwellAmpere1d.setLayout(layout1d.get());
-    }
-/*
-    {
-        using GridLayout = GridLayout<GridLayoutImplYee<2, 1>>;
-        VecFieldMock<FieldMock<2>> B_2, E_2, Bnew_2;
-        MaxwellAmpere<GridLayout> MaxwellAmpere2d;
-        auto layout2d = std::make_unique<TestGridLayout<GridLayout>>();
-        EXPECT_ANY_THROW(MaxwellAmpere2d(B_2, E_2, Bnew_2, 1.));
-        MaxwellAmpere2d.setLayout(layout2d.get());
-    }
-
-    {
-        using GridLayout = GridLayout<GridLayoutImplYee<3, 1>>;
-        VecFieldMock<FieldMock<3>> B_3, E_3, Bnew_3;
-        MaxwellAmpere<GridLayout> MaxwellAmpere3d;
-        auto layout3d = std::make_unique<TestGridLayout<GridLayout>>();
-        EXPECT_ANY_THROW(MaxwellAmpere3d(B_3, E_3, Bnew_3, 1.));
-        MaxwellAmpere3d.setLayout(layout3d.get());
-    }*/
-}
-
-
-
-
-std::vector<double> read(std::string filename)
-{
-    std::ifstream readFile(filename);
-    assert(readFile.is_open());
-    std::vector<double> x;
-
-    std::copy(std::istream_iterator<double>(readFile), std::istream_iterator<double>(),
-              std::back_inserter(x));
-    return x;
-}
-
-
-
-class MaxwellAmpere1DTest : public ::testing::Test
-{
-protected:
-    using GridLayoutImpl = GridLayoutImplYee<1, 1>;
-    GridLayout<GridLayoutImpl> layout;
-    static constexpr auto interp_order = GridLayoutImpl::interp_order;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Bx;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> By;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Bz;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Ex;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Ey;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Ez;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Jx;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Jy;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Jz;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Exnew;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Eynew;
-    Field<NdArrayVector<1>, HybridQuantity::Scalar> Eznew;
-    VecField<NdArrayVector<1>, HybridQuantity> B;
-    VecField<NdArrayVector<1>, HybridQuantity> E;
-    VecField<NdArrayVector<1>, HybridQuantity> J;
-    VecField<NdArrayVector<1>, HybridQuantity> Enew;
-    MaxwellAmpere<GridLayout<GridLayoutImpl>> maxwellAmpere;
+    using GridYee  = GridLayout<GridLayoutImplYee<dim, interp>>;
+    GridYee layout = NDlayout<dim, interp>::create();
+    
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Bx;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> By;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Bz;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Ex;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Ey;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Ez;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Jx;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Jy;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Jz;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Exnew;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Eynew;
+    Field<NdArrayVector<dim>, HybridQuantity::Scalar> Eznew;
+    VecField<NdArrayVector<dim>, HybridQuantity> B;
+    VecField<NdArrayVector<dim>, HybridQuantity> E;
+    VecField<NdArrayVector<dim>, HybridQuantity> J;
+    VecField<NdArrayVector<dim>, HybridQuantity> Enew;
+    MaxwellAmpere<GridYee> maxwellAmpere;
 
 public:
-    MaxwellAmpere1DTest()
-        : layout{{{0.1}}, {{50}}, Point{0.}}
-        , Bx{"Bx", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
+    MaxwellAmpereTest()
+        : Bx{"Bx", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
         , By{"By", HybridQuantity::Scalar::By, layout.allocSize(HybridQuantity::Scalar::By)}
         , Bz{"Bz", HybridQuantity::Scalar::Bz, layout.allocSize(HybridQuantity::Scalar::Bz)}
         , Ex{"Ex", HybridQuantity::Scalar::Ex, layout.allocSize(HybridQuantity::Scalar::Ex)}
@@ -222,156 +185,214 @@ public:
         Enew.setBuffer("Enew_y", &Eynew);
         Enew.setBuffer("Enew_z", &Eznew);
     }
+
+    ~MaxwellAmpereTest() {}
 };
 
+using TupleInfos
+    = testing::Types<std::pair<DimConst<1>, InterpConst<1>>, std::pair<DimConst<2>, InterpConst<1>>,
+                     std::pair<DimConst<3>, InterpConst<1>>>;
 
-/*
+TYPED_TEST_SUITE(MaxwellAmpereTest, TupleInfos);
 
-class MaxwellAmpere2DTest : public ::testing::Test
+
+TYPED_TEST(MaxwellAmpereTest, ThatOhmHasCtorWithDict)
 {
-protected:
-    using GridLayoutImpl = GridLayoutImplYee<2, 1>;
-    GridLayout<GridLayoutImpl> layout;
-    static constexpr auto interp_order = GridLayoutImpl::interp_order;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Bx;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> By;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Bz;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Ex;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Ey;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Ez;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Exnew;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Eynew;
-    Field<NdArrayVector<2>, HybridQuantity::Scalar> Eznew;
-    VecField<NdArrayVector<2>, HybridQuantity> B;
-    VecField<NdArrayVector<2>, HybridQuantity> E;
-    VecField<NdArrayVector<2>, HybridQuantity> Enew;
-    MaxwellAmpere<GridLayout<GridLayoutImpl>> MaxwellAmpere;
+    TypeParam pair;
+    auto constexpr dim    = pair.first();
+    auto constexpr interp = pair.second();
 
-public:
-    MaxwellAmpere2DTest()
-        : layout{{{0.1, 0.2}}, {{50, 30}}, Point{0., 0.}}
-        , Bx{"Bx", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
-        , By{"By", HybridQuantity::Scalar::By, layout.allocSize(HybridQuantity::Scalar::By)}
-        , Bz{"Bz", HybridQuantity::Scalar::Bz, layout.allocSize(HybridQuantity::Scalar::Bz)}
-        , Ex{"Ex", HybridQuantity::Scalar::Jx, layout.allocSize(HybridQuantity::Scalar::Jx)}
-        , Ey{"Ey", HybridQuantity::Scalar::Jy, layout.allocSize(HybridQuantity::Scalar::Jy)}
-        , Ez{"Ez", HybridQuantity::Scalar::Jz, layout.allocSize(HybridQuantity::Scalar::Jz)}
-        , Exnew{"Exnew", HybridQuantity::Scalar::Ex, layout.allocSize(HybridQuantity::Scalar::Bx)}
-        , Eynew{"Bynew", HybridQuantity::Scalar::Ey, layout.allocSize(HybridQuantity::Scalar::By)}
-        , Eznew{"Bznew", HybridQuantity::Scalar::Ez, layout.allocSize(HybridQuantity::Scalar::Bz)}
-        , B{"B", HybridQuantity::Vector::B}
-        , E{"E", HybridQuantity::Vector::E}
-        , Enew{"Enew", HybridQuantity::Vector::E}
-        , J{"J", HybridQuantity::Vector::J}
-    {
-        B.setBuffer("B_x", &Bx);
-        B.setBuffer("B_y", &By);
-        B.setBuffer("B_z", &Bz);
-        E.setBuffer("E_x", &Ex);
-        E.setBuffer("E_y", &Ey);
-        E.setBuffer("E_z", &Ez);
-        Enew.setBuffer("Bnew_x", &Exnew);
-        Enew.setBuffer("Bnew_y", &Eynew);
-        Enew.setBuffer("Bnew_z", &Eznew);
-    }
-};
+    using GridYee = GridLayout<GridLayoutImplYee<dim, interp>>;
+
+    MaxwellAmpere<GridYee> maxwellAmpere(createDict());
+}
 
 
-
-
-class MaxwellAmpere3DTest : public ::testing::Test
+TYPED_TEST(MaxwellAmpereTest, ShouldBeGivenAGridLayoutPointerToBeOperational)
 {
-protected:
-    using GridLayoutImpl = GridLayoutImplYee<3, 1>;
-    GridLayout<GridLayoutImpl> layout;
-    static constexpr auto interp_order = GridLayoutImpl::interp_order;
-    Field<NdArrayVector<3>, HybridQuantity::Scalar> Bx;
-    Field<NdArrayVector<3>, HybridQuantity::Scalar> By;
-    Field<NdArrayVector<3>, HybridQuantity::Scalar> Bz;
-    Field<NdArrayVector<3>, HybridQuantity::Scalar> Ex;
-    Field<NdArrayVector<3>, HybridQuantity::Scalar> Ey;
-    Field<NdArrayVector<3>, HybridQuantity::Scalar> Ez;
-    Field<NdArrayVector<3>, HybridQuantity::Scalar> Bxnew;
-    Field<NdArrayVector<3>, HybridQuantity::Scalar> Bynew;
-    Field<NdArrayVector<3>, HybridQuantity::Scalar> Bznew;
-    VecField<NdArrayVector<3>, HybridQuantity> B;
-    VecField<NdArrayVector<3>, HybridQuantity> E;
-    VecField<NdArrayVector<3>, HybridQuantity> Bnew;
-    MaxwellAmpere<GridLayout<GridLayoutImpl>> MaxwellAmpere;
+    TypeParam pair;
+    auto constexpr dim    = pair.first();
+    auto constexpr interp = pair.second();
 
-public:
-    MaxwellAmpere3DTest()
-        : layout{{{0.1, 0.2, 0.3}}, {{50, 30, 40}}, Point{0., 0., 0.}}
-        , Bx{"Bx", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
-        , By{"By", HybridQuantity::Scalar::By, layout.allocSize(HybridQuantity::Scalar::By)}
-        , Bz{"Bz", HybridQuantity::Scalar::Bz, layout.allocSize(HybridQuantity::Scalar::Bz)}
-        , Ex{"Ex", HybridQuantity::Scalar::Jx, layout.allocSize(HybridQuantity::Scalar::Jx)}
-        , Ey{"Ey", HybridQuantity::Scalar::Jy, layout.allocSize(HybridQuantity::Scalar::Jy)}
-        , Ez{"Ez", HybridQuantity::Scalar::Jz, layout.allocSize(HybridQuantity::Scalar::Jz)}
-        , Bxnew{"Bxnew", HybridQuantity::Scalar::Bx, layout.allocSize(HybridQuantity::Scalar::Bx)}
-        , Bynew{"Bynew", HybridQuantity::Scalar::By, layout.allocSize(HybridQuantity::Scalar::By)}
-        , Bznew{"Bznew", HybridQuantity::Scalar::Bz, layout.allocSize(HybridQuantity::Scalar::Bz)}
-        , B{"B", HybridQuantity::Vector::B}
-        , E{"E", HybridQuantity::Vector::E}
-        , Bnew{"Bnew", HybridQuantity::Vector::B}
-    {
-        B.setBuffer("B_x", &Bx);
-        B.setBuffer("B_y", &By);
-        B.setBuffer("B_z", &Bz);
-        E.setBuffer("E_x", &Ex);
-        E.setBuffer("E_y", &Ey);
-        E.setBuffer("E_z", &Ez);
-        Bnew.setBuffer("Bnew_x", &Bxnew);
-        Bnew.setBuffer("Bnew_y", &Bynew);
-        Bnew.setBuffer("Bnew_z", &Bznew);
-    }
-};
+    using GridYee = GridLayout<GridLayoutImplYee<dim, interp>>;
+
+    auto layout = std::make_unique<GridYee>(NDlayout<dim, interp>::create());
+
+    // this->maxwellAmpere.setLayout(layout.get());
+    EXPECT_ANY_THROW(this->maxwellAmpere(this->B, this->E, this->J, 
+                     this->Enew, 1.)); // because the grid layout is not set (TODO issue #3392)
+}
 
 
-*/
-
-TEST_F(MaxwellAmpere1DTest, MaxwellAmpere1DCalculatedOk)
+std::vector<double> read(std::string filename)
 {
-    auto filename_dbxdt = std::string{"dbxdt_yee_1D_order1.txt"};
-    auto filename_dbydt = std::string{"dbydt_yee_1D_order1.txt"};
-    auto filename_dbzdt = std::string{"dbzdt_yee_1D_order1.txt"};
-    auto expected_dbxdt = read(filename_dbxdt);
-    auto expected_dbydt = read(filename_dbydt);
-    auto expected_dbzdt = read(filename_dbzdt);
+    std::ifstream readFile(filename);
+    assert(readFile.is_open());
+    std::vector<double> x;
 
-    auto gsi_p_X = this->layout.ghostStartIndex(QtyCentering::primal, Direction::X);
-    auto gei_p_X = this->layout.ghostEndIndex(QtyCentering::primal, Direction::X);
+    std::copy(std::istream_iterator<double>(readFile), std::istream_iterator<double>(),
+              std::back_inserter(x));
+    return x;
+}
 
-    for (auto ix = gsi_p_X; ix <= gei_p_X; ++ix)
+
+
+
+TYPED_TEST(MaxwellAmpereTest, MaxwellAmpere1DCalculatedOk)
+{
+    TypeParam pair;
+    auto constexpr dim    = pair.first();
+    auto constexpr interp = pair.second();
+
+    if constexpr (dim == 1)
     {
-        auto point = this->layout.fieldNodeCoordinates(Ey, Point{0.}, ix);
+        auto filename_MAx = std::string{"MAx_yee_1D_order1.txt"};
+        auto filename_MAy = std::string{"MAy_yee_1D_order1.txt"};
+        auto filename_MAz = std::string{"MAz_yee_1D_order1.txt"};
+        auto expected_MAx = read(filename_MAx);
+        auto expected_MAy = read(filename_MAy);
+        auto expected_MAz = read(filename_MAz);
 
-        Ey(ix) = std::cos(2 * M_PI / 5. * point[0]);
-        Ez(ix) = std::sin(2 * M_PI / 5. * point[0]);
+        using GridYee = GridLayout<GridLayoutImplYee<dim, interp>>;
+        auto layout   = std::make_unique<GridYee>(NDlayout<dim, interp>::create());
+
+
+        auto gsi_p_X = this->layout.ghostStartIndex(QtyCentering::primal, Direction::X);
+        auto gei_p_X = this->layout.ghostEndIndex(QtyCentering::primal, Direction::X);
+
+        for (auto ix = gsi_p_X; ix <= gei_p_X; ++ix)
+        {
+            auto point = this->layout.fieldNodeCoordinates(this->Ey, Point{0.}, ix);
+
+            this->Ey(ix) = std::cos(2 * M_PI / 5. * point[0]);
+            this->Ez(ix) = std::sin(2 * M_PI / 5. * point[0]);
+        }
+
+        auto gsi_d_X = this->layout.ghostStartIndex(QtyCentering::dual, Direction::X);
+        auto gei_d_X = this->layout.ghostEndIndex(QtyCentering::dual, Direction::X);
+
+        for (auto ix = gsi_d_X; ix <= gei_d_X; ++ix)
+        {
+            auto point = this->layout.fieldNodeCoordinates(this->By, Point{0.}, ix);
+
+            this->By(ix) = std::tanh(point[0] - 5. / 2.);
+            this->Bz(ix) = std::tanh(point[0] - 5. / 2.);
+        }
+
+        this->maxwellAmpere.setLayout(layout.get());
+        this->maxwellAmpere(this->B, this->E, this->J, this->Enew, 1.);
+
+        auto psi_d_X = this->layout.physicalStartIndex(QtyCentering::dual, Direction::X);
+        auto pei_d_X = this->layout.physicalEndIndex(QtyCentering::dual, Direction::X);
+
+        for (auto ix = psi_d_X; ix <= pei_d_X; ++ix)
+        {
+            EXPECT_THAT(this->Exnew(ix), ::testing::DoubleNear((expected_MAx[ix]), 1e-12));
+            EXPECT_THAT(this->Eynew(ix), ::testing::DoubleNear((expected_MAy[ix]), 1e-12));
+            EXPECT_THAT(this->Eznew(ix), ::testing::DoubleNear((expected_MAz[ix]), 1e-12));
+        }
     }
 
-    auto gsi_d_X = this->layout.ghostStartIndex(QtyCentering::dual, Direction::X);
-    auto gei_d_X = this->layout.ghostEndIndex(QtyCentering::dual, Direction::X);
-
-    for (auto ix = gsi_d_X; ix <= gei_d_X; ++ix)
+    if constexpr (dim == 2)
     {
-        auto point = this->layout.fieldNodeCoordinates(By, Point{0.}, ix);
+        auto filename_MAx = std::string{"MAx_yee_2D_order1.txt"};
+        auto filename_MAy = std::string{"MAy_yee_2D_order1.txt"};
+        auto filename_MAz = std::string{"MAz_yee_2D_order1.txt"};
+        auto expected_MAx = read(filename_MAx);
+        auto expected_MAy = read(filename_MAy);
+        auto expected_MAz = read(filename_MAz);
 
-        By(ix) = std::tanh(point[0] - 5. / 2.);
-        Bz(ix) = std::tanh(point[0] - 5. / 2.);
-    }
+        using GridYee = GridLayout<GridLayoutImplYee<dim, interp>>;
+        auto layout   = std::make_unique<GridYee>(NDlayout<dim, interp>::create());
 
-    maxwellAmpere.setLayout(&layout);
-    maxwellAmpere(B, E, J, Enew, 1.);
+        auto gsi_p_X = this->layout.ghostStartIndex(QtyCentering::primal, Direction::X);
+        auto gei_p_X = this->layout.ghostEndIndex(QtyCentering::primal, Direction::X);
+        auto gsi_d_X = this->layout.ghostStartIndex(QtyCentering::dual, Direction::X);
+        auto gei_d_X = this->layout.ghostEndIndex(QtyCentering::dual, Direction::X);
 
-    auto psi_d_X = this->layout.physicalStartIndex(QtyCentering::dual, Direction::X);
-    auto pei_d_X = this->layout.physicalEndIndex(QtyCentering::dual, Direction::X);
+        auto gsi_p_Y = this->layout.ghostStartIndex(QtyCentering::primal, Direction::Y);
+        auto gei_p_Y = this->layout.ghostEndIndex(QtyCentering::primal, Direction::Y);
+        auto gsi_d_Y = this->layout.ghostStartIndex(QtyCentering::dual, Direction::Y);
+        auto gei_d_Y = this->layout.ghostEndIndex(QtyCentering::dual, Direction::Y);
 
-    for (auto ix = psi_d_X; ix <= pei_d_X; ++ix)
-    {
-        EXPECT_THAT(Exnew(ix), ::testing::DoubleNear((expected_dbxdt[ix]), 1e-12));
-        EXPECT_THAT(Eynew(ix), ::testing::DoubleNear((expected_dbydt[ix]), 1e-12));
-        EXPECT_THAT(Eznew(ix), ::testing::DoubleNear((expected_dbzdt[ix]), 1e-12));
+        for (auto ix = gsi_d_X; ix <= gei_d_X; ++ix)
+        {
+            for (auto iy = gsi_p_Y; iy <= gei_p_Y; ++iy)
+            {
+                auto point = this->layout.fieldNodeCoordinates(this->Ey, Point{0., 0.}, ix, iy);
+
+                this->Ex(ix, iy) = std::cos(2 * M_PI / 5. * point[0]) * std::sin(2 * M_PI / 6. * point[1]);
+            }
+        }
+
+        for (auto ix = gsi_p_X; ix <= gei_p_X; ++ix)
+        {
+            for (auto iy = gsi_d_Y; iy <= gei_d_Y; ++iy)
+            {
+                auto point = this->layout.fieldNodeCoordinates(this->Ey, Point{0., 0.}, ix, iy);
+
+                this->Ey(ix, iy) = std::cos(2 * M_PI / 5. * point[0]) * std::tanh(2 * M_PI / 6. * point[1]);
+            }
+        }
+
+        for (auto ix = gsi_p_X; ix <= gei_p_X; ++ix)
+        {
+            for (auto iy = gsi_p_Y; iy <= gei_p_Y; ++iy)
+            {
+                auto point = this->layout.fieldNodeCoordinates(this->Ez, Point{0., 0.}, ix, iy);
+
+                this->Ez(ix, iy) = std::sin(2 * M_PI / 5. * point[0]) * std::tanh(2 * M_PI / 6. * point[1]);
+            }
+        }
+
+        for (auto ix = gsi_p_X; ix <= gei_p_X; ++ix)
+        {
+            for (auto iy = gsi_d_Y; iy <= gei_d_Y; ++iy)
+            {
+                auto point = this->layout.fieldNodeCoordinates(this->Bx, Point{0., 0.}, ix, iy);
+
+                this->Bx(ix, iy) = std::tanh(point[0] - 5. / 2.) * std::tanh(point[1] - 6. / 2.);
+            }
+        }
+
+        for (auto ix = gsi_d_X; ix <= gei_d_X; ++ix)
+        {
+            for (auto iy = gsi_p_Y; iy <= gei_p_Y; ++iy)
+            {
+                auto point = this->layout.fieldNodeCoordinates(this->By, Point{0., 0.}, ix, iy);
+
+                this->By(ix, iy) = std::tanh(point[0] - 5. / 2.) * std::tanh(point[1] - 6. / 2.);
+            }
+        }
+
+        for (auto ix = gsi_d_X; ix <= gei_d_X; ++ix)
+        {
+            for (auto iy = gsi_d_Y; iy <= gei_d_Y; ++iy)
+            {
+                auto point = this->layout.fieldNodeCoordinates(this->Bz, Point{0., 0.}, ix, iy);
+
+                this->Bz(ix, iy) = std::tanh(point[0] - 5. / 2.) * std::tanh(point[1] - 6. / 2.);
+            }
+        }
+
+        this->maxwellAmpere.setLayout(layout.get());
+        this->maxwellAmpere(this->B, this->E, this->J, this->Enew, 1.);
+
+        auto psi_p_X = this->layout.physicalStartIndex(QtyCentering::primal, Direction::X);
+        auto pei_p_X = this->layout.physicalEndIndex(QtyCentering::primal, Direction::X);
+        auto psi_d_Y = this->layout.physicalStartIndex(QtyCentering::dual, Direction::Y);
+        auto pei_d_Y = this->layout.physicalEndIndex(QtyCentering::dual, Direction::Y);
+
+        for (auto ix = psi_p_X; ix <= pei_p_X; ++ix)
+        {
+            for (auto iy = psi_d_Y; iy <= pei_d_Y; ++iy)
+            {
+                auto index_ = ix * this->layout.allocSize(HybridQuantity::Scalar::Ex)[1] + iy;
+                EXPECT_THAT(this->Exnew(ix, iy), ::testing::DoubleNear((expected_MAx[index_]), 1e-12));
+                EXPECT_THAT(this->Eynew(ix, iy), ::testing::DoubleNear((expected_MAy[index_]), 1e-12));
+                EXPECT_THAT(this->Eznew(ix, iy), ::testing::DoubleNear((expected_MAz[index_]), 1e-12));
+            }
+        }
     }
 }
 

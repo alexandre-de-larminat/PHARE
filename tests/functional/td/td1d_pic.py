@@ -50,11 +50,11 @@ def b2(x):
 
 def T(x):
     K = 1
-    return 1 / density(x) * (K - b2(x) * 0.5)
+    return 0.0 #1 / density(x) * (K - b2(x) * 0.5)
 
 
 def vx(x):
-    return 0.1
+    return 2.0
 
 
 def vy(x):
@@ -76,7 +76,7 @@ def vthy(x):
 def vthz(x):
     return T(x)
 
-mass_electron = 1./10
+mass_electron = 1./1
 
 def vthe(x):
     return T(x)/mass_electron
@@ -100,20 +100,20 @@ vvv_electrons = {
     "vthz": vthe,
 }
 
-steps = 250
+steps = 200
 # used to only test on the early particle diagnostic files
 particle_diagnostics = {"count": steps, "idx": 0}
 
 
 def simulation_params(diagdir, **extra):
     params = {
-        "interp_order": 1,
+        "interp_order": 3,
         "time_step_nbr": steps,
-        "time_step": 0.04,
+        "time_step": 0.01,
         "boundary_types": "periodic",
         "cells": 100,
         "dl": 1.0,
-        "normalized_c": 1.0,
+        "normalized_c": 2.0,
         "diag_options": {
             "format": "phareh5",
             "options": {"dir": diagdir, "mode": "overwrite"},

@@ -55,16 +55,16 @@ def test_MA_yee1D(path):
         dtype=np.float64,
     )
     Jx = np.zeros(
-        layout.allocSize(tv.interpOrder, tv.BxCentering[0], tv.nbrCells[0]),
+        layout.allocSize(tv.interpOrder, tv.ExCentering[0], tv.nbrCells[0]),
         dtype=np.float64,
     )
 
     Jy = np.zeros(
-        layout.allocSize(tv.interpOrder, tv.ByCentering[0], tv.nbrCells[0]),
+        layout.allocSize(tv.interpOrder, tv.EyCentering[0], tv.nbrCells[0]),
         dtype=np.float64,
     )
     Jz = np.zeros(
-        layout.allocSize(tv.interpOrder, tv.BzCentering[0], tv.nbrCells[0]),
+        layout.allocSize(tv.interpOrder, tv.EzCentering[0], tv.nbrCells[0]),
         dtype=np.float64,
     )
 
@@ -115,6 +115,7 @@ def test_MA_yee1D(path):
         + tv.meshSize[0] * 0.5
     )
 
+
     Ey = np.cos(2 * np.pi / tv.domainSize[0] * x_primal)
     Ez = np.sin(2 * np.pi / tv.domainSize[0] * x_primal)
     By = np.tanh(x_dual - 0.5 * tv.domainSize[0])
@@ -135,13 +136,13 @@ def test_MA_yee1D(path):
         - Jz[psi_p_X : pei_p_X + 1] )
     )
 
-    filename_dbxdt = "dbxdt_yee_1D_order1.txt"
-    filename_dbydt = "dbydt_yee_1D_order1.txt"
-    filename_dbzdt = "dbzdt_yee_1D_order1.txt"
+    filename_MAx = "MAx_yee_1D_order1.txt"
+    filename_MAy = "MAy_yee_1D_order1.txt"
+    filename_MAz = "MAz_yee_1D_order1.txt"
 
-    np.savetxt(os.path.join(path, filename_dbxdt), ExNew, delimiter=" ")
-    np.savetxt(os.path.join(path, filename_dbydt), EyNew, delimiter=" ")
-    np.savetxt(os.path.join(path, filename_dbzdt), EzNew, delimiter=" ")
+    np.savetxt(os.path.join(path, filename_MAx), ExNew, delimiter=" ")
+    np.savetxt(os.path.join(path, filename_MAy), EyNew, delimiter=" ")
+    np.savetxt(os.path.join(path, filename_MAz), EzNew, delimiter=" ")
 
 
 def test_MA_yee2D(path):
@@ -307,13 +308,13 @@ def test_MA_yee2D(path):
         axes=0,
     )
 
-    BxNew[:, psi_d_Y : pei_d_Y + 1] = (
+    ExNew[:, psi_d_Y : pei_d_Y + 1] = (
         Bx[:, psi_d_Y : pei_d_Y + 1]
         - tv.dt
         * (Ez[:, psi_p_Y + 1 : pei_p_Y + 1] - Ez[:, psi_p_Y:pei_p_Y])
         / tv.meshSize[1]
     )
-    ByNew[psi_d_X : pei_d_X + 1, :] = (
+    EyNew[psi_d_X : pei_d_X + 1, :] = (
         By[psi_d_X : pei_d_X + 1, :]
         + tv.dt
         * (Ez[psi_p_X + 1 : pei_p_X + 1, :] - Ez[psi_p_X:pei_p_X, :])
@@ -329,15 +330,15 @@ def test_MA_yee2D(path):
         * (Ex[:, psi_p_Y + 1 : pei_p_Y + 1] - Ex[:, psi_p_Y:pei_p_Y])
         / tv.meshSize[1]
     )
-    BzNew = Bz + w1 + w2
+    EzNew = Bz + w1 + w2
 
-    filename_dbxdt = "dbxdt_yee_2D_order1.txt"
-    filename_dbydt = "dbydt_yee_2D_order1.txt"
-    filename_dbzdt = "dbzdt_yee_2D_order1.txt"
+    filename_MAx = "MAx_yee_2D_order1.txt"
+    filename_MAy = "MAy_yee_2D_order1.txt"
+    filename_MAz = "MAz_yee_2D_order1.txt"
 
-    np.savetxt(os.path.join(path, filename_dbxdt), BxNew.flatten("C"), delimiter=" ")
-    np.savetxt(os.path.join(path, filename_dbydt), ByNew.flatten("C"), delimiter=" ")
-    np.savetxt(os.path.join(path, filename_dbzdt), BzNew.flatten("C"), delimiter=" ")
+    np.savetxt(os.path.join(path, filename_MAx), ExNew.flatten("C"), delimiter=" ")
+    np.savetxt(os.path.join(path, filename_MAy), EyNew.flatten("C"), delimiter=" ")
+    np.savetxt(os.path.join(path, filename_MAz), EzNew.flatten("C"), delimiter=" ")
 
 
 def test_MA_yee3D(path):
@@ -544,7 +545,7 @@ def test_MA_yee3D(path):
         * (Ey[:, :, psi_p_Z + 1 : pei_p_Z + 1] - Ey[:, :, psi_p_Z:pei_p_Z])
         / tv.meshSize[2]
     )
-    BxNew = Bx + u1 + u2
+    ExNew = Bx + u1 + u2
 
     v1[:, :, psi_d_Z : pei_d_Z + 1] = (
         -tv.dt
@@ -556,7 +557,7 @@ def test_MA_yee3D(path):
         * (Ez[psi_p_X + 1 : pei_p_X + 1, :, :] - Ez[psi_p_X:pei_p_X, :, :])
         / tv.meshSize[0]
     )
-    ByNew = By + v1 + v2
+    EyNew = By + v1 + v2
 
     w1[psi_d_X : pei_d_X + 1, :, :] = (
         -tv.dt
@@ -568,15 +569,15 @@ def test_MA_yee3D(path):
         * (Ex[:, psi_p_Y + 1 : pei_p_Y + 1, :] - Ex[:, psi_p_Y:pei_p_Y, :])
         / tv.meshSize[1]
     )
-    BzNew = Bz + w1 + w2
+    EzNew = Bz + w1 + w2
 
-    filename_dbxdt = "dbxdt_yee_3D_order1.txt"
-    filename_dbydt = "dbydt_yee_3D_order1.txt"
-    filename_dbzdt = "dbzdt_yee_3D_order1.txt"
+    filename_MAx = "MAx_yee_3D_order1.txt"
+    filename_MAy = "MAy_yee_3D_order1.txt"
+    filename_MAz = "MAz_yee_3D_order1.txt"
 
-    np.savetxt(os.path.join(path, filename_dbxdt), BxNew.flatten("C"), delimiter=" ")
-    np.savetxt(os.path.join(path, filename_dbydt), ByNew.flatten("C"), delimiter=" ")
-    np.savetxt(os.path.join(path, filename_dbzdt), BzNew.flatten("C"), delimiter=" ")
+    np.savetxt(os.path.join(path, filename_MAx), ExNew.flatten("C"), delimiter=" ")
+    np.savetxt(os.path.join(path, filename_MAy), EyNew.flatten("C"), delimiter=" ")
+    np.savetxt(os.path.join(path, filename_MAz), EzNew.flatten("C"), delimiter=" ")
 
 
 def main(path="./"):
@@ -584,7 +585,7 @@ def main(path="./"):
         path = sys.argv[1]
 
     test_MA_yee1D(path)
-    #test_MA_yee2D(path)
+    test_MA_yee2D(path)
     #test_MA_yee3D(path)
 
 
