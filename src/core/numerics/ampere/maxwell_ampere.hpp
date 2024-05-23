@@ -65,7 +65,6 @@ private:
     double dt_;
     double c_norm;
     double c2 = c_norm * c_norm;
-    double mu0 = 1.;
 
     template<typename VecField, typename Field, typename... Indexes>
     void ExEq_(Field const& Ex, VecField const& B, Field const& Jx, Field& Exnew, Indexes const&... ijk) const
@@ -74,7 +73,7 @@ private:
 
         if constexpr (dimension == 1)
         {
-            Exnew(ijk...) = Ex(ijk...) - dt_ * c2 * mu0 * Jx(ijk...) ; 
+            Exnew(ijk...) = Ex(ijk...) - dt_ * c2 * Jx(ijk...) ; 
         }
         if constexpr (dimension == 2)
         {
@@ -96,7 +95,7 @@ private:
         if constexpr (dimension == 1 || dimension == 2)
         {
             Eynew(ijk...) = Ey(ijk...) - dt_ * c2 *( layout_->template deriv<Direction::X>(Bz, {ijk...}) 
-                            + mu0 * Jy(ijk...));
+                            + Jy(ijk...));
         }
         if constexpr (dimension == 3)
         {
@@ -113,7 +112,7 @@ private:
         if constexpr (dimension == 1)
         {
             Eznew(ijk...) = Ez(ijk...) + dt_ * c2 * (layout_->template deriv<Direction::X>(By, {ijk...}) 
-                            - mu0 * Jz(ijk...));
+                            - Jz(ijk...));
         }
 
         if constexpr (dimension == 2 || dimension == 3)

@@ -41,10 +41,6 @@ def test_MA_yee1D(path):
     layout = gridlayout.GridLayout()  # yee layout
 
     tv = TestVariables()
-    Bx = np.zeros(
-        layout.allocSize(tv.interpOrder, tv.BxCentering[0], tv.nbrCells[0]),
-        dtype=np.float64,
-    )
 
     By = np.zeros(
         layout.allocSize(tv.interpOrder, tv.ByCentering[0], tv.nbrCells[0]),
@@ -54,11 +50,11 @@ def test_MA_yee1D(path):
         layout.allocSize(tv.interpOrder, tv.BzCentering[0], tv.nbrCells[0]),
         dtype=np.float64,
     )
+
     Jx = np.zeros(
         layout.allocSize(tv.interpOrder, tv.ExCentering[0], tv.nbrCells[0]),
         dtype=np.float64,
     )
-
     Jy = np.zeros(
         layout.allocSize(tv.interpOrder, tv.EyCentering[0], tv.nbrCells[0]),
         dtype=np.float64,
@@ -115,11 +111,16 @@ def test_MA_yee1D(path):
         + tv.meshSize[0] * 0.5
     )
 
-
+    Ex = np.cos(2 * np.pi / tv.domainSize[0] * x_dual)
     Ey = np.cos(2 * np.pi / tv.domainSize[0] * x_primal)
     Ez = np.sin(2 * np.pi / tv.domainSize[0] * x_primal)
+
     By = np.tanh(x_dual - 0.5 * tv.domainSize[0])
     Bz = np.tanh(x_dual - 0.5 * tv.domainSize[0])
+    
+    Jx = np.cos(2 * np.pi / tv.domainSize[0] * x_dual)
+    Jy = np.cos(2 * np.pi / tv.domainSize[0] * x_primal)
+    Jz = np.sin(2 * np.pi / tv.domainSize[0] * x_primal)
 
     ExNew[psi_p_X : pei_p_X + 1] = (
         Ex[psi_p_X : pei_p_X + 1]
@@ -174,22 +175,22 @@ def test_MA_yee2D(path):
 
     Jx = np.zeros(
         [
-            layout.allocSize(tv.interpOrder, tv.BzCentering[0], tv.nbrCells[0]),
-            layout.allocSize(tv.interpOrder, tv.BzCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.ExCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.ExCentering[1], tv.nbrCells[1]),
         ],
         dtype=np.float64,
     )
     Jy = np.zeros(
         [
-            layout.allocSize(tv.interpOrder, tv.BzCentering[0], tv.nbrCells[0]),
-            layout.allocSize(tv.interpOrder, tv.BzCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.EyCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.EyCentering[1], tv.nbrCells[1]),
         ],
         dtype=np.float64,
     )
     Jz = np.zeros(
         [
-            layout.allocSize(tv.interpOrder, tv.BzCentering[0], tv.nbrCells[0]),
-            layout.allocSize(tv.interpOrder, tv.BzCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.EzCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.EzCentering[1], tv.nbrCells[1]),
         ],
         dtype=np.float64,
     )
@@ -218,27 +219,25 @@ def test_MA_yee2D(path):
 
     ExNew = np.zeros(
         [
-            layout.allocSize(tv.interpOrder, tv.BxCentering[0], tv.nbrCells[0]),
-            layout.allocSize(tv.interpOrder, tv.BxCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.ExCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.ExCentering[1], tv.nbrCells[1]),
         ],
         dtype=np.float64,
     )
     EyNew = np.zeros(
         [
-            layout.allocSize(tv.interpOrder, tv.ByCentering[0], tv.nbrCells[0]),
-            layout.allocSize(tv.interpOrder, tv.ByCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.EyCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.EyCentering[1], tv.nbrCells[1]),
         ],
         dtype=np.float64,
     )
     EzNew = np.zeros(
         [
-            layout.allocSize(tv.interpOrder, tv.BzCentering[0], tv.nbrCells[0]),
-            layout.allocSize(tv.interpOrder, tv.BzCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.EzCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.EzCentering[1], tv.nbrCells[1]),
         ],
         dtype=np.float64,
     )
-    w1 = np.zeros_like(BzNew)
-    w2 = np.zeros_like(BzNew)
 
     psi_p_X = layout.physicalStartIndex(tv.interpOrder, "primal")
     pei_p_X = layout.physicalEndIndex(tv.interpOrder, "primal", tv.nbrCells[0])
@@ -292,6 +291,22 @@ def test_MA_yee2D(path):
         axes=0,
     )
 
+    Jx = np.tensordot(
+        np.cos(2 * np.pi / tv.domainSize[0] * x_dual),
+        np.sin(2 * np.pi / tv.domainSize[1] * y_primal),
+        axes=0,
+    )
+    Jy = np.tensordot(
+        np.cos(2 * np.pi / tv.domainSize[0] * x_primal),
+        np.tanh(2 * np.pi / tv.domainSize[1] * y_dual),
+        axes=0,
+    )
+    Jz = np.tensordot(
+        np.sin(2 * np.pi / tv.domainSize[0] * x_primal),
+        np.tanh(2 * np.pi / tv.domainSize[1] * y_primal),
+        axes=0,
+    )
+
     Bx = np.tensordot(
         np.tanh(x_primal - 0.5 * tv.domainSize[0]),
         np.tanh(y_dual - 0.5 * tv.domainSize[1]),
@@ -308,29 +323,33 @@ def test_MA_yee2D(path):
         axes=0,
     )
 
-    ExNew[:, psi_d_Y : pei_d_Y + 1] = (
-        Bx[:, psi_d_Y : pei_d_Y + 1]
-        - tv.dt
-        * (Ez[:, psi_p_Y + 1 : pei_p_Y + 1] - Ez[:, psi_p_Y:pei_p_Y])
-        / tv.meshSize[1]
+    u = np.zeros_like(ExNew)
+    u[:, psi_p_Y : pei_p_Y + 1] = (
+        + tv.dt * (Bz[:, psi_d_Y : pei_d_Y + 2] - Bz[:, psi_d_Y - 1 : pei_d_Y + 1]) / tv.meshSize[1]
     )
-    EyNew[psi_d_X : pei_d_X + 1, :] = (
-        By[psi_d_X : pei_d_X + 1, :]
-        + tv.dt
-        * (Ez[psi_p_X + 1 : pei_p_X + 1, :] - Ez[psi_p_X:pei_p_X, :])
-        / tv.meshSize[0]
+
+    ExNew = Ex + u - tv.dt * Jx
+
+    v = np.zeros_like(EyNew)
+    v[psi_p_X : pei_p_X + 1, :] = (
+        - tv.dt * (Bz[psi_d_X : pei_d_X + 2, :] 
+                 - Bz[psi_d_X - 1 : pei_d_X + 1, :]) / tv.meshSize[0] 
     )
-    w1[psi_d_X : pei_d_X + 1, :] = (
-        -tv.dt
-        * (Ey[psi_p_X + 1 : pei_p_X + 1, :] - Ey[psi_p_X:pei_p_X, :])
-        / tv.meshSize[0]
+
+    EyNew = Ey + v - tv.dt * Jy
+
+    w1 = np.zeros_like(EzNew)
+    w2 = np.zeros_like(EzNew)
+
+    w1[psi_p_X : pei_p_X + 1, :] = (
+        + tv.dt * (By[psi_d_X : pei_d_X + 2, :] - By[psi_d_X - 1 : pei_d_X + 1, :]) / tv.meshSize[0]
     )
-    w2[:, psi_d_Y : pei_d_Y + 1] = (
-        +tv.dt
-        * (Ex[:, psi_p_Y + 1 : pei_p_Y + 1] - Ex[:, psi_p_Y:pei_p_Y])
-        / tv.meshSize[1]
+    w2[:, psi_p_Y : pei_p_Y + 1] = (
+        - tv.dt * (Bx[:, psi_d_Y : pei_d_Y + 2] - Bx[:, psi_d_Y - 1 : pei_d_Y + 1]) / tv.meshSize[1]
     )
-    EzNew = Bz + w1 + w2
+
+    EzNew = Ez + w1 + w2 - tv.dt * Jz
+
 
     filename_MAx = "MAx_yee_2D_order1.txt"
     filename_MAy = "MAy_yee_2D_order1.txt"
@@ -396,37 +415,62 @@ def test_MA_yee3D(path):
         dtype=np.float64,
     )
 
-    BxNew = np.zeros(
+    Jx = np.zeros(
         [
-            layout.allocSize(tv.interpOrder, tv.BxCentering[0], tv.nbrCells[0]),
-            layout.allocSize(tv.interpOrder, tv.BxCentering[1], tv.nbrCells[1]),
-            layout.allocSize(tv.interpOrder, tv.BxCentering[2], tv.nbrCells[2]),
+            layout.allocSize(tv.interpOrder, tv.ExCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.ExCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.ExCentering[2], tv.nbrCells[2]),
         ],
         dtype=np.float64,
     )
-    ByNew = np.zeros(
+    Jy = np.zeros(
         [
-            layout.allocSize(tv.interpOrder, tv.ByCentering[0], tv.nbrCells[0]),
-            layout.allocSize(tv.interpOrder, tv.ByCentering[1], tv.nbrCells[1]),
-            layout.allocSize(tv.interpOrder, tv.ByCentering[2], tv.nbrCells[2]),
+            layout.allocSize(tv.interpOrder, tv.EyCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.EyCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.EyCentering[2], tv.nbrCells[2]),
         ],
         dtype=np.float64,
     )
-    BzNew = np.zeros(
+    Jz = np.zeros(
         [
-            layout.allocSize(tv.interpOrder, tv.BzCentering[0], tv.nbrCells[0]),
-            layout.allocSize(tv.interpOrder, tv.BzCentering[1], tv.nbrCells[1]),
-            layout.allocSize(tv.interpOrder, tv.BzCentering[2], tv.nbrCells[2]),
+            layout.allocSize(tv.interpOrder, tv.EzCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.EzCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.EzCentering[2], tv.nbrCells[2]),
         ],
         dtype=np.float64,
     )
 
-    u1 = np.zeros_like(BxNew)
-    u2 = np.zeros_like(BxNew)
-    v1 = np.zeros_like(ByNew)
-    v2 = np.zeros_like(ByNew)
-    w1 = np.zeros_like(BzNew)
-    w2 = np.zeros_like(BzNew)
+    ExNew = np.zeros(
+        [
+            layout.allocSize(tv.interpOrder, tv.ExCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.ExCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.ExCentering[2], tv.nbrCells[2]),
+        ],
+        dtype=np.float64,
+    )
+    EyNew = np.zeros(
+        [
+            layout.allocSize(tv.interpOrder, tv.EyCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.EyCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.EyCentering[2], tv.nbrCells[2]),
+        ],
+        dtype=np.float64,
+    )
+    EzNew = np.zeros(
+        [
+            layout.allocSize(tv.interpOrder, tv.EzCentering[0], tv.nbrCells[0]),
+            layout.allocSize(tv.interpOrder, tv.EzCentering[1], tv.nbrCells[1]),
+            layout.allocSize(tv.interpOrder, tv.EzCentering[2], tv.nbrCells[2]),
+        ],
+        dtype=np.float64,
+    )
+
+    u1 = np.zeros_like(ExNew)
+    u2 = np.zeros_like(ExNew)
+    v1 = np.zeros_like(EyNew)
+    v2 = np.zeros_like(EyNew)
+    w1 = np.zeros_like(EzNew)
+    w2 = np.zeros_like(EzNew)
 
     psi_p_X = layout.physicalStartIndex(tv.interpOrder, "primal")
     pei_p_X = layout.physicalEndIndex(tv.interpOrder, "primal", tv.nbrCells[0])
@@ -507,6 +551,34 @@ def test_MA_yee3D(path):
         axes=0,
     )
 
+    Jx = np.tensordot(
+        np.sin(2 * np.pi / tv.domainSize[0] * x_dual),
+        np.tensordot(
+            np.cos(2 * np.pi / tv.domainSize[1] * y_primal),
+            np.tanh(2 * np.pi / tv.domainSize[2] * z_primal),
+            axes=0,
+        ),
+        axes=0,
+    )
+    Jy = np.tensordot(
+        np.tanh(2 * np.pi / tv.domainSize[0] * x_primal),
+        np.tensordot(
+            np.sin(2 * np.pi / tv.domainSize[1] * y_dual),
+            np.cos(2 * np.pi / tv.domainSize[2] * z_primal),
+            axes=0,
+        ),
+        axes=0,
+    )
+    Jz = np.tensordot(
+        np.cos(2 * np.pi / tv.domainSize[0] * x_primal),
+        np.tensordot(
+            np.tanh(2 * np.pi / tv.domainSize[1] * y_primal),
+            np.sin(2 * np.pi / tv.domainSize[2] * z_dual),
+            axes=0,
+        ),
+        axes=0,
+    )
+
     Bx = np.tensordot(
         np.tanh(x_primal - 0.5 * tv.domainSize[0]),
         np.tensordot(
@@ -535,41 +607,41 @@ def test_MA_yee3D(path):
         axes=0,
     )
 
-    u1[:, psi_d_Y : pei_d_Y + 1, :] = (
-        -tv.dt
-        * (Ez[:, psi_p_Y + 1 : pei_p_Y + 1, :] - Ez[:, psi_p_Y:pei_p_Y, :])
+    u1[:, psi_p_Y : pei_p_Y + 1, :] = (
+        + tv.dt
+        * (Bz[:, psi_d_Y : pei_d_Y + 2, :] - Bz[:, psi_d_Y - 1 : pei_d_Y + 1, :])
         / tv.meshSize[1]
     )
-    u2[:, :, psi_d_Z : pei_d_Z + 1] = (
-        +tv.dt
-        * (Ey[:, :, psi_p_Z + 1 : pei_p_Z + 1] - Ey[:, :, psi_p_Z:pei_p_Z])
+    u2[:, :, psi_p_Z : pei_p_Z + 1] = (
+        - tv.dt
+        * (By[:, :, psi_d_Z : pei_d_Z + 2] - By[:, :, psi_d_Z - 1 : pei_d_Z + 1])
         / tv.meshSize[2]
     )
-    ExNew = Bx + u1 + u2
+    ExNew = Ex + u1 + u2 - tv.dt * Jx
 
-    v1[:, :, psi_d_Z : pei_d_Z + 1] = (
-        -tv.dt
-        * (Ex[:, :, psi_p_Z + 1 : pei_p_Z + 1] - Ex[:, :, psi_p_Z:pei_p_Z])
+    v1[:, :, psi_p_Z : pei_p_Z + 1] = (
+        + tv.dt
+        * (Bx[:, :, psi_d_Z : pei_d_Z + 2] - Bx[:, :, psi_d_Z - 1 : pei_d_Z + 1])
         / tv.meshSize[2]
     )
-    v2[psi_d_X : pei_d_X + 1, :, :] = (
-        +tv.dt
-        * (Ez[psi_p_X + 1 : pei_p_X + 1, :, :] - Ez[psi_p_X:pei_p_X, :, :])
+    v2[psi_p_X : pei_p_X + 1, :, :] = (
+        - tv.dt
+        * (Bz[psi_d_X : pei_d_X + 2, :, :] - Bz[psi_d_X - 1 : pei_d_X + 1, :, :])
         / tv.meshSize[0]
     )
-    EyNew = By + v1 + v2
+    EyNew = Ey + v1 + v2 - tv.dt * Jy
 
-    w1[psi_d_X : pei_d_X + 1, :, :] = (
-        -tv.dt
-        * (Ey[psi_p_X + 1 : pei_p_X + 1, :, :] - Ey[psi_p_X:pei_p_X, :, :])
+    w1[psi_p_X : pei_p_X + 1, :, :] = (
+        + tv.dt
+        * (By[psi_d_X : pei_d_X + 2, :, :] - By[psi_d_X - 1 : pei_d_X + 1, :, :])
         / tv.meshSize[0]
     )
-    w2[:, psi_d_Y : pei_d_Y + 1, :] = (
-        +tv.dt
-        * (Ex[:, psi_p_Y + 1 : pei_p_Y + 1, :] - Ex[:, psi_p_Y:pei_p_Y, :])
+    w2[:, psi_p_Y : pei_p_Y + 1, :] = (
+        - tv.dt
+        * (Bx[:, psi_d_Y : pei_d_Y + 2, :] - Bx[:, psi_d_Y - 1 : pei_d_Y + 1, :])
         / tv.meshSize[1]
     )
-    EzNew = Bz + w1 + w2
+    EzNew = Ez + w1 + w2 - tv.dt * Jz
 
     filename_MAx = "MAx_yee_3D_order1.txt"
     filename_MAy = "MAy_yee_3D_order1.txt"
@@ -586,7 +658,7 @@ def main(path="./"):
 
     test_MA_yee1D(path)
     test_MA_yee2D(path)
-    #test_MA_yee3D(path)
+    test_MA_yee3D(path)
 
 
 if __name__ == "__main__":
