@@ -54,7 +54,7 @@ def T(x):
 
 
 def vx(x):
-    return 2.0
+    return 1.0
 
 
 def vy(x):
@@ -100,7 +100,7 @@ vvv_electrons = {
     "vthz": vthe,
 }
 
-steps = 200
+steps = 2000
 # used to only test on the early particle diagnostic files
 particle_diagnostics = {"count": steps, "idx": 0}
 
@@ -109,10 +109,10 @@ def simulation_params(diagdir, **extra):
     params = {
         "interp_order": 3,
         "time_step_nbr": steps,
-        "time_step": 0.01,
+        "time_step": 0.001,
         "boundary_types": "periodic",
-        "cells": 100,
-        "dl": 1.0,
+        "cells": 1000,
+        "dl": 0.1,
         "normalized_c": 2.0,
         "diag_options": {
             "format": "phareh5",
