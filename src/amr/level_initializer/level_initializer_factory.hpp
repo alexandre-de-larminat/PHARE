@@ -29,7 +29,7 @@ namespace solver
             }
             if (modelName == "PICModel")
             {
-                return std::make_unique<PICLevelInitializer<PICModel>>();
+                return std::make_unique<PICLevelInitializer<PICModel>>(dict);
             }
             return nullptr;
         }

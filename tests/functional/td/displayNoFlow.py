@@ -10,7 +10,7 @@ import os
 
 mpl.use("Agg")
 
-run_path = "./noRefinement"
+run_path = "./noFlowPic"
 run = Run(run_path)
 
 time = get_times_from_h5(os.path.join(run_path, "EM_B.h5"))
@@ -34,7 +34,6 @@ flux_ions = run.GetFlux(plot_time, "protons")
 flux_electrons = run.GetElectronFlux(plot_time, "electrons")
 
 ion_density = run.GetNi(plot_time)
-ion_mass_density = run.GetMassDensity(plot_time)
 electron_density = run.GetNe(plot_time)
 
 ion_particles= run.GetParticles(plot_time, "protons")
@@ -47,7 +46,7 @@ Ne, xNe = flat_finest_field(electron_density, "rho")
 Fix, xFix = flat_finest_field(flux_ions, "protons_Fx")
 Fex, xFex = flat_finest_field(flux_electrons, "pop_Fx")
 
-hier = hierarchy_from(h5_filename="./noRefinement/EM_B.h5")
+hier = hierarchy_from(h5_filename="./noFlowPic/EM_B.h5")
 """
 patches = hier.level(0).patches
 for patch in patches:
@@ -99,12 +98,11 @@ ax5.plot(xFix, Fix, color="k", ls="-")
 ax5.plot(xFex, Fex, color="r", ls="--")
 ax5.set_ylabel(r"$F_x$")
 """
-ax1.legend()
-ax2.legend(loc="lower left")
+ax1.legend(loc="upper left")
+ax2.legend(loc="upper left")
 #fig.tight_layout()
-fig.savefig("td1d_pic_info.png")
 
-
+fig.savefig("td1d_pic_noflow.png")
 
 E = run.GetE(plot_time)
 Ex, xEx = flat_finest_field(E, "Ex")
@@ -127,14 +125,11 @@ ax0, ax1, ax2 = axarr
 ax0.plot(xEx, Ex, color="k", ls="-")
 ax0.plot(xEx0, Ex0, color="r", ls="--")
 ax0.plot(xEx1, Ex1, color="b", ls="--")
-ax0.set_ylabel(r"$E_x$")
 ax1.plot(xEy, Ey, color="k", ls="-")
 ax1.plot(xEy0, Ey0, color="r", ls="--")
 ax1.plot(xEy1, Ey1, color="b", ls="--")
-ax1.set_ylabel(r"$E_y$")
 ax2.plot(xEz, Ez, color="k", ls="-")
 ax2.plot(xEz0, Ez0, color="r", ls="--")
 ax2.plot(xEz1, Ez1, color="b", ls="--")
-ax2.set_ylabel(r"$E_z$")
 
-fig.savefig("td1d_pic_E.png")
+fig.savefig("td1d_pic_E_noflow.png")

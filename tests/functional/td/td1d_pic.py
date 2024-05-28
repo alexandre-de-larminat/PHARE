@@ -50,11 +50,11 @@ def b2(x):
 
 def T(x):
     K = 1
-    return 0.0 #1 / density(x) * (K - b2(x) * 0.5)
+    return 1 / density(x) * (K - b2(x) * 0.5)
 
 
 def vx(x):
-    return 1.0
+    return 0.0
 
 
 def vy(x):
@@ -76,7 +76,7 @@ def vthy(x):
 def vthz(x):
     return T(x)
 
-mass_electron = 1./1
+mass_electron = 1./10
 
 def vthe(x):
     return T(x)/mass_electron
@@ -100,7 +100,7 @@ vvv_electrons = {
     "vthz": vthe,
 }
 
-steps = 2000
+steps = 1000
 # used to only test on the early particle diagnostic files
 particle_diagnostics = {"count": steps, "idx": 0}
 
@@ -109,11 +109,11 @@ def simulation_params(diagdir, **extra):
     params = {
         "interp_order": 3,
         "time_step_nbr": steps,
-        "time_step": 0.001,
+        "time_step": 0.01,
         "boundary_types": "periodic",
-        "cells": 1000,
-        "dl": 0.1,
-        "normalized_c": 2.0,
+        "cells": 500,
+        "dl": 0.2,
+        "normalized_c": 1.0,
         "diag_options": {
             "format": "phareh5",
             "options": {"dir": diagdir, "mode": "overwrite"},
@@ -141,7 +141,7 @@ def config(**options):
             compute_timestamps=timestamps,
         )
         
-    for quantity in ["density", "mass_density", "bulkVelocity"]:
+    for quantity in ["density", "bulkVelocity"]:
         ph.FluidDiagnostics(
             quantity=quantity,
             write_timestamps=timestamps,
@@ -186,7 +186,7 @@ def noRefinement(diagdir):
 
 
 def main():
-    Simulator(noRefinement(diagdir="noRefinement")).run()
+    Simulator(noRefinement(diagdir="noFlowPic")).run()
     ph.global_vars.sim = None
 
 

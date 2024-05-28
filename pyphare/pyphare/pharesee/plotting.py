@@ -96,7 +96,7 @@ def dist_plot(particles, **kwargs):
 
     im = ax.pcolormesh(xh, yh, image, cmap=cmap, norm=norm)
 
-    fig.colorbar(im, ax=ax)
+    fig.colorbar(im, ax=ax, label="Particle count")
 
     if kwargs.get("kde", False) is True:
         import seaborn as sns

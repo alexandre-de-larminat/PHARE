@@ -127,8 +127,8 @@ public:
 
             
         double crx_p = charge_density / dt * dl;  // current density in (x) for 1 particle
-        double cry_p = charge_density * partIn.v[1]; // current density in y using v(n+1/2)
-        double crz_p = charge_density * partIn.v[2]; // current density in z
+        double cry_p = charge_density * partOut.v[1]; // current density in y using v(n+1/2)
+        double crz_p = charge_density * partOut.v[2]; // current density in z
 
         std::vector<double> Jx_p(order_size, 0.);
 

@@ -5,51 +5,41 @@ import pyphare.pharein as ph
 from pyphare.simulator.simulator import Simulator
 from pyphare.pharesee.run import Run
 
+from pyphare.pharesee.run import Run
+from pyphare.pharesee.hierarchy import get_times_from_h5
+from pyphare.pharesee.hierarchy import flat_finest_field
+  
+import os
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import matplotlib.animation as animation
 
 mpl.use("Agg")
 
-
 from tests.diagnostic import all_timestamps
-
-
-def density(x):
-    return 1.0
-
-def ion_density(x):
-    return 1.
-
-
-def S(x, x0, l):
-    return 0.5 * (1 + np.tanh((x - x0) / l))
 
 
 def bx(x):
     return 0.0
 
-
 def by(x):
     from pyphare.pharein.global_vars import sim
 
     L = sim.simulation_domain()[0]
-    L1 = L * 0.25
+    L1 = L #* 0.5
     return np.sin(2 * np.pi * x / L1)
 
-
 def bz(x):
-    return 0.0
-
-
+    return 0.
 
 
 def simulation_params(diagdir, **extra):
     params = {
         "interp_order": 1,
-        "time_step_nbr": 200,
-        "time_step": 0.05,
+        "time_step_nbr": 100,
+        "time_step": 1.,
         "boundary_types": "periodic",
         "cells": 100,
         "dl": 1.0,
@@ -69,7 +59,6 @@ def config(**options):
         bx=bx, by=by, bz=bz
     )
 
-
     timestamps = all_timestamps(sim)
 
     for quantity in ["E", "B"]:
@@ -78,7 +67,6 @@ def config(**options):
             write_timestamps=timestamps,
             compute_timestamps=timestamps,
         )
-    
 
     return sim
 
@@ -93,62 +81,73 @@ def main():
     Simulator(noRefinement(diagdir="wavePropagation")).run()
     ph.global_vars.sim = None
 
-def fig():
-    from pyphare.pharesee.run import Run
-    from pyphare.pharesee.hierarchy import get_times_from_h5
-    from pyphare.pharesee.hierarchy import flat_finest_field
-  
+
+def wave(x, a0, k, phi):
+    return a0 * np.cos(k * x + phi)
+
+
+def phase_speed(run_path, ampl, xmax):
+    from scipy.signal import medfilt
+    from scipy.optimize import curve_fit
     import os
 
-    mpl.use("Agg")
+    time = get_times_from_h5(os.path.join(run_path, "EM_B.h5"))
+    r = Run(run_path)
+    phase = np.zeros_like(time)
+    amplitude = np.zeros_like(time)
+    wave_vec = np.zeros_like(time)
+
+    for it, t in enumerate(time):
+        B = r.GetB(t)
+        by, xby = flat_finest_field(B, "By")
+        a, k, phi = curve_fit(wave, xby, by, p0=(ampl, 2 * np.pi / xmax, 0))[0]
+        phase[it] = phi
+        amplitude[it] = a
+        wave_vec[it] = k
+
+    vphi = medfilt(np.gradient(phase, time) / wave_vec, kernel_size=7)
+    return vphi, time, phase, amplitude, wave_vec
+
+
+def fig():
 
     run_path = "./wavePropagation"
     run = Run(run_path)
 
     time = get_times_from_h5(os.path.join(run_path, "EM_B.h5"))
 
-    plot_time = time[int(len(time)-1)]
-    first_time = time[1]
-    half_time = time[int(len(time)/2)]
-
-
-    B = run.GetB(first_time)
+    B = run.GetB(time[0])
     by, xby = flat_finest_field(B, "By")
 
-    B1 = run.GetB(half_time)
-    by1, xby1 = flat_finest_field(B1, "By")
-
-    B2 = run.GetB(plot_time)
-    by2, xby2 = flat_finest_field(B2, "By")
+    E = run.GetE(time[0])
+    Ez, xEz = flat_finest_field(E, "Ez")
 
 
-    E0 = run.GetE(first_time)
-    Ez0, xEz0 = flat_finest_field(E0, "Ez")
+    fig, axarr = plt.subplots(nrows=2, figsize=(6, 4))
 
-    E1 = run.GetE(half_time)
-    Ez1, xEz1 = flat_finest_field(E1, "Ez")
-
-    E2 = run.GetE(plot_time)
-    Ez2, xEz2 = flat_finest_field(E2, "Ez")
+    ax0, ax1 = axarr
 
 
-    fig, axarr = plt.subplots(nrows=3, figsize=(8, 3))
+    Bline, = ax0.plot(xby, by, color="r", ls="-")
+    ax0.set_ylabel(r"$B_y$")
+    Eline, = ax1.plot(xEz, Ez, color="k", ls="-")
+    ax1.set_ylabel(r"$E_z$")
+    ax1.set_xlabel("x")
 
+    vphi, t, phi, a, k = phase_speed(run_path, 1, 100)
 
+    ax0.set_title(r"$V_\phi = {:6.4f}$".format(vphi.mean()))
 
-    ax0, ax1, ax2 = axarr
+    def update(frame):
+        Bline.set_ydata(flat_finest_field(run.GetB(time[frame]), "By")[0])
+        Eline.set_ydata(flat_finest_field(run.GetE(time[frame]), "Ez")[0])
+        return Bline, Eline
 
-    ax0.plot(xEz0, Ez0, color="k", ls="-")
-    ax0.plot(xby, by, color="r", ls="--")
+    anim = animation.FuncAnimation(fig, update, frames=len(time), interval=100, blit=True)
+    anim.save("td1d_pic_waveprop.gif", writer="imagemagick", fps=10)
 
-    ax1.plot(xby1, by1, color="r", ls="--")
-    ax1.plot(xEz1, Ez1, color="k", ls="-")
-
-    ax2.plot(xby2, by2, color="r", ls="--")
-    ax2.plot(xEz2, Ez2, color="k", ls="-")
-
-
-
+    ax0.plot(xby, flat_finest_field(run.GetB(time[int(len(time)/4)]), "By")[0], color="r", ls="-")
+    ax1.plot(xEz, flat_finest_field(run.GetE(time[int(len(time)/4)]), "Ez")[0], color="k", ls="-")
     fig.savefig("td1d_pic_waveprop.png")
 
 

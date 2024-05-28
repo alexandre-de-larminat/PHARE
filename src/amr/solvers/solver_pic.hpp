@@ -137,11 +137,11 @@ void SolverPIC<PICModel, AMR_Types>::fillMessengerInfo(
 {
     auto& PICInfo = dynamic_cast<amr::PICMessengerInfo&>(*info);
 
-    auto const& Eavg  = electromagAvg_.E;
-    auto const& Bnew = electromagNew_.B;
+    auto const& Bavg  = electromagAvg_.B;
+    //auto const& E     = electromag.E;
 
-    PICInfo.ghostElectric.emplace_back(core::VecFieldNames{Eavg});
-    PICInfo.initMagnetic.emplace_back(core::VecFieldNames{Bnew});
+    //PICInfo.ghostElectric.emplace_back(core::VecFieldNames{E});
+    PICInfo.initMagnetic.emplace_back(core::VecFieldNames{Bavg});
 }
 
 

@@ -50,6 +50,27 @@ public:
         });
     }
 
+    template<typename VecField>
+    void operator()(VecField& Enew, VecField const& Ve, VecField const& B)
+    {
+
+        if (!this->hasLayout())
+            throw std::runtime_error(
+                "Error - Ohm - GridLayout not set, cannot proceed to calculate ohm()");
+
+        auto const& [Exnew, Eynew, Eznew] = Enew();
+
+        layout_->evalOnBox(Exnew, [&](auto&... args) mutable {
+            this->template E_Eq_<Component::X>(Enew, Ve, B, args...);
+        });
+        layout_->evalOnBox(Eynew, [&](auto&... args) mutable {
+            this->template E_Eq_<Component::Y>(Enew, Ve, B, args...);
+        });
+        layout_->evalOnBox(Eznew, [&](auto&... args) mutable {
+            this->template E_Eq_<Component::Z>(Enew, Ve, B, args...);
+        });
+    }
+
     double const eta_;
     double const nu_;
 
@@ -75,6 +96,16 @@ private:
                        + pressure_<Tag>(n, Pe, {ijk...}) //
                        + resistive_<Tag>(J, {ijk...})    //
                        + hyperresistive_<Tag>(J, {ijk...});
+    }
+
+    template<auto Tag, typename VecField, typename... IDXs>
+    void E_Eq_(VecField& E, VecField const& Ve, VecField const& B, IDXs const&... ijk) const
+    {
+        auto& Exyz                       = E(Tag);
+
+        static_assert(Components::check<Tag>());
+
+        Exyz(ijk...) = ideal_<Tag>(Ve, B, {ijk...});
     }
 
 
@@ -241,7 +272,7 @@ private:
     }
 
 
-
+public:
     template<auto component, typename VecField>
     auto ideal_(VecField const& Ve, VecField const& B, MeshIndex<dimension> index) const
     {
@@ -253,7 +284,7 @@ private:
             return ideal3D_<component>(Ve, B, index);
     }
 
-
+private:
 
     template<auto component, typename Field>
     auto pressure_(Field const& n, Field const& Pe, MeshIndex<Field::dimension> index) const
