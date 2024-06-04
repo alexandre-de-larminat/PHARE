@@ -682,6 +682,9 @@ def checker(func):
 
         kwargs["normalized_c"] = check_normalized_c(**kwargs)
 
+        # kwargs["dry_run"] = CLI_ARGS.dry_run
+        # kwargs["write_reports"] = CLI_ARGS.reports
+
         return func(simulation_object, **kwargs)
 
     return wrapper
