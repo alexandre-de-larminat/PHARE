@@ -568,6 +568,14 @@ def check_hyper_resistivity(**kwargs):
     return hyper_resistivity
 
 
+def check_normalized_c(**kwargs):
+    normalized_c = kwargs.get("normalized_c", 1.0)
+    if normalized_c < 1.0:
+        raise ValueError(f"Error: normalized_c should not be lower than 1.0")
+
+    return normalized_c
+
+
 def check_clustering(**kwargs):
     valid_keys = ["berger", "tile"]
     clustering = kwargs.get("clustering", "berger")
@@ -607,6 +615,7 @@ def checker(func):
             "diag_options",
             "resistivity",
             "hyper_resistivity",
+            "normalized_c",
             "strict",
             "restart_options",
             "tag_buffer",
@@ -676,6 +685,8 @@ def checker(func):
         kwargs["resistivity"] = check_resistivity(**kwargs)
 
         kwargs["hyper_resistivity"] = check_hyper_resistivity(**kwargs)
+
+        kwargs["normalized_c"] = check_normalized_c(**kwargs)
 
         # kwargs["dry_run"] = CLI_ARGS.dry_run
         # kwargs["write_reports"] = CLI_ARGS.reports
