@@ -172,9 +172,42 @@ protected:
 };
 
 
+template<std::size_t dim>
+class AnotherPusher : public APusher<dim>
+{
+public:
+    using APusher<dim>::dt;
+    using APusher<dim>::layout;
+
+    AnotherPusher()
+        : APusher<dim>()
+        , particlesIn{layout.AMRBox()}
+        , particlesOut{layout.AMRBox()}
+    {   
+        // set speed to n-1/2
+        double vx = -(10. + 0.01) * dt/2;
+        double vy = 10 + 0.05 * dt/2;
+        double vz = (10. - 0.05) * dt/2;
+
+        particlesIn.emplace_back(
+            Particle{1., 1., ConstArray<int, dim>(5), ConstArray<double, dim>(0.), {vx, vy, vz}});
+        particlesOut.emplace_back(
+            Particle{1., 1., ConstArray<int, dim>(5), ConstArray<double, dim>(0.), {vx, vy, vz}});
+    }
+protected:
+    ParticleArray<dim> particlesIn;
+    ParticleArray<dim> particlesOut;
+};
+
+
 using APusher1D = APusher<1>;
 using APusher2D = APusher<2>;
 using APusher3D = APusher<3>;
+
+using AnotherPusher1D = AnotherPusher<1>;
+using AnotherPusher2D = AnotherPusher<2>;
+using AnotherPusher3D = AnotherPusher<3>;
+
 
 TEST_F(APusher3D, trajectoryIsOk)
 {
@@ -242,6 +275,68 @@ TEST_F(APusher1D, trajectoryIsOk)
 }
 
 
+
+TEST_F(AnotherPusher3D, trajectoryIsOkForOneStep)
+{
+    auto rangeIn  = makeIndexRange(particlesIn);
+    auto rangeOut = makeIndexRange(particlesOut);
+    std::copy(rangeIn.begin(), rangeIn.end(), rangeOut.begin());
+
+    for (decltype(nt) i = 0; i < nt; ++i)
+    {
+        actual[0][i] = (particlesOut[0].iCell[0] + particlesOut[0].delta[0]) * dxyz[0];
+        actual[1][i] = (particlesOut[0].iCell[1] + particlesOut[0].delta[1]) * dxyz[1];
+        actual[2][i] = (particlesOut[0].iCell[2] + particlesOut[0].delta[2]) * dxyz[2];
+
+        pusher->move(rangeIn, rangeOut, em, mass, interpolator, layout, selector);
+
+        std::copy(rangeOut.begin(), rangeOut.end(), rangeIn.begin());
+    }
+
+    EXPECT_THAT(actual[0], ::testing::Pointwise(::testing::DoubleNear(1e-5), expectedTrajectory.x));
+    EXPECT_THAT(actual[1], ::testing::Pointwise(::testing::DoubleNear(1e-5), expectedTrajectory.y));
+    EXPECT_THAT(actual[2], ::testing::Pointwise(::testing::DoubleNear(1e-5), expectedTrajectory.z));
+}
+
+TEST_F(AnotherPusher2D, trajectoryIsOkForOneStep)
+{
+    auto rangeIn  = makeIndexRange(particlesIn);
+    auto rangeOut = makeIndexRange(particlesOut);
+    std::copy(rangeIn.begin(), rangeIn.end(), rangeOut.begin());
+
+    for (decltype(nt) i = 0; i < nt; ++i)
+    {
+        actual[0][i] = (particlesOut[0].iCell[0] + particlesOut[0].delta[0]) * dxyz[0];
+        actual[1][i] = (particlesOut[0].iCell[1] + particlesOut[0].delta[1]) * dxyz[1];
+
+        pusher->move(rangeIn, rangeOut, em, mass, interpolator, layout, selector);
+
+        std::copy(rangeOut.begin(), rangeOut.end(), rangeIn.begin());
+    }
+
+    EXPECT_THAT(actual[0], ::testing::Pointwise(::testing::DoubleNear(1e-5), expectedTrajectory.x));
+    EXPECT_THAT(actual[1], ::testing::Pointwise(::testing::DoubleNear(1e-5), expectedTrajectory.y));
+}
+
+
+
+TEST_F(AnotherPusher1D, trajectoryIsOkForOneStep)
+{
+    auto rangeIn  = makeIndexRange(particlesIn);
+    auto rangeOut = makeIndexRange(particlesOut);
+    std::copy(rangeIn.begin(), rangeIn.end(), rangeOut.begin());
+
+    for (decltype(nt) i = 0; i < nt; ++i)
+    {
+        actual[0][i] = (particlesOut[0].iCell[0] + particlesOut[0].delta[0]) * dxyz[0];
+
+        pusher->move(rangeIn, rangeOut, em, mass, interpolator, layout, selector);
+
+        std::copy(rangeOut.begin(), rangeOut.end(), rangeIn.begin());
+    }
+
+    EXPECT_THAT(actual[0], ::testing::Pointwise(::testing::DoubleNear(1e-5), expectedTrajectory.x));
+}
 
 // the idea of this test is to create a 1D domain [0,1[, push the particles
 // until the newEnd returned by the pusher is != the original end, which means
@@ -334,6 +429,37 @@ TEST_F(APusherWithLeavingParticles, splitLeavingFromNonLeavingParticles)
     }));
 }
 
+TEST_F(APusherWithLeavingParticles, splitLeavingFromNonLeavingParticlesForOneStep)
+{
+    auto rangeIn  = makeIndexRange(particlesIn);
+    auto inDomain = rangeIn;
+
+    auto selector = [this](auto& particleRange) //
+    {
+        auto& box = this->cells;
+        return particleRange.array().partition(
+            [&](auto const& cell) { return PHARE::core::isIn(Point{cell}, box); });
+    };
+
+    for (decltype(nt) i = 0; i < nt; ++i)
+    {
+        auto layout = DummyLayout<1>{};
+        inDomain
+            = pusher->move(rangeIn, rangeIn, em, mass, interpolator, layout, selector);
+
+        if (inDomain.end() != std::end(particlesIn))
+        {
+            std::cout << inDomain.iend() << " and " << particlesIn.size() << "\n";
+            break;
+        }
+    }
+    EXPECT_TRUE(std::none_of(inDomain.end(), std::end(particlesIn), [this](auto const& particle) {
+        return PHARE::core::isIn(Point{particle.iCell}, cells);
+    }));
+    EXPECT_TRUE(std::all_of(std::begin(inDomain), std::end(inDomain), [this](auto const& particle) {
+        return PHARE::core::isIn(Point{particle.iCell}, cells);
+    }));
+}
 
 // removed boundary condition partitioner, fix that when BCs are implemented
 #if 0
