@@ -5,6 +5,12 @@ from ..core import phare_utilities
 from . import global_vars
 from ..core import box as boxm
 from ..core.box import Box
+from ..core import parse_cli_args
+
+CLI_ARGS = parse_cli_args()
+
+
+# ------------------------------------------------------------------------------
 
 
 def supported_dimensions():

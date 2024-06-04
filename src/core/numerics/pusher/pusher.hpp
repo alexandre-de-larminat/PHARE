@@ -31,6 +31,11 @@ namespace core
                                    ParticleSelector firstSelector, ParticleSelector secondSelector)
             = 0;
 
+        virtual ParticleRange move(ParticleRange const& rangeIn, ParticleRange& rangeOut,
+                                   Electromag const& emFields, double mass,
+                                   Interpolator& interpolator, GridLayout const& layout,
+                                   ParticleSelector selector)
+            = 0;
 
         virtual void setMeshAndTimeStep(std::array<double, dim> ms, double ts) = 0;
 

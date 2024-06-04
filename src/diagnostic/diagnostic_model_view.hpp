@@ -37,7 +37,8 @@ public:
     using GridLayout = typename Model::gridlayout_type;
     using PatchProperties
         = cppdict::Dict<float, double, std::size_t, std::vector<int>, std::vector<std::uint32_t>,
-                        std::vector<double>, std::vector<std::size_t>, std::string>;
+                        std::vector<double>, std::vector<std::size_t>, std::string,
+                        std::vector<std::string>>;
 
     ModelView(Hierarchy& hierarchy, Model& model)
         : model_{model}
@@ -60,6 +61,7 @@ public:
                                                std::forward<Action>(action), minLevel, maxLevel,
                                                model_);
     }
+    NO_DISCARD auto boundaryConditions() const { return hierarchy_.boundaryConditions(); }
 
     NO_DISCARD auto domainBox() const { return hierarchy_.domainBox(); }
 
@@ -71,6 +73,7 @@ public:
     {
         return std::string{GridLayout::implT::type};
     }
+
 
     NO_DISCARD auto getPatchProperties(std::string patchID, GridLayout const& grid) const
     {
@@ -84,9 +87,8 @@ public:
     }
 
 
-    NO_DISCARD static auto getEmptyPatchProperties()
+    NO_DISCARD static auto getEmptyPatchProperties(PatchProperties dict = {})
     {
-        PatchProperties dict;
         dict["origin"]   = std::vector<double>{};
         dict["nbrCells"] = std::vector<std::uint32_t>{};
         dict["lower"]    = std::vector<int>{};
