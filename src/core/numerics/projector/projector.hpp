@@ -197,7 +197,6 @@ public:
         }
 
 
-
         // requisite for appropriate centering
         int iCorr = order_size/2;
         if (Sx0[1] > Sx0[Sx0.size()-2]) { 
@@ -211,7 +210,7 @@ public:
 
         auto dl = layout.meshSize();
         double cell_volume = layout.cellVolume();
-        double charge_density = partIn.charge * partIn.weight * cell_volume; // CHECK weight factors in the cell volume
+        double charge_density = partIn.charge * partIn.weight * cell_volume;
      
         double crx_p = charge_density/dt * dl[0];  // current density in the evaluated dimension
         double cry_p = charge_density/dt * dl[1];  // current density in the evaluated dimension
@@ -245,6 +244,15 @@ public:
             }
         }
 
+        // local current made by the particle
+        for (uint i = 1; i < order_size; ++i)
+        {
+            for(uint j = 1; j < order_size; ++j)
+            {
+                Jx_p[i][j] = Jx_p[i-1][j] + crx_p * Wx[i-1][j];
+                Jy_p[i][j] = Jy_p[i][j-1] + cry_p * Wy[i][j-1]; 
+            }
+        }
 
         for (auto i = 0u; i < order_size; ++i)
         {
@@ -252,9 +260,6 @@ public:
             {
                 auto x = xOldStartIndex + i - iCorr; // eg, i from -2 to 2 for 3rd order B-splines.
                 auto y = yOldStartIndex + j - jCorr;
-
-                Jx_p[i][j] = Jx_p[i-1][j] + crx_p * Wx[i-1][j];
-                Jy_p[i][j] = Jy_p[i][j-1] + cry_p * Wy[i][j-1];
 
                 if (x >= 0 and x < Jx.size() and y >= 0 and y < Jy.size()) 
                 {

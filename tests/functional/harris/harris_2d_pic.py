@@ -137,7 +137,7 @@ def config():
         by=by,
         bz=bz,
         protons={"charge": 1, "density": density, **vvv, "init": {"seed": 12334}},
-        electrons={"charge": -1, "mass": mass_electron, "density": density, **vvv_electrons, "init": {"seed": 12334}},
+        electrons={"charge": -1, "mass": mass_electron, "density": density, **vvv_electrons},
     )
 
     dt = 10 * sim.time_step
