@@ -14,7 +14,11 @@ set( SOURCES_INC
      data/particles/particle_utilities.hpp
      data/particles/particle_array.hpp
      data/ions/ion_population/particle_pack.hpp
+     data/pic_electrons/particle_population.hpp
+     data/pic_electrons/electron_population.hpp
      data/ions/ion_population/ion_population.hpp
+     data/pic_electrons/plasma_components.hpp
+     data/pic_electrons/pic_electrons.hpp
      data/ions/ions.hpp
      data/electrons/electrons.hpp
      data/ions/particle_initializers/particle_initializer.hpp
