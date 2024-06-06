@@ -14,17 +14,18 @@ from pyphare.cpp import cpp_lib
 cpp = cpp_lib()
 startMPI()
 
-diag_outputs = "phare_outputs/test/harris/2d"
+diag_outputs = "output"
 from datetime import datetime
+from tests.diagnostic import all_timestamps
 
 
 def config():
     sim = ph.Simulation(
-        time_step_nbr=1,
+        time_step_nbr=10,
         time_step=0.1,
         # boundary_types="periodic",
-        cells=(10, 10),
-        dl=(1.0, 1.0),
+        cells=(10,10),
+        dl=(1.0,1.0),
         refinement_boxes={},
         diag_options={
             "format": "phareh5",
@@ -33,45 +34,40 @@ def config():
         strict=False,
     )
 
-    def density(x, y):
+    def density(x,y):
         return 1.0
 
 
-    def by(x, y):
+    def by(x,y):
         return 0.0
 
-    def bx(x, y):
+    def bx(x,y):
         return 0.0
 
-    def bz(x, y):
+    def bz(x,y):
         return 0.0
 
-    def b2(x, y):
-        return bx(x, y) ** 2 + by(x, y) ** 2 + bz(x, y) ** 2
 
-    def T(x, y):
-        K = 1
-        temp = 1.0 / density(x, y) * (K - b2(x, y) * 0.5)
-        assert np.all(temp > 0)
-        return temp
-
-    def vx(x, y):
+    def T(x,y):
         return 1.0
 
-    def vy(x, y):
+    def vx(x,y):
+        return 1.0
+
+    def vy(x,y):
         return 0.0
 
-    def vz(x, y):
+    def vz(x,y):
         return 0.0
 
-    def vthx(x, y):
-        return np.sqrt(T(x, y))
+    def vthx(x,y):
+        return np.sqrt(T(x,y))
 
-    def vthy(x, y):
-        return np.sqrt(T(x, y))
+    def vthy(x,y):
+        return np.sqrt(T(x,y))
 
-    def vthz(x, y):
-        return np.sqrt(T(x, y))
+    def vthz(x,y):
+        return np.sqrt(T(x,y))
     
 
     vvv = {
@@ -92,9 +88,8 @@ def config():
         electrons={"charge": -1, "density": density, **vvv},
     )
 
-    dt = 10 * sim.time_step
-    nt = sim.final_time / dt + 1
-    timestamps = dt * np.arange(nt)
+
+    timestamps = all_timestamps(sim)
 
     for quantity in ["E", "B"]:
         ph.ElectromagDiagnostics(
@@ -103,17 +98,90 @@ def config():
             compute_timestamps=timestamps,
         )
 
+    for quantity in ["density"]:
+        ph.FluidDiagnostics(
+            quantity=quantity,
+            write_timestamps=timestamps,
+            compute_timestamps=timestamps,
+        )
+        
+    for quantity in ["density"]:
+        ph.FluidDiagnostics(
+            quantity=quantity,
+            write_timestamps=timestamps,
+            compute_timestamps=timestamps,
+            population_name="all_electrons",
+        )
+
+
     return sim
 
 
-def get_time(path, time, datahier=None):
-    time = "{:.10f}".format(time)
+def figure():
+    from pyphare.pharesee.run import Run
+    from pyphare.pharesee.hierarchy import get_times_from_h5
+    from pyphare.pharesee.hierarchy import flat_finest_field
     from pyphare.pharesee.hierarchy import hierarchy_from
+  
+    import os
 
-    datahier = hierarchy_from(h5_filename=path + "/EM_E.h5", time=time, hier=datahier)
-    datahier = hierarchy_from(h5_filename=path + "/EM_B.h5", time=time, hier=datahier)
-    return datahier
 
+    run_path = "./output"
+    run = Run(run_path)
+
+    time = get_times_from_h5(os.path.join(run_path, "EM_B.h5"))
+
+    plot_time = time[int(len(time)-1)]
+    first_time = time[0]
+
+
+    J = run.GetJ(plot_time, merged=True, interp="bilinear")
+
+    print(J["Jx"]) 
+
+
+    B = run.GetB(plot_time)
+
+    print(B)
+    print(B["Bx"]) 
+
+
+    xyjx = J["Jz"][1][0]
+    jx = J["Jz"][0](xyjx)
+
+    print(jx)
+    print(xyjx)
+
+    #xjx = xyjx[:,0]
+    #yjx = xyjx[:,1]
+
+    ion_density = run.GetNi(plot_time)
+    electron_density = run.GetNe(plot_time)
+
+    Ni, xNi = flat_finest_field(ion_density, "rho")
+    Ne, xNe = flat_finest_field(electron_density, "rho")
+
+
+    fig, axarr = plt.subplots(nrows=2, figsize=(8, 10))
+
+
+
+
+    ax0, ax1 = axarr
+
+    ax0.plot(jx, color="k", ls="-")
+    ax0.set_ylabel("Jx")
+
+    charge_density = Ni
+    for i in range(len(Ni)):
+        charge_density[i] = Ni[i] - Ne[i]
+
+
+    ax1.plot(xNi, charge_density, color="k", ls="-")
+    ax1.set_ylabel("Charge density")
+
+    #fig.tight_layout()
+    fig.savefig("test.png")
 
 
 
@@ -125,3 +193,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    figure()

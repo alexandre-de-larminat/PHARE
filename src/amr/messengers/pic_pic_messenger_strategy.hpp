@@ -300,8 +300,11 @@ namespace amr
         void fillElectricGhosts(VecFieldT& E, int const levelNumber, double const fillTime) override
         {
             PHARE_LOG_SCOPE("PICPICMessengerStrategy::fillElectricGhosts");
+            printf("fillElectricGhosts\n");
             elecSharedNodesRefiners_.fill(E, levelNumber, fillTime);
+            printf("filled elecSharedNodesRefiners\n");
             elecGhostsRefiners_.fill(E, levelNumber, fillTime);
+            printf("filled elecGhostsRefiners\n");
         }
 
 
