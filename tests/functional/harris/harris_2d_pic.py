@@ -83,9 +83,15 @@ def config():
     def b2(x, y):
         return bx(x, y) ** 2 + by(x, y) ** 2 + bz(x, y) ** 2
 
-    def T(x, y):
+    def Ti(x, y):
         K = 1
         temp = 1.0 / density(x, y) * (K - b2(x, y) * 0.5)
+        assert np.all(temp > 0)
+        return temp
+    
+    def Te(x, y):
+        K = 1
+        temp = Ti(x, y) * 5
         assert np.all(temp > 0)
         return temp
 
@@ -98,27 +104,21 @@ def config():
     def vz(x, y):
         return 0.0
 
-    def vthx(x, y):
-        return np.sqrt(T(x, y))
-
-    def vthy(x, y):
-        return np.sqrt(T(x, y))
-
-    def vthz(x, y):
-        return np.sqrt(T(x, y))
-    
-    mass_electron = 1.
+    def vth_ions(x, y):
+        return np.sqrt(Ti(x, y))
 
     def vth_electrons(x, y):
-        return np.sqrt(T(x, y))/mass_electron
+        return np.sqrt(Te(x, y))
+    
+    mass_electron = .2
 
     vvv = {
         "vbulkx": vx,
         "vbulky": vy,
         "vbulkz": vz,
-        "vthx": vthx,
-        "vthy": vthy,
-        "vthz": vthz,
+        "vthx": vth_ions,
+        "vthy": vth_ions,
+        "vthz": vth_ions,
         "nbr_part_per_cell": 100,
     }
 
@@ -178,7 +178,6 @@ def post_advance(new_time):
 def main():
     s = Simulator(config(), post_advance=post_advance)
     s.initialize()
-    post_advance(0)
     s.run()
 
 

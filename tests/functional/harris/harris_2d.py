@@ -14,7 +14,7 @@ from pyphare.cpp import cpp_lib
 cpp = cpp_lib()
 startMPI()
 
-diag_outputs = "phare_outputs/test/harris/2d"
+diag_outputs = "phare_outputs/test/harris/hybrid2d"
 from datetime import datetime
 
 
