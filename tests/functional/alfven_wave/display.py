@@ -47,45 +47,71 @@ def phase_speed(run_path, ampl, xmax):
 
 def main():
 
-    from pyphare.pharesee.run import Run
-    from pyphare.pharesee.hierarchy import flat_finest_field
+    #vphi, t, phi, a, k = phase_speed(".", .01, 10)
 
-    vphi, t, phi, a, k = phase_speed(".", 1., 100)
-
-    r = Run(".")
-    t = get_times_from_h5("EM_B.h5")
+    r = Run("alt")
+    t = get_times_from_h5("alt/EM_B.h5")
     fig, ax = plt.subplots(figsize=(9, 5), nrows=1)
 
     #ax, ax2 = ax
-    B = r.GetB(t[int(len(t) / 2)])
-    by, xby = flat_finest_field(B, "By")
-    ax.plot(xby, by, label="t = 500", alpha=0.6)
-
-
-
-    B = r.GetB(t[-1])
-    by, xby = flat_finest_field(B, "By")
-    ax.plot(xby, by, label="t = 1000", alpha=0.6)
-    ax.plot(
-            xby,
-            wave(xby, 1, 2 * np.pi / 100.0, 2 * np.pi / 100 * 50),
-            color="k",
-            ls="--",
-            label="T=500 (theory)",
-        )
 
     B = r.GetB(t[0])
     by, xby = flat_finest_field(B, "By")
-    #ax.plot(xby, by, label="t = 0", color="k")
-    for j in range(10):
-        i=j+1
-        ax.plot(xby, flat_finest_field(r.GetB(t[int(len(t) * i*0.1)-1]), "By")[0], alpha=.1*i, c="k")
+    ax.plot(xby, by, label="t = 0", alpha=0.6)
+    B = r.GetB(t[int(len(t) * 0.1)])
+    by, xby = flat_finest_field(B, "By")
+    ax.plot(xby, by, label="t = 1", alpha=0.6)
 
+    B = r.GetB(t[int(len(t) * 0.2)])
+    by, xby = flat_finest_field(B, "By")
+    ax.plot(xby, by, label="t = 2", alpha=0.6)
+
+
+    B = r.GetB(t[int(len(t) * 0.3)])
+    by, xby = flat_finest_field(B, "By")
+    ax.plot(xby, by, label="t = 3", alpha=0.6)
+
+    B = r.GetB(t[int(len(t) * 0.4)])
+    by, xby = flat_finest_field(B, "By")
+    ax.plot(xby, by, label="t = 4", alpha=0.6)
+
+    B = r.GetB(t[int(len(t) * 0.5)])
+    by, xby = flat_finest_field(B, "By")
+    ax.plot(xby, by, label="t = 5", alpha=0.6)
+
+    B = r.GetB(t[int(len(t) *.75)])
+    by, xby = flat_finest_field(B, "By")
+    ax.plot(xby, by, label="t = 7.5", alpha=0.6)
+
+    B = r.GetB(t[int(len(t) -1)])
+    by, xby = flat_finest_field(B, "By")
+    ax.plot(xby, by, label="t = 10", alpha=0.6)
+
+
+    #B = r.GetB(t[-1])
+    #by, xby = flat_finest_field(B, "By")
+    #ax.plot(xby, by, label="t = 100", alpha=0.6)
+
+    ax.plot(
+            xby,
+            wave(xby, .01, 2 * np.pi / 10.0, 2 * np.pi / 10 * 5),
+            color="k",
+            ls="--",
+            label="T=50 (theory)",
+        )
+    """
+    B = r.GetB(t[0])
+    by, xby = flat_finest_field(B, "By")
+    #ax.plot(xby, by, label="t = 0", color="k")
+    for j in range(2):
+        i=j+1
+        ax.plot(xby, flat_finest_field(r.GetB(t[int(len(t) * i*0.5)-1]), "By")[0], alpha=.5*i, c="k")
+    """
     ax.set_xlabel("x")
     ax.set_ylabel(r"$B_y$")
     ax.legend(ncol=4, loc="upper center")
-    ax.set_ylim((-1.2, 1.3))
-    ax.set_title(r"$V_\phi = {:6.4f}$".format(vphi.mean()))
+    ax.set_ylim((-1.2*0.01, 1.3*0.01))
+    #ax.set_title(r"$V_\phi = {:6.4f}$".format(vphi.mean()))
 
     E = r.GetE(t[int(len(t) / 2)])
     ey, xey = flat_finest_field(E, "Ez")
@@ -98,7 +124,12 @@ def main():
     fig.savefig("alfven_wave.png", dpi=200)
 
 
-"""
+def anim():
+    r = Run(".")
+    t = get_times_from_h5("EM_B.h5")
+    B = r.GetB(t[-1])
+    by, xby = flat_finest_field(B, "By")
+
     fig, ax = plt.subplots(nrows=1, figsize=(8, 4))
 
     Bline, = ax.plot(xby, by, color="r", ls="-")
@@ -112,13 +143,14 @@ def main():
         return Bline,
 
     anim = animation.FuncAnimation(
-        fig, update, frames=len(t), interval=10, blit=True
+        fig, update, frames=int(len(t)/10), interval=10, blit=True
     )
 
     anim.save("alfven.gif", writer="imagemagick", fps=20)
-"""
+
     #assert np.mean(np.abs(vphi - 1) < 5e-2)
 
 
 if __name__ == "__main__":
     main()
+    #anim()

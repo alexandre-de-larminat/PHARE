@@ -15,6 +15,7 @@
 #include "core/utilities/index/index.hpp"
 #include "core/utilities/point/point.hpp"
 
+#include "core/data/particles/particle_array.hpp"
 #include "tests/core/data/field/test_field.hpp"
 #include "tests/core/data/vecfield/test_vecfield.hpp"
 #include "tests/core/data/gridlayout/gridlayout_test.hpp"
@@ -64,11 +65,13 @@ struct EsirkepovTest : public ::testing::Test
     Field<NdArrayVector<dim>, HybridQuantity::Scalar> Jy;
     Field<NdArrayVector<dim>, HybridQuantity::Scalar> Jz;
     VecField<NdArrayVector<dim>, HybridQuantity> J;
+    ParticleArray<dim> particlesIn;
+    ParticleArray<dim> particlesOut;
     Projector<GridYee> projector;
 
 public:
     EsirkepovTest()
-        , Jx{"Jx", HybridQuantity::Scalar::Jx, layout.allocSize(HybridQuantity::Scalar::Jx)}
+        : Jx{"Jx", HybridQuantity::Scalar::Jx, layout.allocSize(HybridQuantity::Scalar::Jx)}
         , Jy{"Jy", HybridQuantity::Scalar::Jy, layout.allocSize(HybridQuantity::Scalar::Jy)}
         , Jz{"Jz", HybridQuantity::Scalar::Jz, layout.allocSize(HybridQuantity::Scalar::Jz)}
         , J{"J", HybridQuantity::Vector::J}
@@ -100,8 +103,7 @@ public:
 };
 
 using TupleInfos
-    = testing::Types<std::pair<DimConst<1>, InterpConst<1>>, std::pair<DimConst<2>, InterpConst<1>>,
-                     std::pair<DimConst<3>, InterpConst<1>>>;
+    = testing::Types<std::pair<DimConst<1>, InterpConst<1>>>;
 
 TYPED_TEST_SUITE(EsirkepovTest, TupleInfos);
 
@@ -146,18 +148,44 @@ TYPED_TEST(EsirkepovTest, EsirkepovCalculatedOk)
 
     this->projector.setLayout(layout.get());
     this->projector(this->J, rangeOut, rangeIn, layout, 1.);
+
+    std::vector<double> dJx;
     
     if constexpr (dim == 1)
     {
         auto psi_X = this->layout.physicalStartIndex(this->Jx, Direction::X);
         auto pei_X = this->layout.physicalEndIndex(this->Jx, Direction::X);
+        
+        std::vector<double> weight_charge(pei_X, 0.);
+
 
         for (auto ix = psi_X; ix <= pei_X; ++ix)
         {
-            dJx = (Jx(ix + 1) - Jx(ix)) / this->layout.meshSize()[0];
-            EXPECT_THAT(this->Exnew(ix), ::testing::DoubleNear((expected_MAx[ix]), 1e-12));
+            dJx.push_back( (this->Jx(ix + 1) - this->Jx(ix)) / this->layout.meshSize()[0] );
+
+            for (auto inIdx = rangeIn.ibegin(), outIdx = rangeOut.ibegin(); inIdx < rangeIn.iend();
+                        ++inIdx, ++outIdx)
+                {
+                    auto& currPart = this->particlesIn[inIdx] ;
+
+                    if (currPart.iCell[0] == ix)
+                    {
+                        auto& distance_to_dual1 = 0.5 - currPart.delta[0] ;
+                        auto& distance_to_dual2 = 1. - distance_to_dual1 ;
+
+                        weight_charge[ix] += currPart.charge * currPart.weight * distance_to_dual1 ;
+
+                        if (ix!=pei_X)
+                            weight_charge[ix + 1] += currPart.charge * currPart.weight * distance_to_dual2 ;
+
+                    }
+                }
         }
 
+        for (auto ix = psi_X; ix <= pei_X; ++ix)
+        {
+            EXPECT_THAT(dJx[ix], ::testing::DoubleNear((weight_charge[ix]), 1e-12));
+        }
     }
 
     

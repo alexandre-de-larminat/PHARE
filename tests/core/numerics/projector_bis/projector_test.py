@@ -24,8 +24,8 @@ def config():
         time_step_nbr=10,
         time_step=0.1,
         # boundary_types="periodic",
-        cells=(10,10),
-        dl=(1.0,1.0),
+        cells=10,
+        dl=1,
         refinement_boxes={},
         diag_options={
             "format": "phareh5",
@@ -34,40 +34,40 @@ def config():
         strict=False,
     )
 
-    def density(x,y):
+    def density(x):
         return 1.0
 
 
-    def by(x,y):
+    def by(x):
         return 0.0
 
-    def bx(x,y):
+    def bx(x):
         return 0.0
 
-    def bz(x,y):
+    def bz(x):
         return 0.0
 
 
-    def T(x,y):
+    def T(x):
         return 1.0
 
-    def vx(x,y):
+    def vx(x):
         return 1.0
 
-    def vy(x,y):
+    def vy(x):
         return 0.0
 
-    def vz(x,y):
+    def vz(x):
         return 0.0
 
-    def vthx(x,y):
-        return np.sqrt(T(x,y))
+    def vthx(x):
+        return np.sqrt(T(x))
 
-    def vthy(x,y):
-        return np.sqrt(T(x,y))
+    def vthy(x):
+        return np.sqrt(T(x))
 
-    def vthz(x,y):
-        return np.sqrt(T(x,y))
+    def vthz(x):
+        return np.sqrt(T(x))
     
 
     vvv = {
@@ -135,22 +135,29 @@ def figure():
     first_time = time[0]
 
 
-    J = run.GetJ(plot_time, merged=True, interp="bilinear")
+    J = run.GetJ(plot_time, merged=True, interp="linear")
 
     print(J["Jx"]) 
+    print(J["Jx"][0])
+    print(J["Jx"][1])
 
 
     B = run.GetB(plot_time)
 
-    print(B)
+    print("B",B)
     print(B["Bx"]) 
 
 
-    xyjx = J["Jz"][1][0]
-    jx = J["Jz"][0](xyjx)
+    xjx = J["Jx"][1]
+
+    print(xjx.shape)
+    print("x :", xjx)
+
+    jx = J["Jx"][0](xjx)
 
     print(jx)
-    print(xyjx)
+    print(jx.shape)
+
 
     #xjx = xyjx[:,0]
     #yjx = xyjx[:,1]
@@ -182,6 +189,9 @@ def figure():
 
     #fig.tight_layout()
     fig.savefig("test.png")
+
+    plt.pcolormesh(xjx, yjx, jx, shading='auto')
+    plt.show()
 
 
 

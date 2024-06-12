@@ -20,28 +20,31 @@ mpl.use("Agg")
 #                     Simulation configuration
 #
 ####################################################################
-v = .01
+v = .00
 b = .01
+cell_nbr = 100
+dl = .1
+x_length = cell_nbr * dl
 
 def config():
     # configure the simulation
 
     sim = ph.Simulation(
-        time_step_nbr=100000,  # number of time steps (not specified if time_step and final_time provided)
-        final_time=1000,  # simulation final time (not specified if time_step and time_step_nbr provided)
+        time_step_nbr=100,  # number of time steps (not specified if time_step and final_time provided)
+        final_time=10,  # simulation final time (not specified if time_step and time_step_nbr provided)
         boundary_types="periodic",  # boundary condition, string or tuple, length == len(cell) == len(dl)
-        cells=1000,  # integer or tuple length == dimension
-        dl=1,  # mesh size of the root level, float or tuple
-        normalized_c=1.0,
+        cells=cell_nbr,  # integer or tuple length == dimension
+        dl=dl,  # mesh size of the root level, float or tuple
+        normalized_c=1.,
         refinement_boxes={},
         diag_options={
             "format": "phareh5",
-            "options": {"dir": ".", "mode": "overwrite"},
+            "options": {"dir": "alt", "mode": "overwrite"},
         },
     )
 
     def density(x):
-        return 1.0
+        return 0.1
 
     def by(x):
         L = sim.simulation_domain()
@@ -52,7 +55,7 @@ def config():
         return b * np.sin(2 * np.pi * x / L[0])
 
     def bx(x):
-        return 1.0
+        return 0.01
 
     def vx(x):
         return 0.0
@@ -60,17 +63,25 @@ def config():
 
     def vy(x):
         L = sim.simulation_domain()
-        return v * np.cos(2 * np.pi * x / L[0])
+        return 0#v * np.cos(2 * np.pi * x / L[0])
 
     def vz(x):
         L = sim.simulation_domain()
-        return v * np.sin(2 * np.pi * x / L[0])
+        return 0#v * np.sin(2 * np.pi * x / L[0])
+    
+    def vye(x):
+        L = sim.simulation_domain()
+        return -vy(x) 
+
+    def vze(x):
+        L = sim.simulation_domain()
+        return -vz(x)
 
     def vth(x):
         return .0
     
     def vthe(x):
-        return vth(x)/electron_mass
+        return vth(x)#/electron_mass
 
     electron_mass = 1
 
@@ -85,8 +96,8 @@ def config():
 
     vvv_e = {
         "vbulkx": vx,
-        "vbulky": vy,
-        "vbulkz": vz,
+        "vbulky": vye,
+        "vbulkz": vze,
         "vthx": vthe,
         "vthy": vthe,
         "vthz": vthe,
@@ -160,7 +171,7 @@ def main():
     Simulator(sim).run()
 
 def figure():
-        vphi, t, phi, a, k = phase_speed(".", b, 1000)
+        vphi, t, phi, a, k = phase_speed(".", b, x_length)
 
         r = Run(".")
         t = get_times_from_h5("EM_B.h5")
@@ -177,7 +188,7 @@ def figure():
         ax.plot(xby, by, label="t = 1000", alpha=0.6)
         ax.plot(
             xby,
-            wave(xby, b, 2 * np.pi / 1000.0, 2 * np.pi / 1000 * 500),
+            wave(xby, b, 2 * np.pi / x_length, 2 * np.pi / x_length * x_length/2),
             color="k",
             ls="--",
             label="T=500 (theory)",
@@ -202,4 +213,4 @@ def figure():
 
 if __name__ == "__main__":
     main()
-    figure()
+    #figure()
