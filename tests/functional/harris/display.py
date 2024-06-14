@@ -44,7 +44,7 @@ from pyphare.pharesee.plotting import finest_field_plot
 
 finest_field_plot(run_path, "Bx", filename="Bx.png", time=plot_time)
 finest_field_plot(run_path, "By", filename="By.png", time=plot_time)
-finest_field_plot(run_path, "Bz", filename="Bz.png", time=plot_time)
+finest_field_plot(run_path, "Bz", filename="Bz.png", time=plot_time, title="plot time = {}".format(plot_time))  
 
 finest_field_plot(run_path, "Ex", filename="Ex.png", time=plot_time)
 finest_field_plot(run_path, "Ey", filename="Ey.png", time=plot_time)

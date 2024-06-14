@@ -133,6 +133,7 @@ namespace PHARE::solver
 
                 auto& B = picModel.state.electromag.B;
 
+                #if 0
                 for (auto& patch : level)
                 {
                     auto _      = picModel.resourcesManager->setOnPatch(*patch, E, B);
@@ -153,7 +154,9 @@ namespace PHARE::solver
 
                     picModel.resourcesManager->setTime(E, *patch, 0.);
                 }
-                if (electrons.isUsable())
+                #endif 
+
+                if (electrons.isSettable())
                 {
                     for (auto& patch : level)
                     {
