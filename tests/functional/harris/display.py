@@ -38,6 +38,53 @@ def BY(x):
 
 
 
+J = run.GetJ(plot_time, merged=True, interp="bilinear")
+xjx, yjx = J["Jx"][1]
+xjx, yjx = np.meshgrid(xjx, yjx) 
+jx = J["Jx"][0]
+jx = jx(xjx, yjx)
+plt.pcolormesh(xjx, yjx, jx, shading='auto')
+plt.colorbar()
+plt.savefig("Jx.png")
+
+
+J = run.GetJ(plot_time, merged=True, interp="bilinear")
+xjx, yjx = J["Jy"][1]
+xjx, yjx = np.meshgrid(xjx, yjx) 
+jx = J["Jy"][0]
+jx = jx(xjx, yjx)
+plt.pcolormesh(xjx, yjx, jx, shading='auto')
+plt.colorbar()
+plt.savefig("Jy.png")
+
+
+J = run.GetJ(plot_time, merged=True, interp="bilinear")
+xjx, yjx = J["Jz"][1]
+xjx, yjx = np.meshgrid(xjx, yjx) 
+jx = J["Jz"][0]
+jx = jx(xjx, yjx)
+plt.pcolormesh(xjx, yjx, jx, shading='auto')
+plt.colorbar()
+plt.savefig("Jz.png")
+
+
+J = run.GetJ(0, merged=True, interp="bilinear")
+xjx, yjx = J["Jz"][1]
+xjx, yjx = np.meshgrid(xjx, yjx)
+jx = J["Jz"][0]
+jx = jx(xjx, yjx)
+plt.pcolormesh(xjx, yjx, jx, shading='auto')
+plt.colorbar()
+plt.savefig("Jz0.png")
+
+J = run.GetJ(1, merged=True, interp="bilinear")
+xjx, yjx = J["Jz"][1]
+xjx, yjx = np.meshgrid(xjx, yjx)
+jx = J["Jz"][0]
+jx = jx(xjx, yjx)
+plt.pcolormesh(xjx, yjx, jx, shading='auto')
+plt.colorbar()
+plt.savefig("Jz1.png")
 
 from pyphare.pharesee.plotting import finest_field_plot
 
@@ -46,13 +93,14 @@ finest_field_plot(run_path, "Bx", filename="Bx.png", time=plot_time)
 finest_field_plot(run_path, "By", filename="By.png", time=plot_time)
 finest_field_plot(run_path, "Bz", filename="Bz.png", time=plot_time, title="plot time = {}".format(plot_time))  
 
-finest_field_plot(run_path, "Ex", filename="Ex.png", time=plot_time)
-finest_field_plot(run_path, "Ey", filename="Ey.png", time=plot_time)
-finest_field_plot(run_path, "Ez", filename="Ez.png", time=plot_time)
-
+finest_field_plot(run_path, "Ex", filename="Ex.png", time=1)
+finest_field_plot(run_path, "Ey", filename="Ey.png", time=1)
+finest_field_plot(run_path, "Ez", filename="Ez.png", time=1)
+"""
 finest_field_plot(run_path, "Bx", filename="Bx0.png", time=first_time)
 finest_field_plot(run_path, "By", filename="By0.png", time=first_time)
 finest_field_plot(run_path, "Bz", filename="Bz0.png", time=first_time)
 finest_field_plot(run_path, "Ex", filename="Ex0.png", time=first_time)
 finest_field_plot(run_path, "Ey", filename="Ey0.png", time=first_time)
 finest_field_plot(run_path, "Ez", filename="Ez0.png", time=first_time)
+"""

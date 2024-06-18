@@ -20,8 +20,8 @@ from datetime import datetime
 
 def config():
     sim = ph.Simulation(
-        time_step_nbr=40000,
-        time_step=0.001,
+        time_step_nbr=4000,
+        time_step=0.01,
         # boundary_types="periodic",
         cells=(200, 400),
         dl=(0.2, 0.2),
