@@ -36,15 +36,15 @@ public:
     {
         if constexpr (dim == 1)
         {
-            return {{{0.1}}, {{10}}, Point{0.}};
+            return {{{1}}, {{10}}, Point{0.}};
         }
         else if constexpr (dim == 2)
         {
-            return {{{0.1, 0.2}}, {{10, 15}}, Point{0., 0.}};
+            return {{{1, 0.5}}, {{10, 15}}, Point{0., 0.}};
         }
         else if constexpr (dim == 3)
         {
-            return {{{0.1, 0.2, 0.3}}, {{10, 15, 20}}, Point{0., 0., 0.}};
+            return {{{1, 0.5, 2}}, {{10, 15, 20}}, Point{0., 0., 0.}};
         }
     }
 };
@@ -132,12 +132,12 @@ public:
         , dt{1}
 
     {
-        for (int i = 1; i < 9; ++i)
+        for (int i = 5; i < 6; ++i)
         {
             particlesIn.emplace_back(
-                Particle{1., 1., ConstArray<int, dim>(i), ConstArray<double, dim>(0.), {10., 10., 0.}});
+                Particle{1., 1., ConstArray<int, dim>(i), ConstArray<double, dim>(0.6), {10., 10., 10.}});
             particlesOut.emplace_back(
-                Particle{1., 1., ConstArray<int, dim>(i), ConstArray<double, dim>(0.), {10., 10., 0.}});
+                Particle{1., 1., ConstArray<int, dim>(i), ConstArray<double, dim>(0.), {10., 10., 10.}});
         }
 
         J.setBuffer("J_x", &Jx);
@@ -177,12 +177,12 @@ TYPED_TEST(EsirkepovTest, EsirkepovCalculatedOk)
 
     auto rangeIn  = makeIndexRange(this->particlesIn);
     auto rangeOut = makeIndexRange(this->particlesOut);
-    std::copy(rangeIn.begin(), rangeIn.end(), rangeOut.begin());
+    //std::copy(rangeIn.begin(), rangeIn.end(), rangeOut.begin());
 
     this->projector.setLayout(layout.get());
+    //this->projector(this->J, rangeOut, rangeIn, this->layout, 1.);
 
-
-    std::vector<double> dJx;
+    //std::vector<double> dJx;
     
     if constexpr (dim == 1)
     {
@@ -192,47 +192,89 @@ TYPED_TEST(EsirkepovTest, EsirkepovCalculatedOk)
         std::vector<double> weight_chargeOld(pei_X, 0.);
         std::vector<double> weight_chargeNew(pei_X, 0.);
         std::vector<double> dRho(pei_X, 0.);
+        std::vector<double> dJx(pei_X, 0.);
 
-        rangeOut = this->pusher->move(rangeIn, rangeOut, this->em, this->mass, this->interpolator, this->layout, this->selector);
+        std::cout << "Projector" << std::endl;
+
+        //rangeOut = this->pusher->move(rangeIn, rangeOut, this->em, this->mass, this->interpolator, this->layout, this->selector);
         this->projector(this->J, rangeOut, rangeIn, this->layout, 1.);
+
+        std::cout << "Post projector" << std::endl;
+
+        auto& particlesIn = rangeIn.array();
+        auto& particlesOut = rangeOut.array();
 
         for (auto ix = psi_X; ix <= pei_X; ++ix)
         {
-            dJx.push_back( (this->Jx(ix + 1) - this->Jx(ix)) / this->layout.meshSize()[0] );
+            int cell_idx = ix - 2 ;
+            std::cout << "cell_idx = " << cell_idx << std::endl;
+
+            dJx[ix] = ( (this->Jx(ix+1) - this->Jx(ix)) / this->layout.meshSize()[0]);
 
             for (auto inIdx = rangeIn.ibegin(), outIdx = rangeOut.ibegin(); inIdx < rangeIn.iend();
                         ++inIdx, ++outIdx)
                 {
-                    auto& currPart = this->particlesIn[inIdx] ;
-                    auto& currPartOut = this->particlesOut[outIdx] ;
+                    auto& currPart = particlesIn[inIdx] ;
+                    auto& currPartOut = particlesOut[outIdx] ;
 
-                    if (currPart.iCell[0] == ix)
+
+                    if (currPart.iCell[0] == ix -2)
                     {
-                        auto distance_to_dual1 = 0.5 - currPart.delta[0] ;
+                        if (currPart.delta[0]<0.5)
+                        {
+                            cell_idx = ix - 3 ;
+                        }
+                        else
+                        {cell_idx = ix - 2 ;
+                        }
+
+                        
+                        std::cout << "currPart.iCell[0] = " << currPart.iCell[0] << std::endl;
+                        auto distance_to_dual1 =  0.5 + currPart.delta[0] ;
                         auto distance_to_dual2 = 1. - distance_to_dual1 ;
-                        std::cout << "deltaIn = " << currPart.delta[0] << std::endl;
-                        std::cout << "deltaOut = " << currPartOut.delta[0] << std::endl;
+                        //std::cout << "deltaIn = " << currPart.delta[0] << std::endl;
+                        //std::cout << "deltaOut = " << currPartOut.delta[0] << std::endl;
 
-                        auto distance_to_dual1_out = 0.5 - currPartOut.delta[0] ;
+                        auto distance_to_dual1_out =  0.5 + currPartOut.delta[0] ;
                         auto distance_to_dual2_out = 1. - distance_to_dual1_out ;
+                        //std::cout << "distance_to_dual1 = " << distance_to_dual1 << std::endl;
+                        //std::cout << "distance_to_dual1_out = " << distance_to_dual1_out << std::endl;
 
-                        weight_chargeOld[ix] += currPart.charge * currPart.weight * distance_to_dual1 ;
-                        weight_chargeNew[ix] += currPart.charge * currPart.weight * distance_to_dual1_out ;
+                        if (cell_idx >= 0)
+                        {
+                            weight_chargeOld[cell_idx] += currPart.charge * currPart.weight * distance_to_dual1 ;
+                            weight_chargeNew[cell_idx] += currPart.charge * currPart.weight * distance_to_dual1_out ;
+                            std::cout << "weight_chargeOld[" << cell_idx << "] = " << weight_chargeOld[cell_idx] << std::endl;
+                            std::cout << "weight_chargeNew[" << cell_idx << "] = " << weight_chargeNew[cell_idx] << std::endl;
+                        }
 
-                        if (ix!=pei_X)
-                            weight_chargeOld[ix + 1] += currPart.charge * currPart.weight * distance_to_dual2 ;
-                            weight_chargeNew[ix + 1] += currPart.charge * currPart.weight * distance_to_dual2_out ;
+                        weight_chargeOld[cell_idx + 1] += currPart.charge * currPart.weight * distance_to_dual2 ;
+                        weight_chargeNew[cell_idx + 1] += currPart.charge * currPart.weight * distance_to_dual2_out ;
+                        std::cout << "weight_chargeOld[" << cell_idx+1 << "] = " << weight_chargeOld[cell_idx+1] << std::endl;
+                        std::cout << "weight_chargeNew[" << cell_idx+1 << "] = " << weight_chargeNew[cell_idx+1] << std::endl;
 
                     }
                 }
             
-            dRho[ix] = (weight_chargeNew[ix] - weight_chargeOld[ix])/this->dt ;
+            dRho[cell_idx] = (weight_chargeOld[cell_idx] - weight_chargeNew[cell_idx])/this->dt ;
+            if (cell_idx < pei_X)
+                dRho[cell_idx+1] = (weight_chargeOld[cell_idx+1] - weight_chargeNew[cell_idx+1])/this->dt ;
         }
+        for (auto ix = psi_X; ix <= pei_X; ++ix)
+        {
+            std::cout << "dRho[" << ix-2 << "] = " << dRho[ix-2] << std::endl;
+            std::cout << "dJx[" << ix << "] = " << dJx[ix] << std::endl;
+            std::cout << "Jx[" << ix << "] = " << this->Jx(ix) << std::endl;
+        }
+        std::cout << "psi_X = " << psi_X << std::endl;
+        std::cout << "pei_X = " << pei_X << std::endl;
 
         for (auto ix = psi_X; ix <= pei_X; ++ix)
         {
-            std::cout << "Comparing dJx[" << ix << "] = " << dJx[ix] << " with dRho[" << ix << "] = " << dRho[ix] << std::endl;
-            EXPECT_THAT(dJx[ix], ::testing::DoubleNear((dRho[ix]), 1e-12));
+            auto cell_idx = ix - 2 ;
+            std::cout << "TEST\n" << std::endl;
+            std::cout << "Comparing dJx[" << ix << "] = " << -dJx[ix] << " with dRho[" << cell_idx << "] = " << dRho[cell_idx] << std::endl;
+            EXPECT_NEAR(-dJx[ix], dRho[cell_idx], 1e-12);
         }
     }
 

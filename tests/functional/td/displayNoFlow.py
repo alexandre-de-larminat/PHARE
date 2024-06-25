@@ -10,7 +10,7 @@ import os
 
 mpl.use("Agg")
 
-run_path = "./noFlowPic"
+run_path = "./noRefinement"
 run = Run(run_path)
 
 time = get_times_from_h5(os.path.join(run_path, "EM_B.h5"))
@@ -28,23 +28,15 @@ by1, xby1 = flat_finest_field(B1, "By")
 
 
 velocity_ions = run.GetVi(plot_time)
-velocity_electrons = run.GetVe(plot_time)
 
 flux_ions = run.GetFlux(plot_time, "protons")
-flux_electrons = run.GetElectronFlux(plot_time, "electrons")
 
 ion_density = run.GetNi(plot_time)
-electron_density = run.GetNe(plot_time)
 
 ion_particles= run.GetParticles(plot_time, "protons")
-electron_particles = run.GetElectronParticles(plot_time, "electrons")
 
 Vix, xVix = flat_finest_field(velocity_ions, "Vx")
-Vex, xVex = flat_finest_field(velocity_electrons, "Vx")
 Ni, xNi = flat_finest_field(ion_density, "rho")
-Ne, xNe = flat_finest_field(electron_density, "rho")
-Fix, xFix = flat_finest_field(flux_ions, "protons_Fx")
-Fex, xFex = flat_finest_field(flux_electrons, "pop_Fx")
 
 hier = hierarchy_from(h5_filename="./noFlowPic/EM_B.h5")
 """
@@ -54,7 +46,7 @@ for patch in patches:
     print(patch.patch_datas.keys())
 """
 
-fig, axarr = plt.subplots(nrows=5, figsize=(8, 10))
+fig, axarr = plt.subplots(nrows=4, figsize=(8, 10))
 
 def S(x, x0, l):
     return 0.5 * (1 + np.tanh((x - x0) / l))
@@ -66,21 +58,19 @@ def BY(x):
     return v1 + (v2 - v1) * (S(x, L * 0.25, 1) - S(x, L * 0.75, 1))
 
 
-ax0, ax1, ax2, ax3, ax4 = axarr
+ax0, ax1, ax2, ax3 = axarr
 
 ax0.plot(xby, BY(xby), color="darkorange", ls="--", label="t=0")
 ax0.plot(xby, by, color="k", ls="-")
 ax0.legend()
 
-ax4.set_xlabel("x")
+ax3.set_xlabel("x")
 ax0.set_ylabel(r"$B_y$")
 
 ax1.plot(xNi, Ni, color="k", ls="-", label="Ions")
-ax1.plot(xNe, Ne, color="r", ls="-", label="Electrons")
 ax1.set_ylabel("Density")
 
 ax2.plot(xVix, Vix, color="k", ls="-", label="Ions")
-ax2.plot(xVex, Vex, color="r", ls="-", label="Electrons", zorder=1)
 ax2.set_ylabel("Bulk Velocity")
 
 ion_particles.dist_plot(
@@ -88,11 +78,6 @@ ion_particles.dist_plot(
                 ax=ax3,
             )
 ax3.set_ylabel(r"Ion $V_x$")
-electron_particles.dist_plot(
-                axis=("x", "Vx"),
-                ax=ax4,
-            )
-ax4.set_ylabel(r"Electron $V_x$")
 """
 ax5.plot(xFix, Fix, color="k", ls="-")
 ax5.plot(xFex, Fex, color="r", ls="--")
@@ -102,7 +87,7 @@ ax1.legend(loc="upper left")
 ax2.legend(loc="upper left")
 #fig.tight_layout()
 
-fig.savefig("td1d_pic_noflow.png")
+fig.savefig("td1d_flow_.png")
 
 E = run.GetE(plot_time)
 Ex, xEx = flat_finest_field(E, "Ex")
@@ -132,4 +117,4 @@ ax2.plot(xEz, Ez, color="k", ls="-")
 ax2.plot(xEz0, Ez0, color="r", ls="--")
 ax2.plot(xEz1, Ez1, color="b", ls="--")
 
-fig.savefig("td1d_pic_E_noflow.png")
+#fig.savefig("td1d_pic_E_noflow.png")

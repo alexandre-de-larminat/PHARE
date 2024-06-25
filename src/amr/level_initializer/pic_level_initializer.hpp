@@ -133,9 +133,10 @@ namespace PHARE::solver
 
                 auto& B = picModel.state.electromag.B;
 
-                #if 0
+
                 for (auto& patch : level)
                 {
+                    printf("PIC level initializer: setOnPatch\n");
                     auto _      = picModel.resourcesManager->setOnPatch(*patch, E, B);
                     auto layout = PHARE::amr::layoutFromPatch<GridLayoutT>(*patch);
                     auto __     = core::SetLayout(&layout, ohm_);
@@ -154,9 +155,8 @@ namespace PHARE::solver
 
                     picModel.resourcesManager->setTime(E, *patch, 0.);
                 }
-                #endif 
 
-                if (electrons.isSettable())
+                if (electrons.isSettable() and 0)
                 {
                     for (auto& patch : level)
                     {

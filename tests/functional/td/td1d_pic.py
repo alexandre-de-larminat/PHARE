@@ -54,12 +54,10 @@ def T(x):
 
 
 def vx(x):
-    return 0.0
-
+    return 2.0
 
 def vy(x):
     return 0.0
-
 
 def vz(x):
     return 0.0
@@ -68,18 +66,17 @@ def vz(x):
 def vthx(x):
     return T(x)
 
-
 def vthy(x):
     return T(x)
-
 
 def vthz(x):
     return T(x)
 
-mass_electron = 1./10
+
+mass_electron = 1./1
 
 def vthe(x):
-    return T(x)/mass_electron
+    return T(x)
 
 
 vvv = {
@@ -111,9 +108,9 @@ def simulation_params(diagdir, **extra):
         "time_step_nbr": steps,
         "time_step": 0.01,
         "boundary_types": "periodic",
-        "cells": 500,
-        "dl": 0.2,
-        "normalized_c": 1.0,
+        "cells": 400,
+        "dl": .25,
+        "normalized_c": 2.0,
         "diag_options": {
             "format": "phareh5",
             "options": {"dir": diagdir, "mode": "overwrite"},

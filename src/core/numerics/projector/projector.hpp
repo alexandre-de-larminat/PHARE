@@ -40,9 +40,8 @@ auto bufferedWeights_(Particle const& part, GridLayout const& layout)
 
     Weighter_t weighter_;
     std::array<double, supportpts> weights;
-    std::vector<std::vector<double>> primal_weights(dimension, std::vector<double>(supportpts+2));
-    std::vector<std::vector<double>> dual_weights(dimension, std::vector<double>(supportpts+2));
-
+    std::vector<std::vector<double>> primal_weights(dimension, std::vector<double>());
+    std::vector<std::vector<double>> dual_weights(dimension, std::vector<double>());
     
     for (uint i = 0; i < dimension; ++i)
     {
@@ -65,7 +64,7 @@ auto bufferedWeights_(Particle const& part, GridLayout const& layout)
         primal_weights[i].insert(primal_weights[i].begin(), 0.0);
         primal_weights[i].push_back(0.0);
 
-/*
+
         weighter_.computeWeight(dual_position, startIndexDual, weights);
 
         for (uint n = 0; n < supportpts; ++n)
@@ -76,11 +75,10 @@ auto bufferedWeights_(Particle const& part, GridLayout const& layout)
         // Add 0.0 to the beginning and end of the weights for calculation purposes
         dual_weights[i].insert(dual_weights[i].begin(), 0.0);
         dual_weights[i].push_back(0.0);
-*/
 
     }
 
-    return primal_weights; 
+    return dual_weights; 
    
 } // END bufferedWeights_
 
@@ -100,13 +98,23 @@ public:
     template<typename VecField, typename Particle, typename GridLayout>
     inline void operator()(VecField& J, Particle const& partOut,
                            Particle const& partIn, GridLayout const& layout, double dt)
-    {
+    {    
+        static constexpr auto interpOrder = GridLayout::interp_order;
+        static constexpr auto dimension   = GridLayout::dimension;
+
         auto& Jx = J(Component::X);
         auto& Jy = J(Component::Y);
         auto& Jz = J(Component::Z);
 
-        auto const& xOldStartIndex = partIn.iCell[0] ; // central dual node
-        auto const& xNewStartIndex = partOut.iCell[0] ;
+        using Interpolator_t = PHARE::core::Interpolator<dimension, interpOrder>;
+
+        auto const& xOldStartIndex = partIn.iCell[0] - Interpolator_t::template 
+            computeStartLeftShift<QtyCentering, QtyCentering::dual>(partIn.delta[0]); // central dual node
+        auto const& xNewStartIndex = partOut.iCell[0] - Interpolator_t::template 
+            computeStartLeftShift<QtyCentering, QtyCentering::dual>(partOut.delta[0]);
+
+        printf("xOldStartIndex: %d\n", xOldStartIndex);
+        printf("xNewStartIndex: %d\n", xNewStartIndex);
 
         auto const& weightsOld  = bufferedWeights_(partIn, layout); // dual weights
         auto const& weightsNew  = bufferedWeights_(partOut, layout);
@@ -117,9 +125,9 @@ public:
 
         // requisite for appropriate centering (greatest weight at node considered)
         int iCorr = order_size/2;
-        if (S0[1] > S0[order_size-2]) { 
-            iCorr -= 1;
-        }
+        //if (S0[1] > S0[order_size-2]) { 
+        //    iCorr -= 1;
+        //}
 
         double dl = layout.meshSize()[0]; 
         double cell_volume = layout.cellVolume(); 
@@ -135,7 +143,7 @@ public:
         std::vector<double> Wl(order_size);
         std::vector<double> Wt(order_size);
 
-        for (uint i = 0; i < order_size; ++i)
+        for (uint i = 1; i < order_size; ++i)
         {
             S1[i + xNewStartIndex - xOldStartIndex] = weightsNew[0][i];
         }
@@ -148,10 +156,14 @@ public:
         {
             Jx_p[i] = Jx_p[i-1] + crx_p * Wl[i-1]; // local current made by the particle
         }
+        
+
         for (uint i = 0; i < order_size; ++i)
         {
             auto x = xOldStartIndex + i - iCorr; // x = xOldStartIndex for maximal weight
+            x += 2; // accounts for ghost cells
 
+            std::cout << Jx.size() << std::endl;
             if (x >= 0 and x < Jx.size()) 
             {
                 Jx(x) += Jx_p[i];
@@ -159,6 +171,7 @@ public:
                 Jz(x) += crz_p * Wt[i];
             }
         }
+        
     }
 }; // END ProjectJ<1>
 

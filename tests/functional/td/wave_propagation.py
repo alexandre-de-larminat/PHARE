@@ -20,6 +20,8 @@ mpl.use("Agg")
 
 from tests.diagnostic import all_timestamps
 
+length = 100.0
+dl = 5
 
 def bx(x):
     return 0.0
@@ -41,8 +43,8 @@ def simulation_params(diagdir, **extra):
         "time_step_nbr": 100,
         "time_step": 1.,
         "boundary_types": "periodic",
-        "cells": 100,
-        "dl": 1.0,
+        "cells": length/dl,
+        "dl": dl,
         "normalized_c": 1.0,
         "diag_options": {
             "format": "phareh5",
@@ -136,19 +138,19 @@ def fig():
 
     vphi, t, phi, a, k = phase_speed(run_path, 1, 100)
 
-    ax0.set_title(r"$V_\phi = {:6.4f}$".format(vphi.mean()))
+    ax0.set_title(r"$V_\phi = {:6.12f}$".format(vphi.mean()))
 
     def update(frame):
         Bline.set_ydata(flat_finest_field(run.GetB(time[frame]), "By")[0])
         Eline.set_ydata(flat_finest_field(run.GetE(time[frame]), "Ez")[0])
         return Bline, Eline
 
-    anim = animation.FuncAnimation(fig, update, frames=len(time), interval=100, blit=True)
-    anim.save("td1d_pic_waveprop.gif", writer="imagemagick", fps=10)
+    #anim = animation.FuncAnimation(fig, update, frames=len(time), interval=100, blit=True)
+    #anim.save("td1d_pic_waveprop.gif", writer="imagemagick", fps=10)
 
     ax0.plot(xby, flat_finest_field(run.GetB(time[int(len(time)/4)]), "By")[0], color="r", ls="-")
     ax1.plot(xEz, flat_finest_field(run.GetE(time[int(len(time)/4)]), "Ez")[0], color="k", ls="-")
-    fig.savefig("td1d_pic_waveprop.png")
+    fig.savefig("td1d_pic_waveprop_.png")
 
 
 if __name__ == "__main__":
