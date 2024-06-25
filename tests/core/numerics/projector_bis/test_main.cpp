@@ -132,14 +132,22 @@ public:
         , dt{1}
 
     {
-        for (int i = 5; i < 6; ++i)
+        for (int i = 1; i < 9; i+=2)
         {
             particlesIn.emplace_back(
-                Particle{1., 1., ConstArray<int, dim>(i), ConstArray<double, dim>(0.6), {10., 10., 10.}});
+                Particle{1., 1., ConstArray<int, dim>(i), ConstArray<double, dim>(0.1), {10., 10., 10.}});
             particlesOut.emplace_back(
                 Particle{1., 1., ConstArray<int, dim>(i), ConstArray<double, dim>(0.), {10., 10., 10.}});
         }
-
+        
+        for (int i = 0; i < 8; i+=3)
+        {
+            particlesIn.emplace_back(
+                Particle{1., 1., ConstArray<int, dim>(i), ConstArray<double, dim>(0.3), {10., 10., 10.}});
+            particlesOut.emplace_back(
+                Particle{1., 1., ConstArray<int, dim>(i), ConstArray<double, dim>(0.), {10., 10., 10.}});
+        }
+        
         J.setBuffer("J_x", &Jx);
         J.setBuffer("J_y", &Jy);
         J.setBuffer("J_z", &Jz);
@@ -269,12 +277,13 @@ TYPED_TEST(EsirkepovTest, EsirkepovCalculatedOk)
         std::cout << "psi_X = " << psi_X << std::endl;
         std::cout << "pei_X = " << pei_X << std::endl;
 
-        for (auto ix = psi_X; ix <= pei_X; ++ix)
+        for (auto ix = psi_X; ix < pei_X - 1; ++ix)
         {
-            auto cell_idx = ix - 2 ;
-            std::cout << "TEST\n" << std::endl;
+            auto cell_idx = ix - 1 ;
+            
             std::cout << "Comparing dJx[" << ix << "] = " << -dJx[ix] << " with dRho[" << cell_idx << "] = " << dRho[cell_idx] << std::endl;
             EXPECT_NEAR(-dJx[ix], dRho[cell_idx], 1e-12);
+            std::cout << "Ok\n" << std::endl;
         }
     }
 
